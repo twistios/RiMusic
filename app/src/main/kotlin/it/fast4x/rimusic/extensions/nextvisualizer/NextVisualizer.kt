@@ -63,6 +63,7 @@ import it.fast4x.rimusic.extensions.nextvisualizer.painters.modifier.Compose
 import it.fast4x.rimusic.extensions.nextvisualizer.painters.modifier.Glitch
 import it.fast4x.rimusic.extensions.nextvisualizer.painters.modifier.Move
 import it.fast4x.rimusic.extensions.nextvisualizer.painters.modifier.Shake
+import it.fast4x.rimusic.extensions.nextvisualizer.painters.waveform.FullWfmAnalog
 import it.fast4x.rimusic.extensions.nextvisualizer.painters.waveform.WfmAnalog
 import it.fast4x.rimusic.extensions.nextvisualizer.utils.Preset
 import it.fast4x.rimusic.extensions.nextvisualizer.utils.VisualizerHelper
@@ -245,6 +246,7 @@ fun getVisualizers(): List<Painter> {
     val ampR = 3f
     val yR = 0.2f
     val color = LocalAppearance.current.colorPalette.text.hashCode()
+    val color_waveform = LocalAppearance.current.colorPalette.blue.hashCode()
     var bitmapCover by remember { mutableStateOf(ContextCompat.getDrawable(context, R.drawable.app_logo)?.toBitmap()!!) }
     val binder = LocalPlayerServiceBinder.current
     LaunchedEffect(Unit) {
@@ -261,8 +263,11 @@ fun getVisualizers(): List<Painter> {
     val background: Bitmap = bitmapCover //ContextCompat.getDrawable(context, R.drawable.app_logo)?.toBitmap()!!
     val bitmap: Bitmap = bitmapCover //ContextCompat.getDrawable(context, R.drawable.app_logo)?.toBitmap()!!
     circleBitmap = bitmap.let { Icon.getCircledBitmap(it) }
+    val player = LocalPlayerServiceBinder.current?.player // TODO maybe dangerous...
+
     return listOf(
         // Basic components
+        Move(FullWfmAnalog(colorPaint = color_waveform, ampR = ampR, player=player)),
         Move(WfmAnalog(colorPaint = color, ampR = ampR)),
         Move(FftBar(colorPaint = color, ampR = ampR), yR = yR),
         Move(FftLine(colorPaint = color, ampR = ampR), yR = yR),
