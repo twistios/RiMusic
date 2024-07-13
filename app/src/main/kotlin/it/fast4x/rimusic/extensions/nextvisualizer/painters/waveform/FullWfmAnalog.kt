@@ -4,6 +4,7 @@ import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.Path
+import android.graphics.PathMeasure
 import androidx.media3.exoplayer.ExoPlayer
 import it.fast4x.rimusic.extensions.nextvisualizer.painters.Painter
 import it.fast4x.rimusic.extensions.nextvisualizer.utils.VisualizerHelper
@@ -24,10 +25,12 @@ class FullWfmAnalog(
     val player: ExoPlayer?
 ) : Painter() {
 
-    private val path = Path()
+    private var path = Path()
     private var skipFrame = false
     private var currentPosition: Long = 0
     private lateinit var waveform : ByteArray
+    private var offset = 0f
+    private var speedScale = 1f
     // private val skip_frames = num*10
     // private var frame_val = 0
 
@@ -53,7 +56,7 @@ class FullWfmAnalog(
         val width = canvas.width.toFloat()
 
         val point = waveform.size / (num + 1)
-        // val sliceWidth = width / num
+
         val durationWidth = (player?.duration ?: 0) / width
 
         // TODO path should start at currentDurationWidth instead of zero if non-zero
@@ -65,14 +68,32 @@ class FullWfmAnalog(
             pointValue += -waveform[point*i].toUByte().toInt()
         }
         pointValue = ((pointValue/num)) // average of current frame
-        val currentDurationWidth = (currentPosition)/durationWidth
-        // path.lineTo(currentDurationWidth, (-waveform[point].toUByte().toInt() + 128f) * ampR)
 
-        path.lineTo(currentDurationWidth, -(pointValue.absoluteValue) * ampR)
-        path.lineTo(currentDurationWidth, (pointValue.absoluteValue) * ampR)
+        // not actually the width
+        val currentDurationWidth = (currentPosition*speedScale)/durationWidth
 
-        // path.lineTo(currentDurationWidth, (-waveform[point].toUByte().toInt() + 128f) * ampR)
+        path.lineTo(currentDurationWidth + offset, (-pointValue.absoluteValue+128) * ampR * 10)
+
+        val pos = getCurrentVisualizerPosition()[0]
+        if (pos > width){
+            offset -= width
+            path = Path()
+            // path.offset(offset, 0f) // offset-method not working
+        } else if (pos < 0){
+            offset += pos.absoluteValue
+            path = Path()
+        }
+
         drawHelper(canvas, "a", 0f, .5f) { canvas.drawPath(path, paint) }
         // path.reset()
+    }
+
+    private fun getCurrentVisualizerPosition(): FloatArray {
+        val pm = PathMeasure(path, false)
+
+        val pos = floatArrayOf(0f, 0f) //pos will be here
+
+        pm.getPosTan(pm.length, pos, null) //pos from end of path
+        return pos
     }
 }
