@@ -26,10 +26,10 @@ class FullWfmAnalog(
 
     private val path = Path()
     private var skipFrame = false
-    private var value: Long = 0
-    lateinit var waveform : ByteArray
-    private val skip_frames = num*10
-    private var frame_val = 0
+    private var currentPosition: Long = 0
+    private lateinit var waveform : ByteArray
+    // private val skip_frames = num*10
+    // private var frame_val = 0
 
     // private var fft: DoubleArray = DoubleArray(1){1.0}
 
@@ -58,14 +58,14 @@ class FullWfmAnalog(
 
         // TODO path should start at currentDurationWidth instead of zero if non-zero
 
-        value = (player?.currentPosition ?: 0).toLong()
+        currentPosition = (player?.currentPosition ?: 0).toLong()
 
         var pointValue = 0f
         for (i in 1..num){
             pointValue += -waveform[point*i].toUByte().toInt()
         }
-        pointValue= ((pointValue/num)+128f)
-        val currentDurationWidth = (value)/durationWidth
+        pointValue = ((pointValue/num)) // average of current frame
+        val currentDurationWidth = (currentPosition)/durationWidth
         // path.lineTo(currentDurationWidth, (-waveform[point].toUByte().toInt() + 128f) * ampR)
 
         path.lineTo(currentDurationWidth, -(pointValue.absoluteValue) * ampR)
