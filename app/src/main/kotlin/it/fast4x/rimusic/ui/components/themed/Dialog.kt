@@ -100,6 +100,7 @@ import progress
 import track
 import it.fast4x.rimusic.utils.isShowingLyricsKey
 import it.fast4x.rimusic.utils.showlyricsthumbnailKey
+import it.fast4x.rimusic.utils.visualizerSpeedKey
 
 @Composable
 fun TextFieldDialog(
@@ -1264,6 +1265,7 @@ fun PlaybackParamsDialog(
     val context = LocalContext.current
     val (colorPalette) = LocalAppearance.current
     val defaultSpeed = 1f
+    val defaultVisualizerSpeed = 1f
     val defaultPitch = 1f
     val defaultVolume = 0.5f //binder?.player?.volume ?: 1f
     val defaultDeviceVolume = getDeviceVolume(context)
@@ -1271,6 +1273,7 @@ fun PlaybackParamsDialog(
     var playbackPitch  by rememberPreference(playbackPitchKey,   defaultPitch)
     var playbackVolume  by rememberPreference(playbackVolumeKey, defaultVolume)
     var playbackDeviceVolume  by rememberPreference(playbackDeviceVolumeKey, defaultDeviceVolume)
+    var visualizerSpeed by rememberPreference(visualizerSpeedKey, defaultVisualizerSpeed)
 
     DefaultDialog(
         onDismiss = {
@@ -1279,7 +1282,7 @@ fun PlaybackParamsDialog(
             onDismiss()
         }
     ) {
-
+            // playback speed
             Row(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
@@ -1358,6 +1361,7 @@ fun PlaybackParamsDialog(
                 )
             }
 
+            // playback pitch
             Row(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
@@ -1436,6 +1440,7 @@ fun PlaybackParamsDialog(
                 )
             }
 
+            // playback volume
             Row(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
@@ -1512,6 +1517,7 @@ fun PlaybackParamsDialog(
                 )
             }
 
+            // playback Device Volume
             Row(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
@@ -1545,6 +1551,85 @@ fun PlaybackParamsDialog(
                     thumb = { thumbValue ->
                         CustomSliderDefaults.Thumb(
                             thumbValue = "%.1f".format(playbackDeviceVolume),
+                            color = Color.Transparent,
+                            size = 40.dp,
+                            modifier = Modifier.background(
+                                brush = Brush.linearGradient(
+                                    listOf(
+                                        colorPalette.background1,
+                                        colorPalette.favoritesIcon
+                                    )
+                                ),
+                                shape = CircleShape
+                            )
+                        )
+                    },
+                    track = { sliderPositions ->
+                        Box(
+                            modifier = Modifier
+                                .track()
+                                .border(
+                                    width = 1.dp,
+                                    color = Color.LightGray.copy(alpha = 0.4f),
+                                    shape = CircleShape
+                                )
+                                .background(Color.White)
+                                .padding(1.dp),
+                            contentAlignment = Alignment.CenterStart
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .progress(sliderPositions = sliderPositions)
+                                    .background(
+                                        brush = Brush.linearGradient(
+                                            listOf(
+                                                colorPalette.favoritesIcon,
+                                                Color.Red
+                                            )
+                                        )
+                                    )
+                            )
+                        }
+                    }
+                )
+            }
+
+            // visualizer speed
+            Row(
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier
+                    .fillMaxWidth()
+            ) {
+                IconButton(
+                    onClick = {
+                        visualizerSpeed = defaultVisualizerSpeed
+                        // setDeviceVolume(context, playbackDeviceVolume)
+                        // TODO
+                    },
+                    icon = R.drawable.slow_motion,
+                    color = colorPalette.favoritesIcon,
+                    modifier = Modifier
+                        .size(24.dp)
+                )
+
+                CustomSlider(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 13.dp)
+                        .padding(horizontal = 5.dp),
+                    value = visualizerSpeed,
+                    onValueChange = {
+                        visualizerSpeed = it
+                        // setDeviceVolume(context, playbackDeviceVolume)
+                        // TODO
+                    },
+                    valueRange = 1f..100.0f,
+                    gap = 1,
+                    showIndicator = true,
+                    thumb = { thumbValue ->
+                        CustomSliderDefaults.Thumb(
+                            thumbValue = "%d".format(visualizerSpeed.toInt()),
                             color = Color.Transparent,
                             size = 40.dp,
                             modifier = Modifier.background(
