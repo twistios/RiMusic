@@ -1,31 +1,23 @@
 package it.fast4x.rimusic.ui.screens.player
 
+//import it.fast4x.rimusic.utils.blurStrength2Key
 import android.annotation.SuppressLint
 import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.media.audiofx.AudioEffect
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.ExperimentalAnimationApi
-import androidx.compose.animation.SizeTransform
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.animateDp
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.core.updateTransition
-import androidx.compose.animation.slideInHorizontally
-import androidx.compose.animation.slideOutHorizontally
-import androidx.compose.animation.togetherWith
-import androidx.compose.animation.with
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.basicMarquee
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
@@ -40,7 +32,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
-import androidx.compose.foundation.layout.absoluteOffset
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
@@ -54,21 +45,15 @@ import androidx.compose.foundation.layout.requiredHeight
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.Icon
-import androidx.compose.material.ModalBottomSheetState
-import androidx.compose.material.ripple.rememberRipple
-import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.rememberModalBottomSheetState
-
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.SheetState
 import androidx.compose.material3.Surface
-import androidx.compose.material3.ripple
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -94,20 +79,25 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.LinearGradientShader
-import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.StrokeJoin
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.ExperimentalTextApi
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.times
 import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
+import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.offline.Download
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
@@ -117,22 +107,27 @@ import it.fast4x.rimusic.Database
 import it.fast4x.rimusic.LocalPlayerServiceBinder
 import it.fast4x.rimusic.R
 import it.fast4x.rimusic.enums.BackgroundProgress
+import it.fast4x.rimusic.enums.ClickLyricsText
 import it.fast4x.rimusic.enums.ColorPaletteMode
-import it.fast4x.rimusic.enums.DurationInSeconds
+import it.fast4x.rimusic.enums.LandscapeLayout
 import it.fast4x.rimusic.enums.NavRoutes
 import it.fast4x.rimusic.enums.PlayerBackgroundColors
+import it.fast4x.rimusic.enums.PlayerPlayButtonType
 import it.fast4x.rimusic.enums.PlayerThumbnailSize
-import it.fast4x.rimusic.enums.PlayerVisualizerType
+import it.fast4x.rimusic.enums.PlayerTimelineType
 import it.fast4x.rimusic.enums.PopupType
+import it.fast4x.rimusic.enums.PrevNextSongs
+import it.fast4x.rimusic.enums.ThumbnailRoundness
+import it.fast4x.rimusic.enums.ThumbnailType
 import it.fast4x.rimusic.enums.UiType
 import it.fast4x.rimusic.models.Info
 import it.fast4x.rimusic.models.Song
 import it.fast4x.rimusic.models.ui.toUiMedia
 import it.fast4x.rimusic.query
-import it.fast4x.rimusic.ui.components.BottomSheetState
+import it.fast4x.rimusic.service.PlayerService
 import it.fast4x.rimusic.ui.components.CustomModalBottomSheet
 import it.fast4x.rimusic.ui.components.LocalMenuState
-import it.fast4x.rimusic.ui.components.rememberBottomSheetState
+import it.fast4x.rimusic.ui.components.MenuState
 import it.fast4x.rimusic.ui.components.themed.BlurParamsDialog
 import it.fast4x.rimusic.ui.components.themed.CircularSlider
 import it.fast4x.rimusic.ui.components.themed.ConfirmationDialog
@@ -144,42 +139,58 @@ import it.fast4x.rimusic.ui.components.themed.PlayerMenu
 import it.fast4x.rimusic.ui.components.themed.SecondaryTextButton
 import it.fast4x.rimusic.ui.components.themed.SmartToast
 import it.fast4x.rimusic.ui.components.themed.animateBrushRotation
+import it.fast4x.rimusic.ui.styling.ColorPalette
 import it.fast4x.rimusic.ui.styling.Dimensions
 import it.fast4x.rimusic.ui.styling.LocalAppearance
+import it.fast4x.rimusic.ui.styling.Typography
 import it.fast4x.rimusic.ui.styling.collapsedPlayerProgressBar
 import it.fast4x.rimusic.ui.styling.dynamicColorPaletteOf
 import it.fast4x.rimusic.ui.styling.favoritesOverlay
 import it.fast4x.rimusic.ui.styling.px
+import it.fast4x.rimusic.utils.ApplyDiscoverToQueue
 import it.fast4x.rimusic.utils.BlurTransformation
 import it.fast4x.rimusic.utils.DisposableListener
 import it.fast4x.rimusic.utils.UiTypeKey
-import it.fast4x.rimusic.utils.asSong
-import it.fast4x.rimusic.utils.audioFadeIn
-import it.fast4x.rimusic.utils.audioFadeOut
+import it.fast4x.rimusic.utils.actionspacedevenlyKey
 import it.fast4x.rimusic.utils.backgroundProgressKey
+import it.fast4x.rimusic.utils.blackgradientKey
 import it.fast4x.rimusic.utils.blurDarkenFactorKey
 import it.fast4x.rimusic.utils.blurStrengthKey
+import it.fast4x.rimusic.utils.bottomgradientKey
+import it.fast4x.rimusic.utils.cleanPrefix
+import it.fast4x.rimusic.utils.clickLyricsTextKey
 import it.fast4x.rimusic.utils.colorPaletteModeKey
 import it.fast4x.rimusic.utils.currentWindow
 import it.fast4x.rimusic.utils.disableClosingPlayerSwipingDownKey
 import it.fast4x.rimusic.utils.disablePlayerHorizontalSwipeKey
+import it.fast4x.rimusic.utils.disableScrollingTextKey
+import it.fast4x.rimusic.utils.discoverKey
+import it.fast4x.rimusic.utils.doubleShadowDrop
 import it.fast4x.rimusic.utils.downloadedStateMedia
 import it.fast4x.rimusic.utils.durationTextToMillis
 import it.fast4x.rimusic.utils.effectRotationKey
+import it.fast4x.rimusic.utils.expandedlyricsKey
+import it.fast4x.rimusic.utils.expandedplayerKey
+import it.fast4x.rimusic.utils.expandedplayertoggleKey
+import it.fast4x.rimusic.utils.extraspaceKey
 import it.fast4x.rimusic.utils.forceSeekToNext
 import it.fast4x.rimusic.utils.formatAsDuration
 import it.fast4x.rimusic.utils.formatAsTime
 import it.fast4x.rimusic.utils.getBitmapFromUrl
 import it.fast4x.rimusic.utils.getDownloadState
 import it.fast4x.rimusic.utils.isLandscape
+import it.fast4x.rimusic.utils.landscapeLayoutKey
 import it.fast4x.rimusic.utils.manageDownload
 import it.fast4x.rimusic.utils.mediaItems
-import it.fast4x.rimusic.utils.playbackFadeDurationKey
 import it.fast4x.rimusic.utils.playerBackgroundColorsKey
+import it.fast4x.rimusic.utils.playerPlayButtonTypeKey
 import it.fast4x.rimusic.utils.playerThumbnailSizeKey
-import it.fast4x.rimusic.utils.playerVisualizerTypeKey
+import it.fast4x.rimusic.utils.playerTimelineTypeKey
+import it.fast4x.rimusic.utils.playlistindicatorKey
 import it.fast4x.rimusic.utils.positionAndDurationState
+import it.fast4x.rimusic.utils.prevNextSongsKey
 import it.fast4x.rimusic.utils.rememberPreference
+import it.fast4x.rimusic.utils.resize
 import it.fast4x.rimusic.utils.semiBold
 import it.fast4x.rimusic.utils.shouldBePlaying
 import it.fast4x.rimusic.utils.showButtonPlayerAddToPlaylistKey
@@ -194,66 +205,28 @@ import it.fast4x.rimusic.utils.showButtonPlayerSystemEqualizerKey
 import it.fast4x.rimusic.utils.showNextSongsInPlayerKey
 import it.fast4x.rimusic.utils.showTopActionsBarKey
 import it.fast4x.rimusic.utils.showTotalTimeQueueKey
+import it.fast4x.rimusic.utils.showalbumcoverKey
+import it.fast4x.rimusic.utils.showlyricsthumbnailKey
+import it.fast4x.rimusic.utils.showthumbnailKey
+import it.fast4x.rimusic.utils.showtwosongsKey
+import it.fast4x.rimusic.utils.showvisthumbnailKey
 import it.fast4x.rimusic.utils.shuffleQueue
+import it.fast4x.rimusic.utils.statsfornerdsKey
+import it.fast4x.rimusic.utils.tapqueueKey
+import it.fast4x.rimusic.utils.textoutlineKey
 import it.fast4x.rimusic.utils.thumbnail
+import it.fast4x.rimusic.utils.thumbnailRoundnessKey
 import it.fast4x.rimusic.utils.thumbnailTapEnabledKey
+import it.fast4x.rimusic.utils.thumbnailTypeKey
 import it.fast4x.rimusic.utils.trackLoopEnabledKey
 import it.fast4x.rimusic.utils.transparentBackgroundPlayerActionBarKey
-import it.fast4x.rimusic.utils.windows
+import it.fast4x.rimusic.utils.visualizerEnabledKey
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flowOf
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import java.math.RoundingMode
-import kotlin.math.absoluteValue
-import androidx.compose.ui.graphics.Shadow
-import androidx.compose.ui.graphics.StrokeJoin
-import androidx.compose.ui.graphics.compositeOver
-import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.unit.times
-import it.fast4x.rimusic.enums.ClickLyricsText
-import it.fast4x.rimusic.enums.LandscapeLayout
-import it.fast4x.rimusic.enums.PlayerPlayButtonType
-import it.fast4x.rimusic.enums.PlayerTimelineType
-import it.fast4x.rimusic.enums.PrevNextSongs
-import it.fast4x.rimusic.enums.ThumbnailRoundness
-import it.fast4x.rimusic.enums.ThumbnailType
-import it.fast4x.rimusic.utils.ApplyDiscoverToQueue
-import it.fast4x.rimusic.utils.actionspacedevenlyKey
-import it.fast4x.rimusic.utils.expandedplayerKey
-import it.fast4x.rimusic.utils.expandedplayertoggleKey
-//import it.fast4x.rimusic.utils.blurStrength2Key
-import it.fast4x.rimusic.utils.showthumbnailKey
-import it.fast4x.rimusic.utils.showlyricsthumbnailKey
-import it.fast4x.rimusic.utils.isShowingLyricsKey
-import it.fast4x.rimusic.utils.blackgradientKey
-import it.fast4x.rimusic.utils.visualizerEnabledKey
-import it.fast4x.rimusic.utils.bottomgradientKey
-import it.fast4x.rimusic.utils.cleanPrefix
-import it.fast4x.rimusic.utils.textoutlineKey
 import kotlin.Float.Companion.POSITIVE_INFINITY
-import it.fast4x.rimusic.utils.clickLyricsTextKey
-import it.fast4x.rimusic.utils.disableScrollingTextKey
-import it.fast4x.rimusic.utils.discoverKey
-import it.fast4x.rimusic.utils.doubleShadowDrop
-import it.fast4x.rimusic.utils.expandedlyricsKey
-import it.fast4x.rimusic.utils.extraspaceKey
-import it.fast4x.rimusic.utils.hideprevnextKey
-import it.fast4x.rimusic.utils.landscapeLayoutKey
-import it.fast4x.rimusic.utils.playerPlayButtonTypeKey
-import it.fast4x.rimusic.utils.playerTimelineTypeKey
-import it.fast4x.rimusic.utils.playlistindicatorKey
-import it.fast4x.rimusic.utils.prevNextSongsKey
-import it.fast4x.rimusic.utils.resize
-import it.fast4x.rimusic.utils.showalbumcoverKey
-import it.fast4x.rimusic.utils.showtwosongsKey
-import it.fast4x.rimusic.utils.showvisthumbnailKey
-import it.fast4x.rimusic.utils.statsfornerdsKey
-import it.fast4x.rimusic.utils.tapqueueKey
-import it.fast4x.rimusic.utils.thumbnailRoundnessKey
-import it.fast4x.rimusic.utils.thumbnailTypeKey
+import kotlin.math.absoluteValue
 
 
 @OptIn(ExperimentalMaterialApi::class, ExperimentalMaterial3Api::class)
@@ -1174,7 +1147,7 @@ fun PlayerModern(
                     .align(if (isLandscape) Alignment.BottomEnd else Alignment.BottomCenter)
                     .requiredHeight(if (showNextSongsInPlayer) 90.dp else 50.dp)
                     .fillMaxWidth(if (isLandscape) 0.8f else 1f)
-                    .conditional(tapqueue) {clickable { showQueue = true }}
+                    .conditional(tapqueue) { clickable { showQueue = true } }
                     .background(
                         colorPalette.background2.copy(
                             alpha = if ((transparentBackgroundActionBarPlayer) || ((playerBackgroundColors == PlayerBackgroundColors.CoverColorGradient) || (playerBackgroundColors == PlayerBackgroundColors.ThemeColorGradient)) && blackgradient) 0.0f else 0.7f // 0.0 > 0.1
@@ -1516,8 +1489,17 @@ fun PlayerModern(
                                 modifier = Modifier
                                     //.padding(horizontal = 4.dp)
                                     .size(24.dp)
-                                    .conditional(songPlaylist > 0 && playlistindicator) {background(colorPalette.accent,CircleShape)}
-                                    .conditional(songPlaylist > 0 && playlistindicator) {padding(all = 5.dp)}
+                                    .conditional(songPlaylist > 0 && playlistindicator) {
+                                        background(
+                                            colorPalette.accent,
+                                            CircleShape
+                                        )
+                                    }
+                                    .conditional(songPlaylist > 0 && playlistindicator) {
+                                        padding(
+                                            all = 5.dp
+                                        )
+                                    }
                             )
 
 
@@ -1762,523 +1744,81 @@ fun PlayerModern(
 
 
         if (isLandscape) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = containerModifier
-                    .padding(top = if (landscapeLayout == LandscapeLayout.Layout1) 40.dp else 20.dp)
-                    .padding(top = if (extraspace) 10.dp else 0.dp)
-                    .drawBehind {
-                        if (backgroundProgress == BackgroundProgress.Both || backgroundProgress == BackgroundProgress.Player) {
-                            drawRect(
-                                color = colorPalette.favoritesOverlay,
-                                topLeft = Offset.Zero,
-                                size = Size(
-                                    width = positionAndDuration.first.toFloat() /
-                                            positionAndDuration.second.absoluteValue * size.width,
-                                    height = size.maxDimension
-                                )
-                            )
-                        }
-                    }
-            ) {
-                Column (
-                    verticalArrangement = Arrangement.Center,
-                    modifier = Modifier
-                        .fillMaxHeight()
-                        .animateContentSize()
-                       // .border(BorderStroke(1.dp, Color.Blue))
-                ) {
-                    if (showthumbnail && landscapeLayout == LandscapeLayout.Layout1) {
-                        Box(
-                            contentAlignment = Alignment.Center,
-                            /*modifier = Modifier
-                            .weight(1f)*/
-                            //.padding(vertical = 10.dp)
-                        ) {
-                            if ((!isShowingLyrics && !isShowingVisualizer) || (isShowingVisualizer && showvisthumbnail) || (isShowingLyrics && showlyricsthumbnail))
-                                thumbnailContent(
-                                    modifier = Modifier
-                                        .padding(
-                                            vertical = playerThumbnailSize.size.dp,
-                                            horizontal = playerThumbnailSize.size.dp
-                                        )
-                                        .thumbnailpause(
-                                            shouldBePlaying = shouldBePlaying
-                                        )
-                                    //.padding(horizontal = 10.dp)
-                                )
-                        }
-                    }
-                    if (isShowingVisualizer && !showvisthumbnail && landscapeLayout == LandscapeLayout.Layout1) {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth(0.5f)
-                                .pointerInput(Unit) {
-                                    detectHorizontalDragGestures(
-                                        onHorizontalDrag = { change, dragAmount ->
-                                            deltaX = dragAmount
-                                        },
-                                        onDragStart = {
-                                        },
-                                        onDragEnd = {
-                                            if (!disablePlayerHorizontalSwipe) {
-                                                if (deltaX > 5) {
-                                                    binder.player.seekToPreviousMediaItem()
-                                                } else if (deltaX < -5) {
-                                                    binder.player.forceSeekToNext()
-                                                }
+            showFullLyrics = doLandscapeStuff(
+                containerModifier,
+                landscapeLayout,
+                extraspace,
+                backgroundProgress,
+                colorPalette,
+                positionAndDuration,
+                showthumbnail,
+                isShowingLyrics,
+                isShowingVisualizer,
+                showvisthumbnail,
+                showlyricsthumbnail,
+                thumbnailContent,
+                playerThumbnailSize,
+                shouldBePlaying,
+                deltaX,
+                disablePlayerHorizontalSwipe,
+                binder,
+                mediaItem,
+                player,
+                showFullLyrics,
+                clickLyricsText,
+                prevNextSongs,
+                prevPrevMediaItem,
+                playerPlayButtonType,
+                playerTimelineType,
+                thumbnailSizeDp,
+                thumbnailType,
+                thumbnailRoundness,
+                nextNextMediaItem,
+                prevMediaItem,
+                nextMediaItem,
+                controlsContent,
+                statsfornerds,
+                actionsBarContent
+            )
+        }
+        else {
 
-                                            }
-
-                                        }
-
-                                    )
-                                }
-                        ) {
-                            NextVisualizer(
-                                    isDisplayed = isShowingVisualizer
-                                )
-                        }
-                    }
-
-                    Box(
-                        contentAlignment = Alignment.Center,
-                        modifier = Modifier
-                            .weight(1f)
-                            .navigationBarsPadding()
-                            .pointerInput(Unit) {
-                                detectHorizontalDragGestures(
-                                    onHorizontalDrag = { change, dragAmount ->
-                                        deltaX = dragAmount
-                                    },
-                                    onDragStart = {
-                                    },
-                                    onDragEnd = {
-                                        if (!disablePlayerHorizontalSwipe) {
-                                            if (deltaX > 5) {
-                                                binder.player.seekToPreviousMediaItem()
-                                            } else if (deltaX < -5) {
-                                                binder.player.forceSeekToNext()
-                                            }
-
-                                        }
-
-                                    }
-
-                                )
-                            }
-                    ){
-                        if (!showlyricsthumbnail)
-                            Lyrics(
-                                mediaId = mediaItem.mediaId,
-                                isDisplayed = isShowingLyrics,
-                                onDismiss = {
-                                    //if (thumbnailTapEnabled)
-                                        isShowingLyrics = false
-                                },
-                                ensureSongInserted = { Database.insert(mediaItem) },
-                                size = 1000.dp,
-                                mediaMetadataProvider = mediaItem::mediaMetadata,
-                                durationProvider = player::getDuration,
-                                isLandscape = isLandscape,
-                                onMaximize = {
-                                    showFullLyrics = true
-                                },
-                                enableClick = when (clickLyricsText) {
-                                    ClickLyricsText.Player, ClickLyricsText.Both -> true
-                                    else -> false
-                                }
-                            )
-                    }
-                }
-                Column (
-                    verticalArrangement = Arrangement.Center,
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                ) {
-                     if (landscapeLayout == LandscapeLayout.Layout2) {
-                         Box(
-                             contentAlignment = Alignment.Center,
-                             modifier = Modifier
-                                 .weight(1f)
-                             /*modifier = Modifier
-                            .weight(1f)*/
-                             //.padding(vertical = 10.dp)
-                         ) {
-                             if (showthumbnail) {
-                                 if ((!isShowingLyrics && !isShowingVisualizer) || (isShowingVisualizer && showvisthumbnail) || (isShowingLyrics && showlyricsthumbnail)) {
-                                     if (prevNextSongs != PrevNextSongs.Hide) {
-                                         if (prevNextSongs == PrevNextSongs.twosongs) {
-                                             AsyncImage(
-                                                 model = prevPrevMediaItem.mediaMetadata.artworkUri.toString()
-                                                     .resize(1200, 1200),
-                                                 contentDescription = null,
-                                                 contentScale = ContentScale.Fit,
-                                                 modifier = Modifier
-                                                     .padding(
-                                                         all = playerThumbnailSize.size.dp + 60.dp
-                                                     )
-                                                     .padding(start = playerPlayButtonType.height.dp - 60.dp)
-                                                     .conditional(playerTimelineType == PlayerTimelineType.FakeAudioBar) {
-                                                         padding(
-                                                             start = 40.dp
-                                                         )
-                                                     }
-                                                     .offset(
-                                                         -((thumbnailSizeDp / 2) - 2 * (playerThumbnailSize.size.dp)),
-                                                         0.dp
-                                                     )
-                                                     .conditional(thumbnailType == ThumbnailType.Modern) {
-                                                         doubleShadowDrop(
-                                                             thumbnailRoundness.shape(),
-                                                             4.dp,
-                                                             8.dp
-                                                         )
-                                                     }
-                                                     .clip(thumbnailRoundness.shape())
-                                             )
-                                             AsyncImage(
-                                                 model = nextNextMediaItem.mediaMetadata.artworkUri.toString()
-                                                     .resize(1200, 1200),
-                                                 contentDescription = null,
-                                                 contentScale = ContentScale.Fit,
-                                                 modifier = Modifier
-                                                     .padding(
-                                                         all = playerThumbnailSize.size.dp + 60.dp
-                                                     )
-                                                     .padding(start = playerPlayButtonType.height.dp - 60.dp)
-                                                     .conditional(playerTimelineType == PlayerTimelineType.FakeAudioBar) {
-                                                         padding(
-                                                             start = 40.dp
-                                                         )
-                                                     }
-                                                     .offset(
-                                                         ((thumbnailSizeDp / 2) - 2 * (playerThumbnailSize.size.dp)),
-                                                         0.dp
-                                                     )
-                                                     .conditional(thumbnailType == ThumbnailType.Modern) {
-                                                         doubleShadowDrop(
-                                                             thumbnailRoundness.shape(),
-                                                             4.dp,
-                                                             8.dp
-                                                         )
-                                                     }
-                                                     .clip(thumbnailRoundness.shape())
-                                             )
-                                         }
-                                         AsyncImage(
-                                             model = prevMediaItem.mediaMetadata.artworkUri.toString()
-                                                 .resize(1200, 1200),
-                                             contentDescription = null,
-                                             contentScale = ContentScale.Fit,
-                                             modifier = Modifier
-                                                 .padding(
-                                                     all = playerThumbnailSize.size.dp + 40.dp
-                                                 )
-                                                 .padding(start = playerPlayButtonType.height.dp - 60.dp)
-                                                 .conditional(playerTimelineType == PlayerTimelineType.FakeAudioBar) {padding(start = 40.dp)}
-                                                 .conditional(prevNextSongs == PrevNextSongs.onesong) {offset(-((thumbnailSizeDp/2) - 2*(playerThumbnailSize.size.dp)),0.dp)}
-                                                 .conditional(prevNextSongs == PrevNextSongs.twosongs) {offset(-((thumbnailSizeDp/3) - 2*(playerThumbnailSize.size.dp)),0.dp)}
-                                                 .conditional(thumbnailType == ThumbnailType.Modern) {doubleShadowDrop(thumbnailRoundness.shape(), 4.dp, 8.dp)}
-                                                 .clip(thumbnailRoundness.shape())
-                                         )
-                                         AsyncImage(
-                                             model = nextMediaItem.mediaMetadata.artworkUri.toString()
-                                                 .resize(1200, 1200),
-                                             contentDescription = null,
-                                             contentScale = ContentScale.Fit,
-                                             modifier = Modifier
-                                                 .padding(
-                                                     all = playerThumbnailSize.size.dp + 40.dp
-                                                 )
-                                                 .padding(end = playerPlayButtonType.height.dp - 60.dp)
-                                                 .conditional(playerTimelineType == PlayerTimelineType.FakeAudioBar) {padding(end = 40.dp)}
-                                                 .conditional(prevNextSongs == PrevNextSongs.onesong) {offset(((thumbnailSizeDp/2) - 2*(playerThumbnailSize.size.dp)),0.dp)}
-                                                 .conditional(prevNextSongs == PrevNextSongs.twosongs) {offset(((thumbnailSizeDp/3) - 2*(playerThumbnailSize.size.dp)),0.dp)}
-                                                 .conditional(thumbnailType == ThumbnailType.Modern) {doubleShadowDrop(thumbnailRoundness.shape(), 4.dp, 8.dp)}
-                                                 .clip(thumbnailRoundness.shape())
-                                         )
-                                     }
-                                     thumbnailContent(
-                                         modifier = Modifier
-                                             .padding(
-                                                 all = playerThumbnailSize.size.dp
-                                             )
-                                             .thumbnailpause(
-                                                 shouldBePlaying = shouldBePlaying)
-                                     )
-                                 }
-                            }
-                            if (isShowingVisualizer && !showvisthumbnail) {
-                                Box(
-                                    modifier = Modifier
-                                        .pointerInput(Unit) {
-                                            detectHorizontalDragGestures(
-                                                onHorizontalDrag = { change, dragAmount ->
-                                                    deltaX = dragAmount
-                                                },
-                                                onDragStart = {
-                                                },
-                                                onDragEnd = {
-                                                    if (!disablePlayerHorizontalSwipe) {
-                                                        if (deltaX > 5) {
-                                                            binder.player.seekToPreviousMediaItem()
-                                                        } else if (deltaX < -5) {
-                                                            binder.player.forceSeekToNext()
-                                                        }
-
-                                                    }
-
-                                                }
-
-                                            )
-                                        }
-                                ) {
-                                    NextVisualizer(
-                                        isDisplayed = isShowingVisualizer
-                                    )
-                                }
-                            }
-                        }
-                    }
-                    controlsContent(
-                        modifier = Modifier
-                            .padding(vertical = 8.dp)
-                            .conditional(landscapeLayout == LandscapeLayout.Layout1) {fillMaxHeight()}
-                            .conditional(landscapeLayout == LandscapeLayout.Layout1) {weight(1f)}
-                    )
-                    if (!showthumbnail) {
-                        StatsForNerds(
-                            mediaId = mediaItem.mediaId,
-                            isDisplayed = statsfornerds,
-                            onDismiss = {}
-                        )
-                    }
-                    actionsBarContent(
-                        modifier = Modifier
-                    )
-                }
-
-            }
-        } else {
-
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                modifier = containerModifier
-                    //.padding(top = 10.dp)
-                    .drawBehind {
-                        if (backgroundProgress == BackgroundProgress.Both || backgroundProgress == BackgroundProgress.Player) {
-                            drawRect(
-                                color = colorPalette.favoritesOverlay,
-                                topLeft = Offset.Zero,
-                                size = Size(
-                                    width = positionAndDuration.first.toFloat() /
-                                            positionAndDuration.second.absoluteValue * size.width,
-                                    height = size.maxDimension
-                                )
-                            )
-                        }
-                    }
-            ) {
-
-
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    modifier = Modifier
-                        .padding(
-                            windowInsets
-                                .only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal)
-                                .asPaddingValues()
-                        )
-                        //.padding(top = 5.dp)
-                        .fillMaxWidth(0.9f)
-                        .height(30.dp)
-                ) {
-
-                    if (showTopActionsBar) {
-                        Image(
-                            painter = painterResource(R.drawable.chevron_down),
-                            contentDescription = null,
-                            colorFilter = ColorFilter.tint(colorPalette.collapsedPlayerProgressBar),
-                            modifier = Modifier
-                                .clickable {
-                                    onDismiss()
-                                }
-                                .rotate(rotationAngle)
-                                //.padding(10.dp)
-                                .size(24.dp)
-                        )
-
-
-                        Image(
-                            painter = painterResource(R.drawable.app_icon),
-                            contentDescription = null,
-                            colorFilter = ColorFilter.tint(colorPalette.collapsedPlayerProgressBar),
-                            modifier = Modifier
-                                .clickable {
-                                    onDismiss()
-                                    navController.navigate(NavRoutes.home.name)
-                                }
-                                .rotate(rotationAngle)
-                                //.padding(10.dp)
-                                .size(24.dp)
-
-                        )
-
-                        if (!showButtonPlayerMenu)
-                            Image(
-                                painter = painterResource(R.drawable.ellipsis_vertical),
-                                contentDescription = null,
-                                colorFilter = ColorFilter.tint(colorPalette.collapsedPlayerProgressBar),
-                                modifier = Modifier
-                                    .clickable {
-                                        menuState.display {
-                                            PlayerMenu(
-                                                navController = navController,
-                                                onDismiss = menuState::hide,
-                                                mediaItem = mediaItem,
-                                                binder = binder,
-                                                onClosePlayer = {
-                                                    onDismiss()
-                                                }
-                                            )
-                                        }
-                                    }
-                                    .rotate(rotationAngle)
-                                    //.padding(10.dp)
-                                    .size(24.dp)
-
-                            )
-
-                    }
-                }
-
-                Spacer(
-                    modifier = Modifier
-                        .height(5.dp)
-                )
-
-                Box(
-                    contentAlignment = Alignment.Center,
-                    modifier = Modifier
-                        .weight(1.2f)
-                ) {
-                   if (showthumbnail) {
-                       if ((!isShowingLyrics && !isShowingVisualizer) || (isShowingVisualizer && showvisthumbnail) || (isShowingLyrics && showlyricsthumbnail))
-                           thumbnailContent(
-                               modifier = Modifier
-                                   .clip(thumbnailShape)
-                                   .padding(
-                                       horizontal = playerThumbnailSize.size.dp,
-                                       vertical = 4.dp,
-                                   )
-                                   .thumbnailpause(
-                                       shouldBePlaying = shouldBePlaying
-                                   )
-                           )
-                   }
-                   Box(
-                        modifier = Modifier
-                            .pointerInput(Unit) {
-                                detectHorizontalDragGestures(
-                                    onHorizontalDrag = { change, dragAmount ->
-                                        deltaX = dragAmount
-                                    },
-                                    onDragStart = {
-                                    },
-                                    onDragEnd = {
-                                        if (!disablePlayerHorizontalSwipe) {
-                                            if (deltaX > 5) {
-                                                binder.player.seekToPreviousMediaItem()
-                                            } else if (deltaX <-5){
-                                                binder.player.forceSeekToNext()
-                                            }
-
-                                        }
-
-                                    }
-
-                                )
-                            }
-                    ) {
-                        if (!showlyricsthumbnail)
-                            Lyrics(
-                                mediaId = mediaItem.mediaId,
-                                isDisplayed = isShowingLyrics,
-                                onDismiss = {
-                                    if (thumbnailTapEnabled) {
-                                        isShowingLyrics = false
-                                    }
-                                },
-                                ensureSongInserted = { Database.insert(mediaItem) },
-                                size = 1000.dp,
-                                mediaMetadataProvider = mediaItem::mediaMetadata,
-                                durationProvider = player::getDuration,
-                                isLandscape = isLandscape,
-                                onMaximize = {
-                                    showFullLyrics = true
-                                },
-                                enableClick = when (clickLyricsText) {
-                                    ClickLyricsText.Player, ClickLyricsText.Both -> true
-                                    else -> false
-                                }
-                            )
-                        if (!showvisthumbnail)
-                            NextVisualizer(
-                                isDisplayed = isShowingVisualizer
-                            )
-                    }
-                }
-
-
-                if (showTotalTimeQueue)
-                    Row(
-                        horizontalArrangement = Arrangement.Center,
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier
-                    ) {
-                        Image(
-                            painter = painterResource(R.drawable.time),
-                            colorFilter = ColorFilter.tint(colorPalette.accent),
-                            modifier = Modifier
-                                .size(20.dp)
-                                .padding(horizontal = 5.dp),
-                            contentDescription = "Background Image",
-                            contentScale = ContentScale.Fit
-                        )
-                        BasicText(
-                            text = " ${formatAsTime(totalPlayTimes)}",
-                            style = typography.xxs.semiBold,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                        )
-                    }
-
-
-                Spacer(
-                    modifier = Modifier
-                        .height(10.dp)
-                )
-
-                controlsContent(
-                    modifier = Modifier
-                        .padding(vertical = 4.dp)
-                        .fillMaxWidth()
-                        .weight(1f)
-                )
-
-                if (!showthumbnail) {
-                    StatsForNerds(
-                        mediaId = mediaItem.mediaId,
-                        isDisplayed = statsfornerds,
-                        onDismiss = {}
-                    )
-                }
-                actionsBarContent(
-                    modifier = Modifier
-                        .padding(vertical = 10.dp)
-                )
-            }
+            showFullLyrics = doNonLandscapeStuff(
+                containerModifier,
+                backgroundProgress,
+                colorPalette,
+                positionAndDuration,
+                windowInsets,
+                showTopActionsBar,
+                onDismiss,
+                rotationAngle,
+                navController,
+                showButtonPlayerMenu,
+                menuState,
+                mediaItem,
+                binder,
+                showthumbnail,
+                isShowingLyrics,
+                isShowingVisualizer,
+                showvisthumbnail,
+                showlyricsthumbnail,
+                thumbnailContent,
+                thumbnailShape,
+                playerThumbnailSize,
+                shouldBePlaying,
+                deltaX,
+                disablePlayerHorizontalSwipe,
+                thumbnailTapEnabled,
+                player,
+                showFullLyrics,
+                clickLyricsText,
+                showTotalTimeQueue,
+                totalPlayTimes,
+                typography,
+                controlsContent,
+                statsfornerds,
+                actionsBarContent
+            )
         }
 
 
@@ -2293,30 +1833,696 @@ fun PlayerModern(
             shape = shape
         )
          */
-        CustomModalBottomSheet(
-            showSheet = showQueue,
-            onDismissRequest = { showQueue = false },
-            containerColor = colorPalette.background2,
-            contentColor = colorPalette.background2,
-            modifier = Modifier.fillMaxWidth(),
-            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-            dragHandle = {
-                Surface(
-                    modifier = Modifier.padding(vertical = 0.dp),
-                    color = colorPalette.background0,
-                    shape = thumbnailShape
-                ) {}
+        BottomSheet(showQueue, colorPalette, thumbnailShape, navController, showFullLyrics)
+
+    }
+
+}
+
+@androidx.annotation.OptIn(UnstableApi::class)
+@ExperimentalTextApi
+@ExperimentalAnimationApi
+@Composable
+private fun doNonLandscapeStuff(
+    containerModifier: Modifier,
+    backgroundProgress: BackgroundProgress,
+    colorPalette: ColorPalette,
+    positionAndDuration: Pair<Long, Long>,
+    windowInsets: WindowInsets,
+    showTopActionsBar: Boolean,
+    onDismiss: () -> Unit,
+    rotationAngle: Float,
+    navController: NavController,
+    showButtonPlayerMenu: Boolean,
+    menuState: MenuState,
+    mediaItem: MediaItem,
+    binder: PlayerService.Binder,
+    showthumbnail: Boolean,
+    isShowingLyrics: Boolean,
+    isShowingVisualizer: Boolean,
+    showvisthumbnail: Boolean,
+    showlyricsthumbnail: Boolean,
+    thumbnailContent: @Composable (modifier: Modifier) -> Unit,
+    thumbnailShape: Shape,
+    playerThumbnailSize: PlayerThumbnailSize,
+    shouldBePlaying: Boolean,
+    deltaX: Float,
+    disablePlayerHorizontalSwipe: Boolean,
+    thumbnailTapEnabled: Boolean,
+    player: ExoPlayer,
+    showFullLyrics: Boolean,
+    clickLyricsText: ClickLyricsText,
+    showTotalTimeQueue: Boolean,
+    totalPlayTimes: Long,
+    typography: Typography,
+    controlsContent: @Composable (modifier: Modifier) -> Unit,
+    statsfornerds: Boolean,
+    actionsBarContent: @Composable (modifier: Modifier) -> Unit
+): Boolean {
+    var isShowingLyrics1 = isShowingLyrics
+    var deltaX1 = deltaX
+    var showFullLyrics1 = showFullLyrics
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = containerModifier
+            //.padding(top = 10.dp)
+            .drawBehind {
+                if (backgroundProgress == BackgroundProgress.Both || backgroundProgress == BackgroundProgress.Player) {
+                    drawRect(
+                        color = colorPalette.favoritesOverlay,
+                        topLeft = Offset.Zero,
+                        size = Size(
+                            width = positionAndDuration.first.toFloat() /
+                                    positionAndDuration.second.absoluteValue * size.width,
+                            height = size.maxDimension
+                        )
+                    )
+                }
             }
+    ) {
+
+
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween,
+            modifier = Modifier
+                .padding(
+                    windowInsets
+                        .only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal)
+                        .asPaddingValues()
+                )
+                //.padding(top = 5.dp)
+                .fillMaxWidth(0.9f)
+                .height(30.dp)
         ) {
-            QueueModern(
-                navController = navController,
-                onDismiss = { showQueue = false },
-            )
+
+            if (showTopActionsBar) {
+                Image(
+                    painter = painterResource(R.drawable.chevron_down),
+                    contentDescription = null,
+                    colorFilter = ColorFilter.tint(colorPalette.collapsedPlayerProgressBar),
+                    modifier = Modifier
+                        .clickable {
+                            onDismiss()
+                        }
+                        .rotate(rotationAngle)
+                        //.padding(10.dp)
+                        .size(24.dp)
+                )
+
+
+                Image(
+                    painter = painterResource(R.drawable.app_icon),
+                    contentDescription = null,
+                    colorFilter = ColorFilter.tint(colorPalette.collapsedPlayerProgressBar),
+                    modifier = Modifier
+                        .clickable {
+                            onDismiss()
+                            navController.navigate(NavRoutes.home.name)
+                        }
+                        .rotate(rotationAngle)
+                        //.padding(10.dp)
+                        .size(24.dp)
+
+                )
+
+                if (!showButtonPlayerMenu)
+                    Image(
+                        painter = painterResource(R.drawable.ellipsis_vertical),
+                        contentDescription = null,
+                        colorFilter = ColorFilter.tint(colorPalette.collapsedPlayerProgressBar),
+                        modifier = Modifier
+                            .clickable {
+                                menuState.display {
+                                    PlayerMenu(
+                                        navController = navController,
+                                        onDismiss = menuState::hide,
+                                        mediaItem = mediaItem,
+                                        binder = binder,
+                                        onClosePlayer = {
+                                            onDismiss()
+                                        }
+                                    )
+                                }
+                            }
+                            .rotate(rotationAngle)
+                            //.padding(10.dp)
+                            .size(24.dp)
+
+                    )
+
+            }
+        }
+
+        Spacer(
+            modifier = Modifier
+                .height(5.dp)
+        )
+
+        Box(
+            contentAlignment = Alignment.Center,
+            modifier = Modifier
+                .weight(1.2f)
+        ) {
+            if (showthumbnail) {
+                if ((!isShowingLyrics1 && !isShowingVisualizer) || (isShowingVisualizer && showvisthumbnail) || (isShowingLyrics1 && showlyricsthumbnail))
+                    thumbnailContent(
+                        modifier = Modifier
+                            .clip(thumbnailShape)
+                            .padding(
+                                horizontal = playerThumbnailSize.size.dp,
+                                vertical = 4.dp,
+                            )
+                            .thumbnailpause(
+                                shouldBePlaying = shouldBePlaying
+                            )
+                    )
+            }
+            Box(
+                modifier = Modifier
+                    .pointerInput(Unit) {
+                        detectHorizontalDragGestures(
+                            onHorizontalDrag = { change, dragAmount ->
+                                deltaX1 = dragAmount
+                            },
+                            onDragStart = {
+                            },
+                            onDragEnd = {
+                                if (!disablePlayerHorizontalSwipe) {
+                                    if (deltaX1 > 5) {
+                                        binder.player.seekToPreviousMediaItem()
+                                    } else if (deltaX1 < -5) {
+                                        binder.player.forceSeekToNext()
+                                    }
+
+                                }
+
+                            }
+
+                        )
+                    }
+            ) {
+                if (!showlyricsthumbnail)
+                    Lyrics(
+                        mediaId = mediaItem.mediaId,
+                        isDisplayed = isShowingLyrics1,
+                        onDismiss = {
+                            if (thumbnailTapEnabled) {
+                                isShowingLyrics1 = false
+                            }
+                        },
+                        ensureSongInserted = { Database.insert(mediaItem) },
+                        size = 1000.dp,
+                        mediaMetadataProvider = mediaItem::mediaMetadata,
+                        durationProvider = player::getDuration,
+                        isLandscape = isLandscape,
+                        onMaximize = {
+                            showFullLyrics1 = true
+                        },
+                        enableClick = when (clickLyricsText) {
+                            ClickLyricsText.Player, ClickLyricsText.Both -> true
+                            else -> false
+                        }
+                    )
+                if (!showvisthumbnail)
+                    NextVisualizer(
+                        isDisplayed = isShowingVisualizer
+                    )
+            }
         }
 
 
+        if (showTotalTimeQueue)
+            Row(
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier
+            ) {
+                Image(
+                    painter = painterResource(R.drawable.time),
+                    colorFilter = ColorFilter.tint(colorPalette.accent),
+                    modifier = Modifier
+                        .size(20.dp)
+                        .padding(horizontal = 5.dp),
+                    contentDescription = "Background Image",
+                    contentScale = ContentScale.Fit
+                )
+                BasicText(
+                    text = " ${formatAsTime(totalPlayTimes)}",
+                    style = typography.xxs.semiBold,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
 
-        /*
+
+        Spacer(
+            modifier = Modifier
+                .height(10.dp)
+        )
+
+        controlsContent(
+            modifier = Modifier
+                .padding(vertical = 4.dp)
+                .fillMaxWidth()
+                .weight(1f)
+        )
+
+        if (!showthumbnail) {
+            StatsForNerds(
+                mediaId = mediaItem.mediaId,
+                isDisplayed = statsfornerds,
+                onDismiss = {}
+            )
+        }
+        actionsBarContent(
+            modifier = Modifier
+                .padding(vertical = 10.dp)
+        )
+    }
+    return showFullLyrics1
+}
+
+@androidx.annotation.OptIn(UnstableApi::class)
+@Composable
+private fun doLandscapeStuff(
+    containerModifier: Modifier,
+    landscapeLayout: LandscapeLayout,
+    extraspace: Boolean,
+    backgroundProgress: BackgroundProgress,
+    colorPalette: ColorPalette,
+    positionAndDuration: Pair<Long, Long>,
+    showthumbnail: Boolean,
+    isShowingLyrics: Boolean,
+    isShowingVisualizer: Boolean,
+    showvisthumbnail: Boolean,
+    showlyricsthumbnail: Boolean,
+    thumbnailContent: @Composable (modifier: Modifier) -> Unit,
+    playerThumbnailSize: PlayerThumbnailSize,
+    shouldBePlaying: Boolean,
+    deltaX: Float,
+    disablePlayerHorizontalSwipe: Boolean,
+    binder: PlayerService.Binder,
+    mediaItem: MediaItem,
+    player: ExoPlayer,
+    showFullLyrics: Boolean,
+    clickLyricsText: ClickLyricsText,
+    prevNextSongs: PrevNextSongs,
+    prevPrevMediaItem: MediaItem,
+    playerPlayButtonType: PlayerPlayButtonType,
+    playerTimelineType: PlayerTimelineType,
+    thumbnailSizeDp: Dp,
+    thumbnailType: ThumbnailType,
+    thumbnailRoundness: ThumbnailRoundness,
+    nextNextMediaItem: MediaItem,
+    prevMediaItem: MediaItem,
+    nextMediaItem: MediaItem,
+    controlsContent: @Composable (modifier: Modifier) -> Unit,
+    statsfornerds: Boolean,
+    actionsBarContent: @Composable (modifier: Modifier) -> Unit
+): Boolean {
+    var isShowingLyrics1 = isShowingLyrics
+    var deltaX1 = deltaX
+    var showFullLyrics1 = showFullLyrics
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = containerModifier
+            .padding(top = if (landscapeLayout == LandscapeLayout.Layout1) 40.dp else 20.dp)
+            .padding(top = if (extraspace) 10.dp else 0.dp)
+            .drawBehind {
+                if (backgroundProgress == BackgroundProgress.Both || backgroundProgress == BackgroundProgress.Player) {
+                    drawRect(
+                        color = colorPalette.favoritesOverlay,
+                        topLeft = Offset.Zero,
+                        size = Size(
+                            width = positionAndDuration.first.toFloat() /
+                                    positionAndDuration.second.absoluteValue * size.width,
+                            height = size.maxDimension
+                        )
+                    )
+                }
+            }
+    ) {
+        Column(
+            verticalArrangement = Arrangement.Center,
+            modifier = Modifier
+                .fillMaxHeight()
+                .animateContentSize()
+            // .border(BorderStroke(1.dp, Color.Blue))
+        ) {
+            if (showthumbnail && landscapeLayout == LandscapeLayout.Layout1) {
+                Box(
+                    contentAlignment = Alignment.Center,
+                    /*modifier = Modifier
+                            .weight(1f)*/
+                    //.padding(vertical = 10.dp)
+                ) {
+                    if ((!isShowingLyrics1 && !isShowingVisualizer) || (isShowingVisualizer && showvisthumbnail) || (isShowingLyrics1 && showlyricsthumbnail))
+                        thumbnailContent(
+                            modifier = Modifier
+                                .padding(
+                                    vertical = playerThumbnailSize.size.dp,
+                                    horizontal = playerThumbnailSize.size.dp
+                                )
+                                .thumbnailpause(
+                                    shouldBePlaying = shouldBePlaying
+                                )
+                            //.padding(horizontal = 10.dp)
+                        )
+                }
+            }
+            if (isShowingVisualizer && !showvisthumbnail && landscapeLayout == LandscapeLayout.Layout1) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth(0.5f)
+                        .pointerInput(Unit) {
+                            detectHorizontalDragGestures(
+                                onHorizontalDrag = { change, dragAmount ->
+                                    deltaX1 = dragAmount
+                                },
+                                onDragStart = {
+                                },
+                                onDragEnd = {
+                                    if (!disablePlayerHorizontalSwipe) {
+                                        if (deltaX1 > 5) {
+                                            binder.player.seekToPreviousMediaItem()
+                                        } else if (deltaX1 < -5) {
+                                            binder.player.forceSeekToNext()
+                                        }
+
+                                    }
+
+                                }
+
+                            )
+                        }
+                ) {
+                    NextVisualizer(
+                        isDisplayed = isShowingVisualizer
+                    )
+                }
+            }
+
+            Box(
+                contentAlignment = Alignment.Center,
+                modifier = Modifier
+                    .weight(1f)
+                    .navigationBarsPadding()
+                    .pointerInput(Unit) {
+                        detectHorizontalDragGestures(
+                            onHorizontalDrag = { change, dragAmount ->
+                                deltaX1 = dragAmount
+                            },
+                            onDragStart = {
+                            },
+                            onDragEnd = {
+                                if (!disablePlayerHorizontalSwipe) {
+                                    if (deltaX1 > 5) {
+                                        binder.player.seekToPreviousMediaItem()
+                                    } else if (deltaX1 < -5) {
+                                        binder.player.forceSeekToNext()
+                                    }
+
+                                }
+
+                            }
+
+                        )
+                    }
+            ) {
+                if (!showlyricsthumbnail)
+                    Lyrics(
+                        mediaId = mediaItem.mediaId,
+                        isDisplayed = isShowingLyrics1,
+                        onDismiss = {
+                            //if (thumbnailTapEnabled)
+                            isShowingLyrics1 = false
+                        },
+                        ensureSongInserted = { Database.insert(mediaItem) },
+                        size = 1000.dp,
+                        mediaMetadataProvider = mediaItem::mediaMetadata,
+                        durationProvider = player::getDuration,
+                        isLandscape = isLandscape,
+                        onMaximize = {
+                            showFullLyrics1 = true
+                        },
+                        enableClick = when (clickLyricsText) {
+                            ClickLyricsText.Player, ClickLyricsText.Both -> true
+                            else -> false
+                        }
+                    )
+            }
+        }
+        Column(
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            if (landscapeLayout == LandscapeLayout.Layout2) {
+                Box(
+                    contentAlignment = Alignment.Center,
+                    modifier = Modifier
+                        .weight(1f)
+                    /*modifier = Modifier
+                            .weight(1f)*/
+                    //.padding(vertical = 10.dp)
+                ) {
+                    if (showthumbnail) {
+                        if ((!isShowingLyrics1 && !isShowingVisualizer) || (isShowingVisualizer && showvisthumbnail) || (isShowingLyrics1 && showlyricsthumbnail)) {
+                            if (prevNextSongs != PrevNextSongs.Hide) {
+                                if (prevNextSongs == PrevNextSongs.twosongs) {
+                                    AsyncImage(
+                                        model = prevPrevMediaItem.mediaMetadata.artworkUri.toString()
+                                            .resize(1200, 1200),
+                                        contentDescription = null,
+                                        contentScale = ContentScale.Fit,
+                                        modifier = Modifier
+                                            .padding(
+                                                all = playerThumbnailSize.size.dp + 60.dp
+                                            )
+                                            .padding(start = playerPlayButtonType.height.dp - 60.dp)
+                                            .conditional(playerTimelineType == PlayerTimelineType.FakeAudioBar) {
+                                                padding(
+                                                    start = 40.dp
+                                                )
+                                            }
+                                            .offset(
+                                                -((thumbnailSizeDp / 2) - 2 * (playerThumbnailSize.size.dp)),
+                                                0.dp
+                                            )
+                                            .conditional(thumbnailType == ThumbnailType.Modern) {
+                                                doubleShadowDrop(
+                                                    thumbnailRoundness.shape(),
+                                                    4.dp,
+                                                    8.dp
+                                                )
+                                            }
+                                            .clip(thumbnailRoundness.shape())
+                                    )
+                                    AsyncImage(
+                                        model = nextNextMediaItem.mediaMetadata.artworkUri.toString()
+                                            .resize(1200, 1200),
+                                        contentDescription = null,
+                                        contentScale = ContentScale.Fit,
+                                        modifier = Modifier
+                                            .padding(
+                                                all = playerThumbnailSize.size.dp + 60.dp
+                                            )
+                                            .padding(start = playerPlayButtonType.height.dp - 60.dp)
+                                            .conditional(playerTimelineType == PlayerTimelineType.FakeAudioBar) {
+                                                padding(
+                                                    start = 40.dp
+                                                )
+                                            }
+                                            .offset(
+                                                ((thumbnailSizeDp / 2) - 2 * (playerThumbnailSize.size.dp)),
+                                                0.dp
+                                            )
+                                            .conditional(thumbnailType == ThumbnailType.Modern) {
+                                                doubleShadowDrop(
+                                                    thumbnailRoundness.shape(),
+                                                    4.dp,
+                                                    8.dp
+                                                )
+                                            }
+                                            .clip(thumbnailRoundness.shape())
+                                    )
+                                }
+                                AsyncImage(
+                                    model = prevMediaItem.mediaMetadata.artworkUri.toString()
+                                        .resize(1200, 1200),
+                                    contentDescription = null,
+                                    contentScale = ContentScale.Fit,
+                                    modifier = Modifier
+                                        .padding(
+                                            all = playerThumbnailSize.size.dp + 40.dp
+                                        )
+                                        .padding(start = playerPlayButtonType.height.dp - 60.dp)
+                                        .conditional(playerTimelineType == PlayerTimelineType.FakeAudioBar) {
+                                            padding(
+                                                start = 40.dp
+                                            )
+                                        }
+                                        .conditional(prevNextSongs == PrevNextSongs.onesong) {
+                                            offset(
+                                                -((thumbnailSizeDp / 2) - 2 * (playerThumbnailSize.size.dp)),
+                                                0.dp
+                                            )
+                                        }
+                                        .conditional(prevNextSongs == PrevNextSongs.twosongs) {
+                                            offset(
+                                                -((thumbnailSizeDp / 3) - 2 * (playerThumbnailSize.size.dp)),
+                                                0.dp
+                                            )
+                                        }
+                                        .conditional(thumbnailType == ThumbnailType.Modern) {
+                                            doubleShadowDrop(
+                                                thumbnailRoundness.shape(),
+                                                4.dp,
+                                                8.dp
+                                            )
+                                        }
+                                        .clip(thumbnailRoundness.shape())
+                                )
+                                AsyncImage(
+                                    model = nextMediaItem.mediaMetadata.artworkUri.toString()
+                                        .resize(1200, 1200),
+                                    contentDescription = null,
+                                    contentScale = ContentScale.Fit,
+                                    modifier = Modifier
+                                        .padding(
+                                            all = playerThumbnailSize.size.dp + 40.dp
+                                        )
+                                        .padding(end = playerPlayButtonType.height.dp - 60.dp)
+                                        .conditional(playerTimelineType == PlayerTimelineType.FakeAudioBar) {
+                                            padding(
+                                                end = 40.dp
+                                            )
+                                        }
+                                        .conditional(prevNextSongs == PrevNextSongs.onesong) {
+                                            offset(
+                                                ((thumbnailSizeDp / 2) - 2 * (playerThumbnailSize.size.dp)),
+                                                0.dp
+                                            )
+                                        }
+                                        .conditional(prevNextSongs == PrevNextSongs.twosongs) {
+                                            offset(
+                                                ((thumbnailSizeDp / 3) - 2 * (playerThumbnailSize.size.dp)),
+                                                0.dp
+                                            )
+                                        }
+                                        .conditional(thumbnailType == ThumbnailType.Modern) {
+                                            doubleShadowDrop(
+                                                thumbnailRoundness.shape(),
+                                                4.dp,
+                                                8.dp
+                                            )
+                                        }
+                                        .clip(thumbnailRoundness.shape())
+                                )
+                            }
+                            thumbnailContent(
+                                modifier = Modifier
+                                    .padding(
+                                        all = playerThumbnailSize.size.dp
+                                    )
+                                    .thumbnailpause(
+                                        shouldBePlaying = shouldBePlaying
+                                    )
+                            )
+                        }
+                    }
+                    if (isShowingVisualizer && !showvisthumbnail) {
+                        Box(
+                            modifier = Modifier
+                                .pointerInput(Unit) {
+                                    detectHorizontalDragGestures(
+                                        onHorizontalDrag = { change, dragAmount ->
+                                            deltaX1 = dragAmount
+                                        },
+                                        onDragStart = {
+                                        },
+                                        onDragEnd = {
+                                            if (!disablePlayerHorizontalSwipe) {
+                                                if (deltaX1 > 5) {
+                                                    binder.player.seekToPreviousMediaItem()
+                                                } else if (deltaX1 < -5) {
+                                                    binder.player.forceSeekToNext()
+                                                }
+
+                                            }
+
+                                        }
+
+                                    )
+                                }
+                        ) {
+                            NextVisualizer(
+                                isDisplayed = isShowingVisualizer
+                            )
+                        }
+                    }
+                }
+            }
+            controlsContent(
+                modifier = Modifier
+                    .padding(vertical = 8.dp)
+                    .conditional(landscapeLayout == LandscapeLayout.Layout1) { fillMaxHeight() }
+                    .conditional(landscapeLayout == LandscapeLayout.Layout1) { weight(1f) }
+            )
+            if (!showthumbnail) {
+                StatsForNerds(
+                    mediaId = mediaItem.mediaId,
+                    isDisplayed = statsfornerds,
+                    onDismiss = {}
+                )
+            }
+            actionsBarContent(
+                modifier = Modifier
+            )
+        }
+
+    }
+    return showFullLyrics1
+}
+
+@androidx.annotation.OptIn(UnstableApi::class)
+@ExperimentalTextApi
+@ExperimentalFoundationApi
+@ExperimentalAnimationApi
+@Composable
+@OptIn(ExperimentalMaterial3Api::class)
+private fun BottomSheet(
+    showQueue: Boolean,
+    colorPalette: ColorPalette,
+    thumbnailShape: Shape,
+    navController: NavController,
+    showFullLyrics: Boolean
+) {
+    var showQueue1 = showQueue
+    var showFullLyrics1 = showFullLyrics
+    CustomModalBottomSheet(
+        showSheet = showQueue1,
+        onDismissRequest = { showQueue1 = false },
+        containerColor = colorPalette.background2,
+        contentColor = colorPalette.background2,
+        modifier = Modifier.fillMaxWidth(),
+        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+        dragHandle = {
+            Surface(
+                modifier = Modifier.padding(vertical = 0.dp),
+                color = colorPalette.background0,
+                shape = thumbnailShape
+            ) {}
+        }
+    ) {
+        QueueModern(
+            navController = navController,
+            onDismiss = { showQueue1 = false },
+        )
+    }
+
+
+    /*
         FullLyricsSheet(
             layoutState = lyricsBottomSheetState,
             content = {},
@@ -2329,29 +2535,26 @@ fun PlayerModern(
         )
          */
 
-        CustomModalBottomSheet(
-            showSheet = showFullLyrics,
-            onDismissRequest = { showFullLyrics = false },
-            containerColor = colorPalette.background2,
-            contentColor = colorPalette.background2,
-            modifier = Modifier.fillMaxWidth(),
-            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-            dragHandle = {
-                Surface(
-                    modifier = Modifier.padding(vertical = 0.dp),
-                    color = colorPalette.background0,
-                    shape = thumbnailShape
-                ) {}
-            }
-        ) {
-            FullLyricsSheetModern(
-                onMaximize = { showFullLyrics = false },
-                onRefresh = {}
-            )
+    CustomModalBottomSheet(
+        showSheet = showFullLyrics1,
+        onDismissRequest = { showFullLyrics1 = false },
+        containerColor = colorPalette.background2,
+        contentColor = colorPalette.background2,
+        modifier = Modifier.fillMaxWidth(),
+        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+        dragHandle = {
+            Surface(
+                modifier = Modifier.padding(vertical = 0.dp),
+                color = colorPalette.background0,
+                shape = thumbnailShape
+            ) {}
         }
-
+    ) {
+        FullLyricsSheetModern(
+            onMaximize = { showFullLyrics1 = false },
+            onRefresh = {}
+        )
     }
-
 }
 
 
