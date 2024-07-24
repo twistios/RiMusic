@@ -976,7 +976,7 @@ fun PlayerModern(
 
 
     if (!isGradientBackgroundEnabled) {
-        if (playerBackgroundColors == PlayerBackgroundColors.BlurredCoverColor) {
+        if (playerBackgroundColors == PlayerBackgroundColors.BlurredCoverColor && (playerType == PlayerType.Essential || showthumbnail)) {
             containerModifier = containerModifier
                 .background(dynamicColorPalette.background1)
                 .paint(
