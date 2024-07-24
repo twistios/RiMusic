@@ -1045,10 +1045,12 @@ fun PlayerModern(
 
         } else {
             containerModifier = containerModifier
-                .background(
-                    //dynamicColorPalette.background1
-                    colorPalette.background1
-                )
+                .conditional (playerType == PlayerType.Essential) {
+                    background(
+                        //dynamicColorPalette.background1
+                        colorPalette.background1
+                    )
+                }
         }
     } else {
         when (playerBackgroundColors) {
