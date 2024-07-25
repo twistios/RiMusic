@@ -2111,7 +2111,108 @@ fun PlayerModern(
 
             }
         } else {
+            Box {
+               if (playerBackgroundColors == PlayerBackgroundColors.BlurredCoverColor && playerType == PlayerType.Modern && !showthumbnail) {
+                   val colorPaletteBool = colorPaletteMode == ColorPaletteMode.Light
+                   val context1 = LocalContext.current
+                   val v = isLandscape // if (isLandscape) 0.8f else 0.75f;
+                   val pagerState =
+                        rememberPagerState(pageCount = { binder.player.mediaItemCount })
+                   val fling = PagerDefaults.flingBehavior(
+                        state = pagerState,
+                        snapPositionalThreshold = 0.20f
+                   )
+                   val page = binder.player.currentMediaItemIndex
+                   HorizontalPager(
+                        state = pagerState,
+                        beyondViewportPageCount = 1,
+                        flingBehavior = fling,
+                        modifier = Modifier
+                   ) { it ->
+                        LaunchedEffect(mediaItem.mediaId) {
+                            pagerState.animateScrollToPage(page)
+                        }
 
+                        LaunchedEffect(pagerState.settledPage) {
+                            var previousPage = pagerState.settledPage
+                            var previousID = mediaItem.mediaId
+                            snapshotFlow { pagerState.settledPage }.collect {
+                                if (previousPage != it) {
+                                    if (previousID != binder.player.getMediaItemAt(it).mediaId) binder.player.forcePlayAtIndex(mediaItems, it)
+                                }
+                                previousPage = it;
+                                previousID = mediaItem.mediaId
+                            }
+                        }
+
+
+                       AsyncImage(
+                           model = ImageRequest.Builder(context1)
+                                .data(binder.player.getMediaItemAt(it).mediaMetadata.artworkUri.toString().resize(1200, 1200))
+                                .transformations(
+                                    listOf(
+                                        if (showthumbnail) {
+                                            BlurTransformation(
+                                                scale = 0.5f,
+                                                radius = blurStrength.toInt(),
+                                                //darkenFactor = blurDarkenFactor
+                                            )
+
+                                        } else
+                                            BlurTransformation(
+                                                scale = 0.5f,
+                                                //radius = blurStrength2.toInt(),
+                                                radius = if ((isShowingLyrics && !isShowingVisualizer) || !noblur) blurStrength.toInt() else 0,
+                                                //darkenFactor = blurDarkenFactor
+                                            )
+                                    )
+                                )
+                                .build(),
+                           contentDescription = "",
+                           contentScale = ContentScale.Crop,
+                           modifier = Modifier
+                                .fillMaxHeight()
+                                .combinedClickable(
+                                    interactionSource = remember { MutableInteractionSource() },
+                                    indication = null,
+                                    onClick = {
+                                        if (thumbnailTapEnabled) {
+                                            if (isShowingVisualizer) isShowingVisualizer = false
+                                            isShowingLyrics = !isShowingLyrics
+                                        }
+                                    },
+                                    onDoubleClick = {
+                                        if (!showlyricsthumbnail && !showvisthumbnail)
+                                            showthumbnail = !showthumbnail
+                                    }
+                                )
+                       )
+                   }
+                   Column(modifier =
+                        Modifier.run {
+                            matchParentSize().background(
+                                // Color.White.copy(0.8f);
+                                Brush.verticalGradient(
+                                    0.0f to Color.Transparent,
+                                    1.0f to if (bottomgradient) // bottomgradient
+                                        if (colorPaletteBool)  // (colorPaletteMode == ColorPaletteMode.Light)
+                                        {
+                                            Color.White.copy(if (v) 0.8f else 0.75f)
+                                        } else Color.Black.copy(if (v) 0.8f else 0.75f)
+                                    else Color.Transparent,
+                                    startY = if (v) 600f else if (expandedplayer) 1300f else 950f,
+                                    endY = POSITIVE_INFINITY
+                                )
+                            )
+                        }
+
+//                        .background(
+//                            if (bottomgradient) if (isLandscape) if (colorPaletteMode == ColorPaletteMode.Light) Color.White.copy(
+//                                0.25f
+//                            ) else Color.Black.copy(0.25f) else Color.Transparent else Color.Transparent
+//                        )
+                    ){}
+               }
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 modifier = containerModifier
@@ -2444,7 +2545,8 @@ fun PlayerModern(
                     modifier = Modifier
                         .padding(vertical = 10.dp)
                 )
-            }
+              }
+           }
         }
 
 
