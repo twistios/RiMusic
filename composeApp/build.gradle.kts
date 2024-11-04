@@ -134,15 +134,16 @@ android {
 
     buildTypes {
         debug {
-            applicationIdSuffix = ".debug"
-            manifestPlaceholders["appName"] = "RiMusic-Debug"
+            applicationIdSuffix = ".twistios_debug"
+            manifestPlaceholders["appName"] = "TwRiMusic-Debug"
         }
 
         release {
             vcsInfo.include = false
             isMinifyEnabled = true
             isShrinkResources = true
-            manifestPlaceholders["appName"] = "RiMusic"
+            manifestPlaceholders["appName"] = "TwRiMusic"
+            applicationIdSuffix = ".twistios_release"
             signingConfig = signingConfigs.getByName("debug")
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
         }
@@ -154,7 +155,7 @@ android {
             .map { it as com.android.build.gradle.internal.api.BaseVariantOutputImpl }
             .forEach { output ->
                 //val outputFileName = "app-${variant.baseName}-${variant.versionName}-${variant.versionCode}.apk"
-                val outputFileName = "app-${variant.baseName}.apk"
+                val outputFileName = "tw_app-${variant.baseName}.apk"
                 output.outputFileName = outputFileName
             }
     }
