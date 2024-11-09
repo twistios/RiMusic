@@ -56,6 +56,10 @@ import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import it.fast4x.compose.persist.persist
 import it.fast4x.innertube.Innertube
+import it.fast4x.innertube.models.NavigationEndpoint
+import it.fast4x.innertube.models.bodies.BrowseBody
+import it.fast4x.innertube.requests.itemsPage
+import it.fast4x.innertube.utils.from
 import it.fast4x.rimusic.Database
 import it.fast4x.rimusic.LocalPlayerAwareWindowInsets
 import it.fast4x.rimusic.LocalPlayerServiceBinder
@@ -98,7 +102,9 @@ import it.fast4x.rimusic.utils.conditional
 import it.fast4x.rimusic.utils.downloadedStateMedia
 import it.fast4x.rimusic.utils.enqueue
 import it.fast4x.rimusic.utils.fadingEdge
+import it.fast4x.rimusic.utils.forcePlay
 import it.fast4x.rimusic.utils.forcePlayAtIndex
+import it.fast4x.rimusic.utils.forcePlayFromBeginning
 import it.fast4x.rimusic.utils.getDownloadState
 import it.fast4x.rimusic.utils.getHttpClient
 import it.fast4x.rimusic.utils.isDownloadedSong
@@ -112,7 +118,10 @@ import it.fast4x.rimusic.utils.resize
 import it.fast4x.rimusic.utils.secondary
 import it.fast4x.rimusic.utils.semiBold
 import it.fast4x.rimusic.utils.showFloatingIconKey
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import me.bush.translator.Language
 import me.bush.translator.Translator
@@ -566,19 +575,48 @@ fun ArtistOverviewModern(
                                                 )
                                             },
                                             onClick = {
+                                                /*
                                                 binder?.stopRadio()
                                                 binder?.player?.forcePlayAtIndex(
                                                     listMediaItems.distinct(),
                                                     index
                                                 )
+                                                 */
+
                                                 /*
-                                            val mediaItem = song.asMediaItem
-                                            binder?.stopRadio()
-                                            binder?.player?.forcePlay(mediaItem)
-                                            binder?.setupRadio(
-                                                NavigationEndpoint.Endpoint.Watch(videoId = mediaItem.mediaId)
-                                            )
-                                             */
+                                                val mediaItem = song.asMediaItem
+                                                binder?.stopRadio()
+                                                binder?.player?.forcePlay(mediaItem)
+                                                binder?.setupRadio(
+                                                    NavigationEndpoint.Endpoint.Watch(videoId = mediaItem.mediaId),
+                                                    //filterArtist = mediaItem.mediaMetadata.artist.toString()
+                                                )
+                                                 */
+                                                CoroutineScope(Dispatchers.IO).launch {
+                                                    youtubeArtistPage
+                                                        .songsEndpoint
+                                                        ?.takeIf { it.browseId != null }
+                                                        ?.let { endpoint ->
+                                                            Innertube.itemsPage(
+                                                                body = BrowseBody(
+                                                                    browseId = endpoint.browseId!!,
+                                                                    params = endpoint.params,
+                                                                ),
+                                                                fromMusicResponsiveListItemRenderer = Innertube.SongItem::from,
+                                                            )
+                                                        }
+                                                        ?.getOrNull()
+                                                        ?.items
+                                                        ?.map { it.asMediaItem }
+                                                        ?.let {
+                                                            withContext(Dispatchers.Main) {
+                                                                binder?.player?.forcePlayFromBeginning(
+                                                                    it
+                                                                )
+                                                            }
+                                                        }
+                                                }
+
                                             }
                                         )
                                         .padding(endPaddingValues),

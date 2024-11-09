@@ -34,7 +34,7 @@ import me.knighthat.ui.screens.settings.about.DevBoard
 @Composable
 fun About() {
     val uriHandler = LocalUriHandler.current
-    val context = LocalContext.current
+    //val context = LocalContext.current
 
     Column(
         modifier = Modifier
@@ -42,7 +42,7 @@ fun About() {
             //.fillMaxSize()
             .fillMaxHeight()
             .fillMaxWidth(
-                if( NavigationBarPosition.Right.isCurrent() )
+                if (NavigationBarPosition.Right.isCurrent())
                     Dimensions.contentWidthRightBar
                 else
                     1f
@@ -139,7 +139,7 @@ fun About() {
         )
         SettingsGroupSpacer()
 
-        SettingsEntryGroupText(title = "Translators")
+        SettingsEntryGroupText(title = stringResource(R.string.translators))
         SettingsDescription(text = stringResource(R.string.in_alphabetical_order))
         SettingsTopDescription( text =
             "2010furs \n"+
@@ -189,6 +189,7 @@ fun About() {
                     "NEVARLeVrai \n"+
                     "NikunjKhangwal \n"+
                     "NiXT0y \n"+
+                    "Notesuree \n" +
                     "opcitgv \n"+
                     "OlimitLolli \n"+
                     "OrangeZXZ \n"+

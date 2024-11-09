@@ -9,6 +9,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.content.edit
+import kotlinx.serialization.InternalSerializationApi
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.serializer
 
 const val lastPlayerThumbnailSizeKey = "lastPlayerThumbnailSize"
 const val lastPlayerPlayButtonTypeKey = "lastPlayerPlayButtonType"
@@ -273,9 +276,52 @@ const val controlsExpandedKey = "controlsExpanded"
 const val miniQueueExpandedKey = "miniQueueExpanded"
 const val statsExpandedKey = "statsExpanded"
 const val actionExpandedKey = "actionExpanded"
+const val showVinylThumbnailAnimationKey = "showVinylThumbnailAnimation"
 
 const val restartActivityKey = "restartActivity"
 const val enableYouTubeLoginKey = "enableYoutubeLogin"
+
+const val autoLoadSongsInQueueKey = "autoLoadSongsInQueue"
+
+
+@PublishedApi
+internal val defaultJson = Json {
+    isLenient = true
+    prettyPrint = false
+    ignoreUnknownKeys = true
+    encodeDefaults = true
+}
+
+@OptIn(InternalSerializationApi::class)
+inline fun <reified T : Json> SharedPreferences.Editor.putJson(
+    key: String,
+    defaultValue: T,
+    json: Json = defaultJson
+): SharedPreferences.Editor =
+    putString(
+        key,
+        try {
+            json.encodeToString(T::class.serializer(), defaultValue)
+        } catch (e: IllegalArgumentException) {
+            null
+        }
+
+    )
+
+@OptIn(InternalSerializationApi::class)
+inline fun <reified T : Json> SharedPreferences.getJson(
+    key: String,
+    defaultValue: T,
+    json: Json = defaultJson
+): T =
+    getString(key, null)?.let {
+        try {
+            json.decodeFromString(T::class.serializer(), it)
+        } catch (e: IllegalArgumentException) {
+            null
+        }
+    } ?: defaultValue
+
 
 inline fun <reified T : Enum<T>> SharedPreferences.getEnum(
     key: String,
@@ -297,6 +343,16 @@ inline fun <reified T : Enum<T>> SharedPreferences.Editor.putEnum(
 
 val Context.preferences: SharedPreferences
     get() = getSharedPreferences("preferences", Context.MODE_PRIVATE)
+
+@Composable
+inline fun <reified T : Json> rememberPreference(key: String, defaultValue: T, json: Json = defaultJson): MutableState<T> {
+    val context = LocalContext.current
+    return remember {
+        mutableStatePreferenceOf(context.preferences.getJson(key, defaultValue)) {
+            context.preferences.edit { putJson(key, it) }
+        }
+    }
+}
 
 @Composable
 fun rememberPreference(key: String, defaultValue: Boolean): MutableState<Boolean> {

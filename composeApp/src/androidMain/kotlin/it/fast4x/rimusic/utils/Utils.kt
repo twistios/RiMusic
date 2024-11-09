@@ -376,12 +376,13 @@ fun getCalculatedMonths( month: Int): String? {
     return sdfr.format(c.time).toString()
 }
 
-suspend fun Result<Innertube.PlaylistOrAlbumPage>.completed(
+@JvmName("ResultInnertubeItemsPageCompleted")
+suspend fun Result<Innertube.ItemsPage<Innertube.SongItem>?>.completed(
     maxDepth: Int =  Int.MAX_VALUE
-) = runCatching {
+): Result<Innertube.ItemsPage<Innertube.SongItem>?> = runCatching {
     val page = getOrThrow()
-    val songs = page.songsPage?.items.orEmpty().toMutableList()
-    var continuation = page.songsPage?.continuation
+    val songs = page?.items.orEmpty().toMutableList()
+    var continuation = page?.continuation
 
     var depth = 0
     var continuationsList = arrayOf<String>()
@@ -405,7 +406,19 @@ suspend fun Result<Innertube.PlaylistOrAlbumPage>.completed(
         //println("mediaItem loop continuationList size ${continuationsList.size}")
     }
 
-    page.copy(songsPage = Innertube.ItemsPage(items = songs, continuation = null))
+    page?.copy(items = songs, continuation = null)
+}.also { it.exceptionOrNull()?.printStackTrace() }
+
+@JvmName("ResultInnertubePlaylistOrAlbumPageCompleted")
+suspend fun Result<Innertube.PlaylistOrAlbumPage>.completed(
+    maxDepth: Int =  Int.MAX_VALUE
+): Result<Innertube.PlaylistOrAlbumPage> = runCatching {
+    val page = getOrThrow()
+    val songsPage = runCatching {
+        page.songsPage!!
+    }
+    val itemsPage = songsPage.completed(maxDepth).getOrThrow()
+    page.copy(songsPage = itemsPage)
 }.also { it.exceptionOrNull()?.printStackTrace() }
 
 @Composable

@@ -42,6 +42,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.password
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
+import androidx.media3.common.util.UnstableApi
 import androidx.navigation.compose.rememberNavController
 import io.ktor.http.Url
 import it.fast4x.compose.persist.persistList
@@ -57,7 +58,7 @@ import it.fast4x.rimusic.enums.ThumbnailRoundness
 import it.fast4x.rimusic.enums.ValidationType
 import it.fast4x.rimusic.extensions.discord.DiscordLoginAndGetToken
 import it.fast4x.rimusic.extensions.youtubelogin.YouTubeLogin
-import it.fast4x.rimusic.service.PlayerMediaBrowserService
+import it.fast4x.rimusic.service.modern.PlayerServiceModern
 import it.fast4x.rimusic.ui.components.CustomModalBottomSheet
 import it.fast4x.rimusic.ui.components.LocalMenuState
 import it.fast4x.rimusic.ui.components.themed.DefaultDialog
@@ -115,6 +116,7 @@ import timber.log.Timber
 import java.io.File
 import java.net.Proxy
 
+@androidx.annotation.OptIn(UnstableApi::class)
 @OptIn(ExperimentalMaterial3Api::class)
 @SuppressLint("BatteryLife")
 @ExperimentalAnimationApi
@@ -128,7 +130,7 @@ fun OtherSettings() {
     )
 
     var isAndroidAutoEnabled by remember {
-        val component = ComponentName(context, PlayerMediaBrowserService::class.java)
+        val component = ComponentName(context, PlayerServiceModern::class.java)
         val disabledFlag = PackageManager.COMPONENT_ENABLED_STATE_DISABLED
         val enabledFlag = PackageManager.COMPONENT_ENABLED_STATE_ENABLED
 
@@ -147,7 +149,7 @@ fun OtherSettings() {
         )
     }
 
-    var isInvincibilityEnabled by rememberPreference(isInvincibilityEnabledKey, false)
+    //var isInvincibilityEnabled by rememberPreference(isInvincibilityEnabledKey, false)
 
     var isIgnoringBatteryOptimizations by remember {
         mutableStateOf(context.isIgnoringBatteryOptimizations)
@@ -796,12 +798,14 @@ fun OtherSettings() {
             }
         )
 
+        /*
         SwitchSettingEntry(
             title = stringResource(R.string.invincible_service),
             text = stringResource(R.string.turning_off_battery_optimizations_is_not_enough),
             isChecked = isInvincibilityEnabled,
             onCheckedChange = { isInvincibilityEnabled = it }
         )
+         */
 
         SettingsGroupSpacer()
 

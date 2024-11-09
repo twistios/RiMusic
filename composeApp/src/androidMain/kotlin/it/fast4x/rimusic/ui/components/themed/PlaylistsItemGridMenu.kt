@@ -89,6 +89,7 @@ fun PlaylistsItemGridMenu(
     onListenToYT: (() -> Unit)? = null,
     onExport: (() -> Unit)? = null,
     onImport: (() -> Unit)? = null,
+    onImportFavorites: (() -> Unit)? = null,
     onGoToPlaylist: ((Long) -> Unit)? = null,
     disableScrollingText: Boolean
     ) {
@@ -485,6 +486,19 @@ fun PlaylistsItemGridMenu(
                         onClick = {
                             onDismiss()
                             onImport()
+                        }
+                    )
+                }
+
+                onImportFavorites?.let { onImport ->
+                    GridMenuItem(
+                        icon = R.drawable.resource_import,
+                        title = R.string.import_favorites,
+                        colorIcon = colorPalette.text,
+                        colorText = colorPalette.text,
+                        onClick = {
+                            onDismiss()
+                            onImportFavorites()
                         }
                     )
                 }

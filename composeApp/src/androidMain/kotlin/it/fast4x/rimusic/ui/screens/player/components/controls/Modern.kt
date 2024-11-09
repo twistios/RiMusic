@@ -58,7 +58,6 @@ import it.fast4x.rimusic.models.Info
 import it.fast4x.rimusic.models.Song
 import it.fast4x.rimusic.models.ui.UiMedia
 import it.fast4x.rimusic.query
-import it.fast4x.rimusic.service.PlayerService
 import it.fast4x.rimusic.ui.components.themed.CustomElevatedButton
 import it.fast4x.rimusic.ui.components.themed.IconButton
 import it.fast4x.rimusic.ui.components.themed.SelectorArtistsDialog
@@ -67,6 +66,7 @@ import it.fast4x.rimusic.ui.screens.player.bounceClick
 import it.fast4x.rimusic.ui.styling.favoritesIcon
 import it.fast4x.rimusic.utils.bold
 import it.fast4x.rimusic.cleanPrefix
+import it.fast4x.rimusic.service.modern.PlayerServiceModern
 import it.fast4x.rimusic.utils.colorPaletteModeKey
 import it.fast4x.rimusic.utils.doubleShadowDrop
 import it.fast4x.rimusic.utils.dropShadow
@@ -90,7 +90,7 @@ import me.knighthat.typography
 @androidx.annotation.OptIn(UnstableApi::class)
 @Composable
 fun InfoAlbumAndArtistModern(
-    binder: PlayerService.Binder,
+    binder: PlayerServiceModern.Binder,
     navController: NavController,
     albumId: String?,
     media: UiMedia,
@@ -360,7 +360,7 @@ fun InfoAlbumAndArtistModern(
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun ControlsModern(
-    binder: PlayerService.Binder,
+    binder: PlayerServiceModern.Binder,
     position: Long,
     playbackSpeed: Float,
     shouldBePlaying: Boolean,

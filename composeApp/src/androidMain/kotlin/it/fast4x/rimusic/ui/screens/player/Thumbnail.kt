@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -41,6 +42,8 @@ import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
 import coil.compose.AsyncImage
+import coil.compose.rememberAsyncImagePainter
+import coil.request.ImageRequest
 import it.fast4x.rimusic.Database
 import it.fast4x.rimusic.LocalPlayerServiceBinder
 import it.fast4x.rimusic.R
@@ -57,17 +60,22 @@ import it.fast4x.rimusic.service.UnplayableException
 import it.fast4x.rimusic.service.VideoIdMismatchException
 import it.fast4x.rimusic.service.isLocal
 import it.fast4x.rimusic.ui.components.themed.SmartMessage
+import it.fast4x.rimusic.ui.components.themed.VinylThumbnailCoverAnimation
 import it.fast4x.rimusic.ui.styling.Dimensions
 import it.fast4x.rimusic.ui.styling.px
+import it.fast4x.rimusic.utils.BlurTransformation
 import it.fast4x.rimusic.utils.DisposableListener
 import it.fast4x.rimusic.utils.clickOnLyricsTextKey
+import it.fast4x.rimusic.utils.conditional
 import it.fast4x.rimusic.utils.currentWindow
 import it.fast4x.rimusic.utils.doubleShadowDrop
 import it.fast4x.rimusic.utils.isLandscape
 import it.fast4x.rimusic.utils.rememberPreference
 import it.fast4x.rimusic.utils.resize
+import it.fast4x.rimusic.utils.showVinylThumbnailAnimationKey
 import it.fast4x.rimusic.utils.showlyricsthumbnailKey
 import it.fast4x.rimusic.utils.showvisthumbnailKey
+import it.fast4x.rimusic.utils.thumbnail
 import it.fast4x.rimusic.utils.thumbnailTypeKey
 import it.fast4x.rimusic.utils.thumbnailpauseKey
 import me.knighthat.colorPalette
@@ -157,6 +165,22 @@ fun Thumbnail(
 
     val window = nullableWindow ?: return
 
+    val coverPainter = rememberAsyncImagePainter(
+        model = ImageRequest.Builder(LocalContext.current)
+            .data(
+                window.mediaItem.mediaMetadata.artworkUri.thumbnail(
+                    thumbnailSizePx
+                )
+            )
+            .size(coil.size.Size.ORIGINAL)
+            .build(),
+        onError = { artImageAvailable = false },
+        onSuccess = { artImageAvailable = true }
+    )
+
+    val showVinylThumbnailAnimation by rememberPreference(showVinylThumbnailAnimationKey, false)
+
+
     AnimatedContent(
         targetState = window,
         transitionSpec = {
@@ -191,12 +215,7 @@ fun Thumbnail(
     ) { currentWindow ->
 
         val thumbnailType by rememberPreference(thumbnailTypeKey, ThumbnailType.Modern)
-        /*
-        val playerControlsType by rememberPreference(
-            playerControlsTypeKey,
-            PlayerControlsType.Modern
-        )
-         */
+
         var modifierUiType by remember { mutableStateOf(modifier) }
 
         if (showthumbnail)
@@ -209,15 +228,17 @@ fun Thumbnail(
                         .fillMaxSize()
                         //.dropShadow(thumbnailShape(), colorPalette().overlay.copy(0.1f), 6.dp, 2.dp, 2.dp)
                         //.dropShadow(thumbnailShape(), colorPalette().overlay.copy(0.1f), 6.dp, (-2).dp, (-2).dp)
-                        .doubleShadowDrop(thumbnailShape(), 4.dp, 8.dp)
-                        .clip(thumbnailShape())
+                        .doubleShadowDrop(if (showVinylThumbnailAnimation) CircleShape else thumbnailShape(), 4.dp, 8.dp)
+                        //.clip(thumbnailShape())
+                        .clip(if (showVinylThumbnailAnimation) CircleShape else thumbnailShape())
                 //.padding(14.dp)
                 else modifierUiType = modifier
                     .aspectRatio(1f)
                     //.size(thumbnailSizeDp)
                     //.padding(14.dp)
                     .fillMaxSize()
-                    .clip(thumbnailShape())
+                    //.clip(thumbnailShape())
+                    .clip(if (showVinylThumbnailAnimation) CircleShape else thumbnailShape())
 
 
 
@@ -226,7 +247,50 @@ fun Thumbnail(
         ) {
             if (showthumbnail) {
                 if ((!isShowingLyrics && !isShowingVisualizer) || (isShowingVisualizer && showvisthumbnail) || (isShowingLyrics && showlyricsthumbnail))
-                    if (artImageAvailable)
+                    if (artImageAvailable) {
+                        if (showVinylThumbnailAnimation)
+                            VinylThumbnailCoverAnimation(
+                                painter = coverPainter,
+                                isSongPlaying = player.isPlaying,
+                                modifier = Modifier
+                                    .pointerInput(Unit) {
+                                        detectTapGestures(
+                                            onLongPress = { onShowStatsForNerds(true) },
+                                            onTap = if (thumbnailTapEnabledKey) {
+                                                {
+                                                    onShowLyrics(true)
+                                                    onShowEqualizer(false)
+                                                }
+                                            } else null,
+                                            onDoubleTap = { onDoubleTap() }
+                                        )
+
+                                    }
+
+                            )
+                        else
+                            Image (
+                                painter = coverPainter,
+                                contentDescription = null,
+                                contentScale = ContentScale.Fit,
+                                modifier = Modifier
+                                    .pointerInput(Unit) {
+                                        detectTapGestures(
+                                            onLongPress = { onShowStatsForNerds(true) },
+                                            onTap = if (thumbnailTapEnabledKey) {
+                                                {
+                                                    onShowLyrics(true)
+                                                    onShowEqualizer(false)
+                                                }
+                                            } else null,
+                                            onDoubleTap = { onDoubleTap() }
+                                        )
+
+                                    }
+                                    .fillMaxSize()
+                                    .clip(thumbnailShape())
+                            )
+                            /*
                         AsyncImage(
                             model = currentWindow.mediaItem.mediaMetadata.artworkUri.toString()
                                 .resize(1200, 1200),
@@ -269,30 +333,33 @@ fun Thumbnail(
 
 
                         )
+                        */
 
-                if (!artImageAvailable)
-                    Image(
-                        painter = painterResource(R.drawable.app_icon),
-                        colorFilter = ColorFilter.tint(colorPalette().accent),
-                        modifier = Modifier
-                            .pointerInput(Unit) {
-                                detectTapGestures(
-                                    onLongPress = { onShowStatsForNerds(true) },
-                                    onTap = if (thumbnailTapEnabledKey) {
-                                        {
-                                            onShowLyrics(true)
-                                            onShowEqualizer(false)
-                                        }
-                                    } else null,
-                                    onDoubleTap = { onDoubleTap() }
-                                )
+                    } else {
+                        Image(
+                            painter = painterResource(R.drawable.ic_banner_foreground),
+                            colorFilter = ColorFilter.tint(colorPalette().accent),
+                            modifier = Modifier
+                                .pointerInput(Unit) {
+                                    detectTapGestures(
+                                        onLongPress = { onShowStatsForNerds(true) },
+                                        onTap = if (thumbnailTapEnabledKey) {
+                                            {
+                                                onShowLyrics(true)
+                                                onShowEqualizer(false)
+                                            }
+                                        } else null,
+                                        onDoubleTap = { onDoubleTap() }
+                                    )
 
-                            }
-                            .fillMaxSize()
-                            .clip(thumbnailShape()),
-                        contentDescription = "Background Image",
-                        contentScale = ContentScale.Fit
-                    )
+                                }
+                                .fillMaxSize()
+                                .clip(thumbnailShape()),
+                            contentDescription = "Background Image",
+                            contentScale = ContentScale.Fit
+                        )
+                    }
+
                 //if (!currentWindow.mediaItem.isLocal)
                 if (showlyricsthumbnail)
                     Lyrics(

@@ -86,6 +86,7 @@ fun PlaylistsItemMenu(
     onListenToYT: (() -> Unit)? = null,
     onExport: (() -> Unit)? = null,
     onImport: (() -> Unit)? = null,
+    onImportFavorites: (() -> Unit)? = null,
     onGoToPlaylist: ((Long) -> Unit)? = null,
     disableScrollingText: Boolean
 ) {
@@ -123,6 +124,7 @@ fun PlaylistsItemMenu(
             onListenToYT = onListenToYT,
             onExport = onExport,
             onImport = onImport,
+            onImportFavorites = onImportFavorites,
             onGoToPlaylist = onGoToPlaylist,
             disableScrollingText = disableScrollingText
         )
@@ -551,6 +553,16 @@ fun PlaylistsItemMenu(
                             onClick = {
                                 onDismiss()
                                 onImport()
+                            }
+                        )
+                    }
+                    onImportFavorites?.let {
+                        MenuEntry(
+                            icon = R.drawable.resource_import,
+                            text = stringResource(R.string.import_favorites),
+                            onClick = {
+                                onDismiss()
+                                onImportFavorites()
                             }
                         )
                     }

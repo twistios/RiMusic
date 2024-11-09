@@ -37,7 +37,6 @@ data class ColorPalette(
             3 -> ModernBlackColorPalette
             else -> dynamicColorPaletteOf(
                 FloatArray(3).apply { ColorUtils.colorToHSL(accent, this) },
-                value[1] as Boolean,
                 value[1] as Boolean
             )
         }
@@ -122,14 +121,16 @@ fun colorPaletteOf(
     }
 }
 
-fun dynamicColorPaletteOf(bitmap: Bitmap, isDark: Boolean, isPitchBlack: Boolean): ColorPalette? {
+fun dynamicColorPaletteOf(bitmap: Bitmap, isDark: Boolean): ColorPalette? {
     val palette = Palette
         .from(bitmap)
         .maximumColorCount(8)
-        .addFilter(if (isDark || isPitchBlack) ({ _, hsl -> hsl[0] !in 36f..100f }) else null)
+        .addFilter(if (isDark) ({ _, hsl -> hsl[0] !in 36f..100f }) else null)
         .generate()
 
-    val hsl = if (isDark || isPitchBlack) {
+
+
+    val hsl = if (isDark) {
         palette.dominantSwatch ?: Palette
             .from(bitmap)
             .maximumColorCount(8)
@@ -145,59 +146,38 @@ fun dynamicColorPaletteOf(bitmap: Bitmap, isDark: Boolean, isPitchBlack: Boolean
             .sortedByDescending(FloatArray::component2)
             .find { it[1] != 0f }
             ?: hsl
-        dynamicColorPaletteOf(newHsl, isDark, isPitchBlack)
+        dynamicColorPaletteOf(newHsl, isDark)
 
     } else {
-        dynamicColorPaletteOf(hsl, isDark, isPitchBlack)
+        dynamicColorPaletteOf(hsl, isDark)
     }
 }
 
-fun dynamicColorPaletteOf(hsl: FloatArray, isDark: Boolean, isPitchBlack: Boolean): ColorPalette {
-    return colorPaletteOf(ColorPaletteName.Dynamic, if (isDark || isPitchBlack) ColorPaletteMode.Dark else ColorPaletteMode.Light, false).copy(
+fun dynamicColorPaletteOf(hsl: FloatArray, isDark: Boolean): ColorPalette {
+    return colorPaletteOf(ColorPaletteName.Dynamic, if (isDark) ColorPaletteMode.Dark else ColorPaletteMode.Light, false).copy(
 
-
-        background0 = if (isPitchBlack) Color.hsl(hsl[0], hsl[1].coerceAtMost(0f), 0f)
-        else Color.hsl(hsl[0], hsl[1].coerceAtMost(0.1f), if (isDark) 0.10f else 0.925f),
-        background1 = if (isPitchBlack) Color.hsl(hsl[0], hsl[1].coerceAtMost(0f), 0f)
-        else Color.hsl(hsl[0], hsl[1].coerceAtMost(0.3f), if (isDark) 0.15f else 0.90f),
-        background2 = if (isPitchBlack) Color.hsl(hsl[0], hsl[1].coerceAtMost(0f), 0f)
-        else Color.hsl(hsl[0], hsl[1].coerceAtMost(0.4f), if (isDark) 0.2f else 0.85f),
-
-
-/*
         background0 = Color.hsl(hsl[0], hsl[1].coerceAtMost(0.1f), if (isDark) 0.10f else 0.925f),
         background1 = Color.hsl(hsl[0], hsl[1].coerceAtMost(0.3f), if (isDark) 0.15f else 0.90f),
         background2 = Color.hsl(hsl[0], hsl[1].coerceAtMost(0.4f), if (isDark) 0.2f else 0.85f),
-*/
+
         accent = Color.hsl(hsl[0], hsl[1].coerceAtMost(0.5f), 0.5f),
 
-        text = if (isPitchBlack) Color.hsl(hsl[0], hsl[1].coerceAtMost(0f), 0.88f)
-        else Color.hsl(hsl[0], hsl[1].coerceAtMost(0.02f), if (isDark) 0.88f else 0.12f),
-        textSecondary = if (isPitchBlack) Color.hsl(hsl[0], hsl[1].coerceAtMost(0f), 0.65f)
-        else Color.hsl(hsl[0], hsl[1].coerceAtMost(0.1f), if (isDark) 0.65f else 0.40f),
-        textDisabled = if (isPitchBlack) Color.hsl(hsl[0], hsl[1].coerceAtMost(0f), 0.40f)
-        else Color.hsl(hsl[0], hsl[1].coerceAtMost(0.2f), if (isDark) 0.40f else 0.65f),
-/*
         text = Color.hsl(hsl[0], hsl[1].coerceAtMost(0.02f), if (isDark) 0.88f else 0.12f),
         textSecondary = Color.hsl(hsl[0], hsl[1].coerceAtMost(0.1f), if (isDark) 0.65f else 0.40f),
         textDisabled = Color.hsl(hsl[0], hsl[1].coerceAtMost(0.2f), if (isDark) 0.40f else 0.65f),
 
- */
     )
 }
 
 
-fun dynamicColorPaletteOf(hsl: Hsl, isDark: Boolean, isPitchBlack: Boolean) = hsl.let { (hue, saturation) ->
+fun dynamicColorPaletteOf(hsl: Hsl, isDark: Boolean) = hsl.let { (hue, saturation) ->
     val accentColor = Color.hsl(
         hue = hue,
-        saturation = saturation.coerceAtMost(if (isPitchBlack || isDark) 0.4f else 0.5f),
+        saturation = saturation.coerceAtMost(if (isDark) 0.4f else 0.5f),
         lightness = 0.5f
     )
 
-    if (isPitchBlack) PureBlackColorPalette.copy(
-        accent = accentColor,
-        isDark = true
-    ) else colorPaletteOf(
+    colorPaletteOf(
         ColorPaletteName.Dynamic,
         if (isDark) ColorPaletteMode.Dark else ColorPaletteMode.Light,
         isDark
@@ -238,12 +218,10 @@ fun dynamicColorPaletteOf(hsl: Hsl, isDark: Boolean, isPitchBlack: Boolean) = hs
 
 fun dynamicColorPaletteOf(
     accentColor: Color,
-    isDark: Boolean,
-    isPitchBlack: Boolean
+    isDark: Boolean
 ) = dynamicColorPaletteOf(
     hsl = accentColor.hsl,
-    isDark = isDark,
-    isPitchBlack = isPitchBlack
+    isDark = isDark
 )
 
 inline val ColorPalette.collapsedPlayerProgressBar: Color
@@ -292,3 +270,13 @@ inline val ColorPalette.onOverlay: Color
 
 inline val ColorPalette.onOverlayShimmer: Color
     get() = PureBlackColorPalette.shimmer
+
+inline val ColorPalette.applyPitchBlack: ColorPalette
+    get() = this.copy(
+        isDark = true,
+        background0 = Color.Black,
+        background1 = Color.Black,
+        background2 = Color.Black,
+        background3 = Color.Black,
+        background4 = Color.Black,
+    )

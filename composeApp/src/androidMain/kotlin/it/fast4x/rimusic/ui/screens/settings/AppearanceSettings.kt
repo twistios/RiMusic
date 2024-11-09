@@ -47,6 +47,7 @@ import it.fast4x.rimusic.enums.ThumbnailType
 import it.fast4x.rimusic.ui.components.themed.HeaderWithIcon
 import it.fast4x.rimusic.ui.components.themed.SmartMessage
 import it.fast4x.rimusic.ui.styling.Dimensions
+import it.fast4x.rimusic.utils.RestartPlayerService
 import it.fast4x.rimusic.utils.actionExpandedKey
 import it.fast4x.rimusic.utils.actionspacedevenlyKey
 import it.fast4x.rimusic.utils.backgroundProgressKey
@@ -106,6 +107,7 @@ import it.fast4x.rimusic.utils.showNextSongsInPlayerKey
 import it.fast4x.rimusic.utils.showRemainingSongTimeKey
 import it.fast4x.rimusic.utils.showTopActionsBarKey
 import it.fast4x.rimusic.utils.showTotalTimeQueueKey
+import it.fast4x.rimusic.utils.showVinylThumbnailAnimationKey
 import it.fast4x.rimusic.utils.showalbumcoverKey
 import it.fast4x.rimusic.utils.showlyricsthumbnailKey
 import it.fast4x.rimusic.utils.showsongsKey
@@ -483,6 +485,8 @@ fun AppearanceSettings(
     var miniQueueExpanded by rememberPreference(miniQueueExpandedKey, true)
     var statsExpanded by rememberPreference(statsExpandedKey, true)
     var actionExpanded by rememberPreference(actionExpandedKey, true)
+    var restartService by rememberSaveable { mutableStateOf(false) }
+    var showVinylThumbnailAnimation by rememberPreference(showVinylThumbnailAnimationKey, false)
 
     Column(
         modifier = Modifier
@@ -600,6 +604,20 @@ fun AppearanceSettings(
         }
         AnimatedVisibility(visible = showthumbnail) {
             Column {
+
+                if (searchInput.isBlank() || stringResource(R.string.show_vinyl_thumbnail_animation).contains(
+                        searchInput,
+                        true
+                    )
+                )
+                    SwitchSettingEntry(
+                        title = stringResource(R.string.show_vinyl_thumbnail_animation),
+                        text = "",
+                        isChecked = showVinylThumbnailAnimation,
+                        onCheckedChange = { showVinylThumbnailAnimation = it },
+                        Modifier.padding(start = 25.dp)
+                    )
+
                 if (playerType == PlayerType.Modern) {
                     if (searchInput.isBlank() || stringResource(R.string.fadingedge).contains(
                             searchInput,
@@ -651,6 +669,7 @@ fun AppearanceSettings(
                         )
                 }
                 if (playerType == PlayerType.Essential) {
+
                     if (searchInput.isBlank() || stringResource(R.string.thumbnailpause).contains(
                             searchInput,
                             true
@@ -1562,20 +1581,6 @@ fun AppearanceSettings(
                     )
             }
 
-            if (showNextSongsInPlayer) {
-                if (searchInput.isBlank() || stringResource(R.string.miniqueue).contains(
-                        searchInput,
-                        true
-                    )
-                )
-                    SwitchSettingEntry(
-                        title = stringResource(R.string.miniqueue),
-                        text = "",
-                        isChecked = miniQueueExpanded,
-                        onCheckedChange = { miniQueueExpanded = it }
-                    )
-            }
-
             if (
                 showButtonPlayerDownload ||
                 showButtonPlayerAddToPlaylist ||
@@ -1599,11 +1604,29 @@ fun AppearanceSettings(
                         title = stringResource(R.string.actionbar),
                         text = "",
                         isChecked = actionExpanded,
-                        onCheckedChange = { actionExpanded = it }
+                        onCheckedChange = {
+                            actionExpanded = it
+                        }
+                    )
+            }
+            if (showNextSongsInPlayer && actionExpanded) {
+                if (searchInput.isBlank() || stringResource(R.string.miniqueue).contains(
+                        searchInput,
+                        true
+                    )
+                )
+                    SwitchSettingEntry(
+                        title = stringResource(R.string.miniqueue),
+                        text = "",
+                        isChecked = miniQueueExpanded,
+                        onCheckedChange = { miniQueueExpanded = it }
                     )
             }
 
         }
+
+        /*
+        TODO add settings for buttons in the background player
         SettingsGroupSpacer()
         SettingsEntryGroupText(title = stringResource(R.string.background_player))
 
@@ -1616,9 +1639,12 @@ fun AppearanceSettings(
                 title = stringResource(R.string.show_favorite_button),
                 text = stringResource(R.string.show_favorite_button_in_lock_screen_and_notification_area),
                 isChecked = showLikeButtonBackgroundPlayer,
-                onCheckedChange = { showLikeButtonBackgroundPlayer = it }
+                onCheckedChange = {
+                    showLikeButtonBackgroundPlayer = it
+                    restartService = true
+                }
             )
-            ImportantSettingsDescription(text = stringResource(R.string.restarting_rimusic_is_required))
+            RestartPlayerService(restartService, onRestart = { restartService = false } )
         }
         if (searchInput.isBlank() || stringResource(R.string.show_download_button).contains(
                 searchInput,
@@ -1629,15 +1655,18 @@ fun AppearanceSettings(
                 title = stringResource(R.string.show_download_button),
                 text = stringResource(R.string.show_download_button_in_lock_screen_and_notification_area),
                 isChecked = showDownloadButtonBackgroundPlayer,
-                onCheckedChange = { showDownloadButtonBackgroundPlayer = it }
+                onCheckedChange = {
+                    showDownloadButtonBackgroundPlayer = it
+                    restartService = true
+                }
             )
 
-            ImportantSettingsDescription(text = stringResource(R.string.restarting_rimusic_is_required))
+            RestartPlayerService(restartService, onRestart = { restartService = false } )
         }
 
         //SettingsGroupSpacer()
         //SettingsEntryGroupText(title = stringResource(R.string.text))
-
+        */
 
         if (searchInput.isBlank() || stringResource(R.string.show_song_cover).contains(
                 searchInput,

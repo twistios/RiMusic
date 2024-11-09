@@ -678,7 +678,7 @@ fun AlbumSongs(
                         }
                     }
                         itemsIndexed(
-                            items = songs,
+                            items = songs.distinctBy { it.id },
                             key = { _, song -> song.id }
                         ) { index, song ->
                             val isLocal by remember { derivedStateOf { song.asMediaItem.isLocal } }

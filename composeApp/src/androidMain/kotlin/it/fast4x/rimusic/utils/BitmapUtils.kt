@@ -13,3 +13,4 @@ suspend fun getBitmapFromUrl(context: Context, url: String): Bitmap {
     val result = (loading.execute(request) as SuccessResult).drawable
     return (result as BitmapDrawable).bitmap
 }
+

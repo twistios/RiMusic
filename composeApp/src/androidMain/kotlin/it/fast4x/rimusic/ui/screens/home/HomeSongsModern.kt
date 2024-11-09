@@ -19,6 +19,7 @@ import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -218,6 +219,7 @@ fun HomeSongsModern(
     )
     var topPlaylistPeriod by rememberPreference(topPlaylistPeriodKey, TopPlaylistPeriod.PastWeek)
 
+
     var scrollToNowPlaying by remember {
         mutableStateOf(false)
     }
@@ -225,6 +227,7 @@ fun HomeSongsModern(
     var nowPlayingItem by remember {
         mutableStateOf(-1)
     }
+
 
     /************ OnDeviceDev */
     val permission = if (Build.VERSION.SDK_INT >= 33) Manifest.permission.READ_MEDIA_AUDIO
@@ -756,8 +759,6 @@ fun HomeSongsModern(
 
                 search.ToolBarButton()
 
-                /*
-                // TODO: Move to three dots menu
                 TabToolBar.Icon(
                     iconId = R.drawable.locate,
                     tint = if (songs.isNotEmpty()) colorPalette().text else colorPalette().textDisabled,
@@ -782,18 +783,18 @@ fun HomeSongsModern(
                     }
                 )
 
+
                 LaunchedEffect(scrollToNowPlaying) {
                     if (scrollToNowPlaying)
                         lazyListState.scrollToItem(nowPlayingItem, 1)
                     scrollToNowPlaying = false
                 }
-                */
 
-                //if (builtInPlaylist == BuiltInPlaylist.Favorites)
-                    downloadAllDialog.ToolBarButton()
 
-                //if (builtInPlaylist == BuiltInPlaylist.Favorites || builtInPlaylist == BuiltInPlaylist.Downloaded)
-                    deleteDownloadsDialog.ToolBarButton()
+
+                downloadAllDialog.ToolBarButton()
+
+                deleteDownloadsDialog.ToolBarButton()
 
                 if (builtInPlaylist == BuiltInPlaylist.All)
                     TabToolBar.Toggleable(
@@ -821,8 +822,7 @@ fun HomeSongsModern(
                         // TODO: Add string to language pack
                         onLongClick = { SmartMessage( "Random sorting", context = context) }
                     )
-                else
-                    import.ToolBarButton()
+
 
                 TabToolBar.Icon( R.drawable.ellipsis_horizontal ) {
                     menuState.display {
@@ -917,6 +917,7 @@ fun HomeSongsModern(
                                 }
                             },
                             onExport = { exportToggleState.value = true },
+                            onImportFavorites = { import.onShortClick() },
                             disableScrollingText = disableScrollingText
                         )
                     }
@@ -947,6 +948,7 @@ fun HomeSongsModern(
 
             LazyColumn(
                 state = lazyListState,
+                contentPadding = PaddingValues( bottom = Dimensions.bottomSpacer )
             ) {
                 if (builtInPlaylist == BuiltInPlaylist.OnDevice) {
                     if (!hasPermission) {
@@ -1357,9 +1359,6 @@ fun HomeSongsModern(
                     }
                 }
 
-                item(key = "bottom") {
-                    Spacer(modifier = Modifier.height(Dimensions.bottomSpacer))
-                }
             }
         }
 

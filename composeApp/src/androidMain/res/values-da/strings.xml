@@ -684,7 +684,7 @@
     <string name="noblur">Ingen Sløring, når Sangtekster er Deaktiveret</string>
     <string name="fadingedge">Falmende Kant</string>
     <string name="carousel">Karruselvisning</string>
-    <string name="carouselsize">Thumbnail Size in Expanded Mode</string>
+    <string name="carouselsize">Miniaturestørrelse i udvidet tilstand</string>
     <string name="addednext">Afspilles som næste</string>
     <string name="info_paused_with_volume_zero">Pauseret ved nul lydstyrke</string>
     <string name="effect_fade_audio">Udton lyd</string>
@@ -744,13 +744,13 @@
     <string name="settings_restore_default_settings">Gendan standardindstillinger</string>
     <string name="piped_custom_instance">Brugerdefineret Piped-instans</string>
     <string name="create_new_playlist">Opret ny playliste</string>
-    <string name="settings_loudness_base_gain">Loudness base gain</string>
-    <string name="settings_target_gain_loudness_info">Target gain for the loudness normalization</string>
+    <string name="settings_loudness_base_gain">Basisforstærkning for lydstyrke</string>
+    <string name="settings_target_gain_loudness_info">Målforstærkning for lydstyrkenormalisering</string>
     <string name="error_media_cannot_be_played">Medie kan ikke afspilles</string>
-    <string name="full_screen_lyrics_components">Full Screen Lyrics Components</string>
+    <string name="full_screen_lyrics_components">Sangtekstkomponenter i fuld skærm</string>
     <string name="titleartist">Titel og Kunstnere</string>
     <string name="miniqueue">Mini-kø</string>
-    <string name="controls">Controls</string>
+    <string name="controls">Kontrolelementer</string>
     <string name="add_to_favorites">Føj til favoritter</string>
     <string name="import_favorites">Importér favoritter</string>
     <string name="skip_media_on_error">Spring automatisk over ved fejl</string>
@@ -759,8 +759,14 @@
     <string name="login_required_to_play_this_media">Login kræves for at afspille dette medie</string>
     <string name="skip_media_on_notavailable_message">Forrige medie er ikke tilgængeligt; sprang over til næste</string>
     <string name="search_results_for">Søgeresultater for:</string>
-    <string name="statsfornerds">Stats for Nerds</string>
-    <string name="actionbar">Action Bar</string>
-    <string name="center">Center</string>
-    <string name="lyricsalignment">Lyrics Alignment</string>
+    <string name="statsfornerds">Statistik for nørder</string>
+    <string name="actionbar">Handlingslinje</string>
+    <string name="center">Midten</string>
+    <string name="lyricsalignment">Justering af sangtekster</string>
+    <string name="lang_azerbaijani">Azerbaijani</string>
+    <string name="translators">Translators</string>
+    <string name="lang_tamil">Tamil</string>
+    <string name="player_auto_load_songs_in_queue">Auto load songs in queue</string>
+    <string name="player_auto_load_songs_in_queue_description">Adds songs when the queue is about to end</string>
+    <string name="show_vinyl_thumbnail_animation">Show Vinyl animation as thumbnail</string>
 </resources>

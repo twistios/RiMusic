@@ -17,7 +17,7 @@ import androidx.compose.ui.Modifier
 import androidx.media3.common.util.UnstableApi
 import it.fast4x.rimusic.enums.PlayerControlsType
 import it.fast4x.rimusic.enums.PlayerPlayButtonType
-import it.fast4x.rimusic.service.PlayerService
+import it.fast4x.rimusic.service.modern.PlayerServiceModern
 import it.fast4x.rimusic.ui.components.themed.PlaybackParamsDialog
 import it.fast4x.rimusic.ui.screens.player.components.controls.ControlsEssential
 import it.fast4x.rimusic.ui.screens.player.components.controls.ControlsModern
@@ -26,7 +26,7 @@ import kotlin.math.roundToInt
 @OptIn(UnstableApi::class)
 @Composable
 fun GetControls(
-    binder: PlayerService.Binder,
+    binder: PlayerServiceModern.Binder,
     position: Long,
     shouldBePlaying: Boolean,
     likedAt: Long?,

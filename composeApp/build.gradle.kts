@@ -10,6 +10,7 @@ plugins {
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.jetbrainsCompose)
     alias(libs.plugins.room)
+    alias(libs.plugins.hilt)
     //alias(libs.plugins.conveyor)
 }
 
@@ -68,6 +69,8 @@ kotlin {
 
         androidMain.dependencies {
             implementation(libs.navigation)
+            implementation(libs.media3.session)
+            implementation(libs.kotlin.coroutines.guava)
         }
         commonMain.dependencies {
             implementation(compose.runtime)
@@ -119,8 +122,8 @@ android {
         applicationId = "it.fast4x.rimusic"
         minSdk = 21
         targetSdk = 35
-        versionCode = 66
-        versionName = "0.6.58.1"
+        versionCode = 67
+        versionName = "0.6.59"
     }
 
     splits {
@@ -308,10 +311,9 @@ dependencies {
     implementation(libs.material3)
     implementation(libs.compose.ui.graphics.android)
     implementation(libs.constraintlayout)
-    implementation(libs.runtime.livedata)
+    implementation(libs.compose.runtime.livedata)
     implementation(libs.core.ktx)
     implementation(libs.compose.animation)
-    //implementation(libs.translator)
     implementation(libs.kotlin.csv)
     implementation(libs.monetcompat)
     implementation(libs.androidmaterial)
@@ -328,6 +330,9 @@ dependencies {
 
     implementation(libs.room)
     ksp(libs.room.compiler)
+
+    implementation(libs.hilt)
+    ksp(libs.hilt.compiler)
 
     implementation(projects.innertube)
     implementation(projects.kugou)

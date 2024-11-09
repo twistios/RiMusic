@@ -170,11 +170,8 @@ fun QuickPicksModern(
 
     var chartsPage by persist<Result<Innertube.ChartsPage>?>("home/chartsPage")
 
-    //var discoverPageAlbums by persist<Result<Innertube.DiscoverPageAlbums>>("home/discoveryAlbums")
-
     var preferitesArtists by persistList<Artist>("home/artists")
 
-    //val localMonthlyPlaylists = monthlyPLaylists()
     var localMonthlyPlaylists by persistList<PlaylistPreview>("home/monthlyPlaylists")
     LaunchedEffect(Unit) {
         Database.monthlyPlaylistsPreview("").collect{ localMonthlyPlaylists = it }

@@ -11,7 +11,7 @@ data class PlayerResponse(
 ): MediaFormatContainer<PlayerResponse.AudioStream> {
 
     override val formats: SortedSet<AudioStream> =
-        sortedSetOf<AudioStream>().apply { addAll( audioStreams ) }
+        sortedSetOf<AudioStream>().apply { addAll( audioStreams.filter { it.mimeType.contains("audio") } ) }
 
     @Serializable
     data class AudioStream(

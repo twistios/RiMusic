@@ -7,6 +7,7 @@ import android.content.Intent
 import android.content.ServiceConnection
 import android.content.SharedPreferences
 import android.graphics.Bitmap
+import android.graphics.drawable.BitmapDrawable
 import android.hardware.Sensor
 import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
@@ -71,6 +72,7 @@ import androidx.compose.ui.text.ExperimentalTextApi
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.coerceIn
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
 import androidx.core.net.toUri
 import androidx.core.os.LocaleListCompat
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
@@ -82,6 +84,9 @@ import androidx.media3.common.Player
 import androidx.media3.common.util.Log
 import androidx.media3.common.util.UnstableApi
 import androidx.navigation.compose.rememberNavController
+import androidx.palette.graphics.Palette
+import coil.imageLoader
+import coil.request.ImageRequest
 import com.kieronquinn.monetcompat.core.MonetActivityAccessException
 import com.kieronquinn.monetcompat.core.MonetCompat
 import com.kieronquinn.monetcompat.interfaces.MonetColorsChangedListener
@@ -106,10 +111,11 @@ import it.fast4x.rimusic.enums.FontType
 import it.fast4x.rimusic.enums.HomeScreenTabs
 import it.fast4x.rimusic.enums.Languages
 import it.fast4x.rimusic.enums.NavRoutes
+import it.fast4x.rimusic.enums.PlayerBackgroundColors
 import it.fast4x.rimusic.enums.PopupType
 import it.fast4x.rimusic.enums.ThumbnailRoundness
 import it.fast4x.rimusic.service.MyDownloadHelper
-import it.fast4x.rimusic.service.PlayerService
+import it.fast4x.rimusic.service.modern.PlayerServiceModern
 import it.fast4x.rimusic.ui.components.CustomModalBottomSheet
 import it.fast4x.rimusic.ui.components.LocalMenuState
 import it.fast4x.rimusic.ui.components.themed.SmartMessage
@@ -119,8 +125,11 @@ import it.fast4x.rimusic.ui.screens.player.Player
 import it.fast4x.rimusic.ui.screens.player.components.YoutubePlayer
 import it.fast4x.rimusic.ui.screens.player.rememberPlayerSheetState
 import it.fast4x.rimusic.ui.styling.Appearance
+import it.fast4x.rimusic.ui.styling.ColorPalette
+import it.fast4x.rimusic.ui.styling.DefaultDarkColorPalette
 import it.fast4x.rimusic.ui.styling.Dimensions
 import it.fast4x.rimusic.ui.styling.LocalAppearance
+import it.fast4x.rimusic.ui.styling.applyPitchBlack
 import it.fast4x.rimusic.ui.styling.colorPaletteOf
 import it.fast4x.rimusic.ui.styling.customColorPalette
 import it.fast4x.rimusic.ui.styling.dynamicColorPaletteOf
@@ -217,7 +226,6 @@ import okhttp3.Response
 import timber.log.Timber
 import java.io.File
 import java.net.Proxy
-import java.net.UnknownHostException
 import java.util.Locale
 import java.util.Objects
 import kotlin.math.sqrt
@@ -238,7 +246,7 @@ class MainActivity :
 
     private val serviceConnection = object : ServiceConnection {
         override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
-            if (service is PlayerService.Binder) {
+            if (service is PlayerServiceModern.Binder) {
                 this@MainActivity.binder = service
             }
         }
@@ -249,7 +257,7 @@ class MainActivity :
 
     }
 
-    private var binder by mutableStateOf<PlayerService.Binder?>(null)
+    private var binder by mutableStateOf<PlayerServiceModern.Binder?>(null)
     private var intentUriData by mutableStateOf<Uri?>(null)
 
     //override lateinit var persistMap: PersistMap
@@ -268,7 +276,7 @@ class MainActivity :
         super.onStart()
 
         runCatching {
-            bindService(intent<PlayerService>(), serviceConnection, Context.BIND_AUTO_CREATE)
+            bindService(intent<PlayerServiceModern>(), serviceConnection, Context.BIND_AUTO_CREATE)
         }.onFailure {
             Timber.e("MainActivity.onStart bindService ${it.stackTraceToString()}")
         }
@@ -282,9 +290,6 @@ class MainActivity :
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         MonetCompat.enablePaletteCompat()
-
-        //@Suppress("DEPRECATION", "UNCHECKED_CAST")
-        //persistMap = lastCustomNonConfigurationInstance as? PersistMap ?: PersistMap()
 
         WindowCompat.setDecorFitsSystemWindows(window, false)
 
@@ -325,9 +330,8 @@ class MainActivity :
             try {
                 Piped.fetchInstances()
                 Invidious.fetchInstances()
-            } catch ( _: UnknownHostException ) {
-                // Probably because there's no internet connection
-                // See report #4328
+            } catch( e: Exception ) {
+                Timber.e( e, "MainActivity Error fetching Piped & Invidious instances" )
             }
         }
     }
@@ -426,6 +430,7 @@ class MainActivity :
             var showPlayer by rememberSaveable { mutableStateOf(false) }
             var switchToAudioPlayer by rememberSaveable { mutableStateOf(false) }
 
+
             LocalePreferences.preference =
                 LocalePreferenceItem(
                     hl = Locale.getDefault().toLanguageTag(),
@@ -471,8 +476,7 @@ class MainActivity :
                     if (colorPaletteName == ColorPaletteName.MaterialYou) {
                         colorPalette = dynamicColorPaletteOf(
                             Color(monet.getAccentColor(this@MainActivity)),
-                            colorPaletteMode == ColorPaletteMode.Dark || (colorPaletteMode == ColorPaletteMode.System && isSystemInDarkTheme),
-                            colorPaletteMode == ColorPaletteMode.PitchBlack
+                            colorPaletteMode == ColorPaletteMode.Dark || (colorPaletteMode == ColorPaletteMode.System && isSystemInDarkTheme)
                         )
                     }
 
@@ -496,9 +500,53 @@ class MainActivity :
 
             }
 
+            fun setDynamicPalette(url: String) {
+                val playerBackgroundColors = preferences.getEnum(playerBackgroundColorsKey, PlayerBackgroundColors.BlurredCoverColor)
+                val colorPaletteName = preferences.getEnum(colorPaletteNameKey, ColorPaletteName.Dynamic)
+                val isDynamicPalette = colorPaletteName == ColorPaletteName.Dynamic
+                val isCoverColor = playerBackgroundColors == PlayerBackgroundColors.CoverColorGradient ||
+                        playerBackgroundColors == PlayerBackgroundColors.CoverColor ||
+                        playerBackgroundColors == PlayerBackgroundColors.FluidCoverColorGradient
+
+                if (!isDynamicPalette && !isCoverColor) return
+
+                val colorPaletteMode = preferences.getEnum(colorPaletteModeKey, ColorPaletteMode.Dark)
+                coroutineScope.launch(Dispatchers.Main) {
+                    val result = imageLoader.execute(
+                        ImageRequest.Builder(this@MainActivity)
+                            .data(url)
+                            .allowHardware(false)
+                            .build()
+                    )
+                    val bitmap = (result.drawable as? BitmapDrawable)?.bitmap
+                    if (bitmap != null) {
+                        val palette = Palette
+                            .from(bitmap)
+                            .maximumColorCount(8)
+                            //.addFilter(if (isDark || isPitchBlack) ({ _, hsl -> hsl[0] !in 36f..100f }) else null)
+                            .generate()
+                        println("Mainactivity onmediaItemTransition palette dominantSwatch: ${palette.dominantSwatch}")
+                        val isDark =
+                            colorPaletteMode == ColorPaletteMode.Dark || (colorPaletteMode == ColorPaletteMode.System && isSystemInDarkTheme)
+                        val isPicthBlack = colorPaletteMode == ColorPaletteMode.PitchBlack
+                        dynamicColorPaletteOf(bitmap, isDark)?.let {
+                            withContext(Dispatchers.Main) {
+                                setSystemBarAppearance(it.isDark)
+                            }
+                            appearance = appearance.copy(
+                                colorPalette = it,
+                                typography = appearance.typography.copy(it.text)
+                            )
+                            println("Mainactivity onmediaItemTransition appearance inside: ${appearance.colorPalette}")
+                        }
+                    }
+                }
+                println("Mainactivity onmediaItemTransition appearance outside: ${appearance.colorPalette}")
+            }
 
 
             DisposableEffect(binder, isSystemInDarkTheme) {
+                /*
                 var bitmapListenerJob: Job? = null
 
                 fun setDynamicPalette(colorPaletteMode: ColorPaletteMode) {
@@ -538,6 +586,7 @@ class MainActivity :
                         }
                     }
                 }
+                */
 
                 val listener =
                     SharedPreferences.OnSharedPreferenceChangeListener { sharedPreferences, key ->
@@ -574,10 +623,10 @@ class MainActivity :
                             transitionEffectKey,
                             playerBackgroundColorsKey,
                             miniPlayerTypeKey,
-                            thumbnailRoundnessKey,
                             restartActivityKey
                             -> {
                                 this@MainActivity.recreate()
+                                println("MainActivity.recreate()")
                             }
 
                             colorPaletteNameKey, colorPaletteModeKey,
@@ -614,23 +663,37 @@ class MainActivity :
                                         ColorPaletteMode.System
                                     )
 
-                                if (colorPaletteName == ColorPaletteName.Dynamic) {
-                                    setDynamicPalette(colorPaletteMode)
-                                } else {
-                                    bitmapListenerJob?.cancel()
-                                    binder?.setBitmapListener(null)
+                                var colorPalette = colorPaletteOf(
+                                    colorPaletteName,
+                                    colorPaletteMode,
+                                    isSystemInDarkTheme
+                                )
 
-                                    var colorPalette = colorPaletteOf(
-                                        colorPaletteName,
-                                        colorPaletteMode,
-                                        isSystemInDarkTheme
-                                    )
+                                if (colorPaletteName == ColorPaletteName.Dynamic) {
+                                    val artworkUri = (binder?.player?.currentMediaItem?.mediaMetadata?.artworkUri ?: "").toString()
+                                    artworkUri.let {
+                                        if (it.isNotEmpty())
+                                            setDynamicPalette(it)
+                                        else {
+
+                                            setSystemBarAppearance(colorPalette.isDark)
+
+                                            appearance = appearance.copy(
+                                                colorPalette = colorPalette,
+                                                typography = appearance.typography.copy(colorPalette.text),
+                                            )
+                                        }
+
+                                    }
+
+                                } else {
+                                    //bitmapListenerJob?.cancel()
+                                    //binder?.setBitmapListener(null)
 
                                     if (colorPaletteName == ColorPaletteName.MaterialYou) {
                                         colorPalette = dynamicColorPaletteOf(
                                             Color(monet.getAccentColor(this@MainActivity)),
-                                            colorPaletteMode == ColorPaletteMode.Dark || (colorPaletteMode == ColorPaletteMode.System && isSystemInDarkTheme),
-                                            colorPaletteMode == ColorPaletteMode.PitchBlack
+                                            colorPaletteMode == ColorPaletteMode.Dark || (colorPaletteMode == ColorPaletteMode.System && isSystemInDarkTheme)
                                         )
                                     }
 
@@ -682,12 +745,13 @@ class MainActivity :
                     val colorPaletteName =
                         getEnum(colorPaletteNameKey, ColorPaletteName.Dynamic)
                     if (colorPaletteName == ColorPaletteName.Dynamic) {
-                        setDynamicPalette(getEnum(colorPaletteModeKey, ColorPaletteMode.Dark))
+                        setDynamicPalette(
+                            (binder?.player?.currentMediaItem?.mediaMetadata?.artworkUri ?: "").toString())
                     }
 
                     onDispose {
-                        bitmapListenerJob?.cancel()
-                        binder?.setBitmapListener(null)
+                        //bitmapListenerJob?.cancel()
+                        //binder?.setBitmapListener(null)
                         unregisterOnSharedPreferenceChangeListener(listener)
                     }
                 }
@@ -725,6 +789,17 @@ class MainActivity :
                     )
                 }
             }
+
+
+            val colorPaletteMode =
+                preferences.getEnum(colorPaletteModeKey, ColorPaletteMode.PitchBlack)
+            if (colorPaletteMode == ColorPaletteMode.PitchBlack)
+                appearance = appearance.copy(
+                    colorPalette = appearance.colorPalette.applyPitchBlack
+                )
+
+
+
 
             BoxWithConstraints(
                 modifier = Modifier
@@ -931,7 +1006,49 @@ class MainActivity :
                                     else showPlayer = true
                                 }
                             }
+
+                            setDynamicPalette(mediaItem?.mediaMetadata?.artworkUri.toString())
+                            /**** NEW CODE ******/
+                            /*
+                            if (mediaItem != null) {
+                                coroutineScope.launch(Dispatchers.Main) {
+                                    val result = imageLoader.execute(
+                                        ImageRequest.Builder(this@MainActivity)
+                                            .data(mediaItem.mediaMetadata.artworkUri)
+                                            .allowHardware(false)
+                                            .build()
+                                    )
+                                    val bitmap = (result.drawable as? BitmapDrawable)?.bitmap
+                                    if (bitmap != null) {
+                                        val palette = Palette
+                                            .from(bitmap)
+                                            .maximumColorCount(8)
+                                            //.addFilter(if (isDark || isPitchBlack) ({ _, hsl -> hsl[0] !in 36f..100f }) else null)
+                                            .generate()
+                                        println("Mainactivity onmediaItemTRansition palette dominantSwatch: ${palette.dominantSwatch}")
+                                        val isDark =
+                                            colorPaletteMode == ColorPaletteMode.Dark || (colorPaletteMode == ColorPaletteMode.System && isSystemInDarkTheme)
+                                        val isPicthBlack = colorPaletteMode == ColorPaletteMode.PitchBlack
+                                        dynamicColorPaletteOf(bitmap, isDark, isPicthBlack)?.let {
+                                            withContext(Dispatchers.Main) {
+                                                setSystemBarAppearance(it.isDark)
+                                            }
+                                            appearance = appearance.copy(
+                                                colorPalette = it,
+                                                typography = appearance.typography.copy(it.text)
+                                            )
+                                            println("Mainactivity onmediaItemTRansition appearance inside: ${appearance.colorPalette}")
+                                        }
+                                    }
+                                }
+                                println("Mainactivity onmediaItemTRansition appearance outside: ${appearance.colorPalette}")
+                            }
+                             */
+                            /*********/
                         }
+
+
+
                     }
 
                     player.addListener(listener)
@@ -1140,7 +1257,7 @@ class MainActivity :
 
 }
 
-val LocalPlayerServiceBinder = staticCompositionLocalOf<PlayerService.Binder?> { null }
+val LocalPlayerServiceBinder = staticCompositionLocalOf<PlayerServiceModern.Binder?> { null }
 
 val LocalPlayerAwareWindowInsets = staticCompositionLocalOf<WindowInsets> { TODO() }
 

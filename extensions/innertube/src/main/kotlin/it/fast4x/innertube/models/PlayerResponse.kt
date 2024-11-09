@@ -41,7 +41,7 @@ data class PlayerResponse(
     ): MediaFormatContainer<StreamingData.AdaptiveFormat> {
 
         override val formats: SortedSet<AdaptiveFormat> =
-            sortedSetOf<AdaptiveFormat>().apply { addAll( adaptiveFormats ) }
+            sortedSetOf<AdaptiveFormat>().apply { addAll( adaptiveFormats.filter { it.isAudio } ) }
 
         @Serializable
         data class AdaptiveFormat(

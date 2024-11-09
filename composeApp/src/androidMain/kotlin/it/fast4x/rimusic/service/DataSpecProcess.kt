@@ -35,6 +35,21 @@ private suspend fun getPipedFormatUrl(
                 AudioQualityFormat.High -> it?.highestQualityFormat
                 AudioQualityFormat.Medium -> it?.mediumQualityFormat
                 AudioQualityFormat.Low -> it?.lowestQualityFormat
+            }.also {
+                //println("PlayerService MyDownloadHelper DataSpecProcess getPipedFormatUrl before upsert format $it")
+                query {
+                    if (Database.songExist(videoId) > 0)
+                        Database.upsert(
+                            Format(
+                                songId = videoId,
+                                itag = it?.itag?.toInt(),
+                                mimeType = it?.mimeType,
+                                contentLength = it?.contentLength?.toLong(),
+                                bitrate = it?.bitrate?.toLong()
+                            )
+                        )
+                }
+                //println("PlayerService MyDownloadHelper DataSpecProcess getPipedFormatUrl after upsert format $it")
             }
         },
         {
@@ -58,6 +73,20 @@ private suspend fun getInvidiousFormatUrl(
                 AudioQualityFormat.High -> it?.highestQualityFormat
                 AudioQualityFormat.Medium -> it?.mediumQualityFormat
                 AudioQualityFormat.Low -> it?.lowestQualityFormat
+            }.also {
+                //println("PlayerService MyDownloadHelper DataSpecProcess getInvidiousFormatUrl before upsert format $it")
+                query {
+                    if (Database.songExist(videoId) > 0)
+                        Database.upsert(
+                            Format(
+                                songId = videoId,
+                                itag = it?.itag?.toInt(),
+                                mimeType = it?.mimeType,
+                                bitrate = it?.bitrate?.toLong()
+                            )
+                        )
+                }
+                //println("PlayerService MyDownloadHelper DataSpecProcess getInvidiousFormatUrl after upsert format $it")
             }
         },
         {

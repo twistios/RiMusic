@@ -1614,7 +1614,7 @@ class PlayerService : InvincibleService(),
             .setCategory(NotificationCompat.CATEGORY_TRANSPORT)
             .setStyle(
                 androidx.media.app.NotificationCompat.MediaStyle()
-                    .setShowActionsInCompactView(0, 1, 2)
+                    //.setShowActionsInCompactView(0, 1, 2)
                     .setMediaSession(mediaSession.sessionToken)
             )
             .addAction(R.drawable.play_skip_back, "Skip back", prevIntent)
@@ -2105,7 +2105,7 @@ class PlayerService : InvincibleService(),
         override fun onSkipToNext() = runCatching(player::playNext).let { }
         override fun onSeekTo(pos: Long) = player.seekTo(pos)
         //override fun onStop() = player.pause()
-        override fun onStop() = binder.callPause({} )
+        override fun onStop() = binder.callPause({})
         override fun onRewind() = runCatching {player.seekToDefaultPosition()}.let { }
         override fun onSkipToQueueItem(id: Long) =
             runCatching { player.seekToDefaultPosition(id.toInt()) }.let { }
@@ -2137,12 +2137,38 @@ class PlayerService : InvincibleService(),
             updatePlaybackState()
         }
 
+        /* MIGRATE TO NEW SERVICE */
         override fun onPlayFromSearch(query: String?, extras: Bundle?) {
             if (query.isNullOrBlank()) return
             binder.playFromSearch(query)
         }
 
+        /* MIGRATE TO NEW SERVICE */
+        override fun onMediaButtonEvent(mediaButtonIntent: Intent): Boolean {
+            if (Intent.ACTION_MEDIA_BUTTON == mediaButtonIntent.action) {
+                val event = mediaButtonIntent.getParcelableExtra<KeyEvent>(Intent.EXTRA_KEY_EVENT)
 
+                event?.let {
+                    when (it.keyCode) {
+                        KeyEvent.KEYCODE_MEDIA_PLAY -> player.play()
+                        KeyEvent.KEYCODE_MEDIA_PAUSE -> binder.callPause({})
+                        KeyEvent.KEYCODE_MEDIA_NEXT -> runCatching(player::playNext).let { }
+                        KeyEvent.KEYCODE_MEDIA_PREVIOUS -> runCatching(player::playPrevious).let { }
+                        KeyEvent.KEYCODE_MEDIA_STOP -> binder.callPause({})
+                        KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE -> {
+                            if (player.isPlaying)
+                                binder.callPause({})
+                            else player.play()
+                        }
+                        else -> {}
+                    }
+                }
+            }
+
+            return true
+        }
+
+        /*
         override fun onMediaButtonEvent(mediaButtonEvent: Intent?): Boolean {
             mediaButtonEvent?.let {
                 if (it.action == Intent.ACTION_MEDIA_BUTTON) {
@@ -2183,7 +2209,7 @@ class PlayerService : InvincibleService(),
             //return super.onMediaButtonEvent(mediaButtonEvent)
             return false
         }
-
+        */
 
     }
 
@@ -2210,7 +2236,6 @@ class PlayerService : InvincibleService(),
         // Prior Android 11
         override fun onReceive(context: Context, intent: Intent) {
             when (intent.action) {
-                //Action.pause.value -> player.pause()
                 Action.pause.value -> binder.callPause({ player.pause() } )
                 Action.play.value -> player.play()
                 Action.next.value -> player.playNext()
@@ -2244,6 +2269,7 @@ class PlayerService : InvincibleService(),
     }
 
 
+    /* MIGRATE TO NEW SERVICE */
     class NotificationDismissReceiver : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
             kotlin.runCatching {

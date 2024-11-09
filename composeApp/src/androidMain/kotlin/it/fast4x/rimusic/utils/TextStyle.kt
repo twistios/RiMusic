@@ -29,6 +29,12 @@ inline val TextStyle.bold: TextStyle
 inline val TextStyle.center: TextStyle
     get() = align(TextAlign.Center)
 
+inline val TextStyle.left: TextStyle
+    get() = align(TextAlign.Start)
+
+inline val TextStyle.right: TextStyle
+    get() = align(TextAlign.End)
+
 inline val TextStyle.secondary: TextStyle
     @Composable
     @ReadOnlyComposable

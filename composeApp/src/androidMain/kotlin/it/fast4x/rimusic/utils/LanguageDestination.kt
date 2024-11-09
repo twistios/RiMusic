@@ -20,6 +20,7 @@ fun languageDestination (
     return when (language ?: otherLanguageApp) {
         Languages.Afrikaans -> Language.AFRIKAANS
         Languages.Arabic -> Language.ARABIC
+        Languages.Azerbaijani -> Language.AZERBAIJANI
         Languages.Bashkir -> Language.BASQUE
         Languages.Bengali -> Language.BENGALI
         Languages.Catalan -> Language.CATALAN
@@ -49,7 +50,7 @@ fun languageDestination (
         Languages.Malayalam -> Language.MALAYALAM
         Languages.Norwegian -> Language.NORWEGIAN
         Languages.Odia -> Language.ODIA
-        Languages.Persian -> Language.PERSIAN
+        //Languages.Persian -> Language.PERSIAN
         Languages.Polish -> Language.POLISH
         Languages.PortugueseBrazilian -> Language.PORTUGUESE
         Languages.Portuguese -> Language.PORTUGUESE
@@ -59,6 +60,7 @@ fun languageDestination (
         Languages.Sinhala -> Language.SINHALA
         Languages.Spanish -> Language.SPANISH
         Languages.Swedish -> Language.SWEDISH
+        Languages.Tamil -> Language.TAMIL
         Languages.Telugu -> Language.TELUGU
         Languages.Turkish -> Language.TURKISH
         Languages.Ukrainian -> Language.UKRAINIAN
@@ -79,6 +81,7 @@ fun languageDestinationName (
         Languages.System -> stringResource(R.string.system_language)
         Languages.Afrikaans -> stringResource(R.string.lang_afrikaans)
         Languages.Arabic -> stringResource(R.string.arabic)
+        Languages.Azerbaijani -> stringResource(R.string.lang_azerbaijani)
         Languages.Bashkir -> stringResource(R.string.bashkir)
         Languages.Bengali -> stringResource(R.string.lang_bengali)
         Languages.Catalan -> stringResource(R.string.catalan)
@@ -108,7 +111,7 @@ fun languageDestinationName (
         Languages.Malayalam -> stringResource(R.string.lang_malayalam)
         Languages.Norwegian -> stringResource(R.string.lang_norwegian)
         Languages.Odia -> stringResource(R.string.odia)
-        Languages.Persian -> stringResource(R.string.persian)
+        //Languages.Persian -> stringResource(R.string.persian)
         Languages.Polish -> stringResource(R.string.polish)
         Languages.PortugueseBrazilian -> stringResource(R.string.portuguese_brazilian)
         Languages.Portuguese -> stringResource(R.string.portuguese)
@@ -120,6 +123,7 @@ fun languageDestinationName (
         Languages.Sinhala -> stringResource(R.string.lang_sinhala)
         Languages.Spanish -> stringResource(R.string.spanish)
         Languages.Swedish -> stringResource(R.string.lang_swedish)
+        Languages.Tamil -> stringResource(R.string.lang_tamil)
         Languages.Telugu -> stringResource(R.string.lang_telugu)
         Languages.Turkish -> stringResource(R.string.turkish)
         Languages.Ukrainian -> stringResource(R.string.lang_ukrainian)

@@ -80,8 +80,8 @@ fun HomeScreen(
     val saveableStateHolder = rememberSaveableStateHolder()
 
     val preferences = LocalContext.current.preferences
-    val showSearchTab by rememberPreference(showSearchTabKey, false)
-    val showStatsInNavbar by rememberPreference(showStatsInNavbarKey, false)
+    //val showSearchTab by rememberPreference(showSearchTabKey, false)
+    //val showStatsInNavbar by rememberPreference(showStatsInNavbarKey, false)
     val enableQuickPicksPage by rememberPreference(enableQuickPicksPageKey, true)
 
     PersistMapCleanup("home/")

@@ -41,6 +41,7 @@ import it.fast4x.innertube.models.bodies.BrowseBody
 import it.fast4x.innertube.models.bodies.ContinuationBody
 import it.fast4x.innertube.requests.artistPage
 import it.fast4x.innertube.requests.itemsPage
+import it.fast4x.innertube.requests.playlistPage
 import it.fast4x.innertube.utils.from
 import it.fast4x.rimusic.Database
 import it.fast4x.rimusic.LocalPlayerServiceBinder
@@ -71,20 +72,25 @@ import it.fast4x.rimusic.ui.styling.Dimensions
 import it.fast4x.rimusic.ui.styling.px
 import it.fast4x.rimusic.utils.addNext
 import it.fast4x.rimusic.utils.asMediaItem
+import it.fast4x.rimusic.utils.completed
 import it.fast4x.rimusic.utils.disableScrollingTextKey
 import it.fast4x.rimusic.utils.downloadedStateMedia
 import it.fast4x.rimusic.utils.enqueue
+import it.fast4x.rimusic.utils.forcePlay
 import it.fast4x.rimusic.utils.forcePlayAtIndex
+import it.fast4x.rimusic.utils.forcePlayFromBeginning
 import it.fast4x.rimusic.utils.getDownloadState
 import it.fast4x.rimusic.utils.isDownloadedSong
 import it.fast4x.rimusic.utils.manageDownload
 import it.fast4x.rimusic.utils.parentalControlEnabledKey
 import it.fast4x.rimusic.utils.rememberPreference
 import it.fast4x.rimusic.utils.thumbnailRoundnessKey
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import me.knighthat.colorPalette
 
@@ -459,31 +465,26 @@ fun ArtistScreen(
                                 tag = "artist/$browseId/songs",
                                 headerContent = headerContent,
                                 itemsPageProvider = artistPage?.let {
-                                    ({ continuation ->
-                                        continuation?.let {
-                                            Innertube.itemsPage(
-                                                body = ContinuationBody(continuation = continuation),
-                                                fromMusicResponsiveListItemRenderer = Innertube.SongItem::from,
-                                            )
-                                        } ?: artistPage
+                                    {
+                                        artistPage
                                             ?.songsEndpoint
                                             ?.takeIf { it.browseId != null }
                                             ?.let { endpoint ->
                                                 Innertube.itemsPage(
                                                     body = BrowseBody(
                                                         browseId = endpoint.browseId!!,
-                                                        params = endpoint.params,
+                                                        params = endpoint.params
                                                     ),
                                                     fromMusicResponsiveListItemRenderer = Innertube.SongItem::from,
-                                                )
+                                                )?.completed()
                                             }
-                                        ?: Result.success(
+                                        ?: Result.success( // is this section ever reached now?
                                             Innertube.ItemsPage(
                                                 items = artistPage?.songs,
                                                 continuation = null
                                             )
                                         )
-                                    })
+                                    }
                                 },
                                 itemContent = { song ->
                                     if (parentalControlEnabled && song.explicit) return@ItemsPage
@@ -530,17 +531,46 @@ fun ArtistScreen(
                                                         )
                                                     },
                                                     onClick = {
+                                                        CoroutineScope(Dispatchers.IO).launch {
+                                                            artistPage
+                                                                ?.songsEndpoint
+                                                                ?.takeIf { it.browseId != null }
+                                                                ?.let { endpoint ->
+                                                                    Innertube.itemsPage(
+                                                                        body = BrowseBody(
+                                                                            browseId = endpoint.browseId!!,
+                                                                            params = endpoint.params,
+                                                                        ),
+                                                                        fromMusicResponsiveListItemRenderer = Innertube.SongItem::from,
+                                                                    )
+                                                                }
+                                                                ?.getOrNull()
+                                                                ?.items
+                                                                ?.map { it.asMediaItem }
+                                                                ?.let {
+                                                                    withContext(Dispatchers.Main) {
+                                                                        binder?.player?.forcePlayFromBeginning(
+                                                                            it
+                                                                        )
+                                                                    }
+                                                                }
+                                                        }
+                                                    /*
                                                         binder?.stopRadio()
                                                         binder?.player?.forcePlayAtIndex(
                                                             listMediaItems.distinct(),
                                                             listMediaItems.distinct()
                                                                 .indexOf(song.asMediaItem)
                                                         )
+
+                                                     */
+
                                                         /*
                                                     binder?.stopRadio()
                                                     binder?.player?.forcePlay(song.asMediaItem)
                                                     binder?.setupRadio(song.info?.endpoint)
-                                                     */
+                                                         */
+
                                                     }
                                                 ),
                                             disableScrollingText = disableScrollingText
