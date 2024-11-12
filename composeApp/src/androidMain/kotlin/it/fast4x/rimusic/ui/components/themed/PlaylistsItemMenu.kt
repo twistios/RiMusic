@@ -87,6 +87,8 @@ fun PlaylistsItemMenu(
     onExport: (() -> Unit)? = null,
     onImport: (() -> Unit)? = null,
     onImportFavorites: (() -> Unit)? = null,
+    onEditThumbnail: (() -> Unit)? = null,
+    onResetThumbnail: (() -> Unit)? = null,
     onGoToPlaylist: ((Long) -> Unit)? = null,
     disableScrollingText: Boolean
 ) {
@@ -125,6 +127,8 @@ fun PlaylistsItemMenu(
             onExport = onExport,
             onImport = onImport,
             onImportFavorites = onImportFavorites,
+            onEditThumbnail = onEditThumbnail,
+            onResetThumbnail = onResetThumbnail,
             onGoToPlaylist = onGoToPlaylist,
             disableScrollingText = disableScrollingText
         )
@@ -563,6 +567,28 @@ fun PlaylistsItemMenu(
                             onClick = {
                                 onDismiss()
                                 onImportFavorites()
+                            }
+                        )
+                    }
+
+                    onEditThumbnail?.let {
+                        MenuEntry(
+                            icon = R.drawable.image,
+                            text = stringResource(R.string.edit_thumbnail),
+                            onClick = {
+                                onDismiss()
+                                onEditThumbnail()
+                            }
+                        )
+                    }
+
+                    onResetThumbnail?.let {
+                        MenuEntry(
+                            icon = R.drawable.image,
+                            text = stringResource(R.string.reset_thumbnail),
+                            onClick = {
+                                onDismiss()
+                                onResetThumbnail()
                             }
                         )
                     }

@@ -57,6 +57,7 @@ import it.fast4x.rimusic.utils.secondary
 import it.fast4x.rimusic.utils.semiBold
 import me.knighthat.Skeleton
 import me.knighthat.colorPalette
+import me.knighthat.component.tab.toolbar.InputDialog
 import me.knighthat.typography
 
 @ExperimentalMaterialApi
@@ -483,17 +484,48 @@ fun SliderSettingsEntry(
     isEnabled: Boolean = true,
     usePadding: Boolean = true
 ) = Column(modifier = modifier) {
+    val context = LocalContext.current
+    val manualEnterToggleState = rememberSaveable { mutableStateOf(false) }
+    val manualEnterInput = remember { mutableStateOf("%.1f".format(state).replace(",", ".")) }
+
+    val manualEnterDialog = remember {
+        object: InputDialog {
+            override val context = context
+            override val toggleState = manualEnterToggleState
+            override val iconId = -1            // Unused
+            override val titleId = R.string.enter_the_value
+            override val messageId = -1         // Unused
+            override val valueState = manualEnterInput
+
+            override fun onSet(newValue: String) {
+                val value: Float? = newValue.toFloatOrNull()
+                if (value != null) {
+                    manualEnterInput.value = "%.1f".format(value).replace(",", ".")
+                    onSlide(value)
+                    onSlideComplete()
+                }
+                onDismiss()
+            }
+        }
+    }
+    manualEnterDialog.Render()
+
     SettingsEntry(
         title = title,
         text = "$text (${toDisplay(state)})",
-        onClick = {},
+        onClick = {
+            manualEnterDialog.toggleState.value = true
+        },
         isEnabled = isEnabled,
         //usePadding = usePadding
     )
 
     Slider(
         state = state,
-        setState = onSlide,
+        setState = { value: Float ->
+            manualEnterInput.value = "%.1f".format(value).replace(",", ".")
+            onSlide(value)
+        },
         onSlideComplete = onSlideComplete,
         range = range,
         steps = steps,

@@ -763,10 +763,19 @@
     <string name="actionbar">Barra Azioni</string>
     <string name="center">Centro</string>
     <string name="lyricsalignment">Allineamento Lyrics</string>
-    <string name="lang_azerbaijani">Azerbaijani</string>
-    <string name="translators">Translators</string>
+    <string name="lang_azerbaijani">Azerbaijano</string>
+    <string name="translators">Traduttori</string>
     <string name="lang_tamil">Tamil</string>
-    <string name="player_auto_load_songs_in_queue">Auto load songs in queue</string>
-    <string name="player_auto_load_songs_in_queue_description">Adds songs when the queue is about to end</string>
-    <string name="show_vinyl_thumbnail_animation">Show Vinyl animation as thumbnail</string>
+    <string name="player_auto_load_songs_in_queue">Aggiunta automatica brani nella coda</string>
+    <string name="player_auto_load_songs_in_queue_description">Aggiunge brani quando la coda sta per terminare</string>
+    <string name="show_vinyl_thumbnail_animation">Mostra animazione vinile come miniatura</string>
+    <string name="toggle_romanization">Toggle Romanization</string>
+    <string name="edit_thumbnail">Edit Thumbnail</string>
+    <string name="thumbnail_not_selected">Thumbnail Not Selected</string>
+    <string name="reset_thumbnail">Reset Thumbnail</string>
+    <string name="no_thumbnail_present">No Thumbnail Present</string>
+    <string name="removed_thumbnail">Removed Thumbnail</string>
+    <string name="failed_to_remove_thumbnail">Failed to Remove Thumbnail</string>
+    <string name="showsecondline">Show Translation in the Second Line</string>
+    <string name="enter_the_value">Enter The Value</string>
 </resources>

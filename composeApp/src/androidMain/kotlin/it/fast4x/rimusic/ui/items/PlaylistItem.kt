@@ -16,6 +16,7 @@ import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -41,6 +42,7 @@ import it.fast4x.rimusic.ui.styling.onOverlay
 import it.fast4x.rimusic.ui.styling.overlay
 import it.fast4x.rimusic.ui.styling.shimmer
 import it.fast4x.rimusic.MONTHLY_PREFIX
+import it.fast4x.rimusic.utils.checkFileExists
 import it.fast4x.rimusic.utils.color
 import it.fast4x.rimusic.utils.conditional
 import it.fast4x.rimusic.utils.getTitleMonthlyPlaylist
@@ -101,6 +103,19 @@ fun PlaylistItem(
     showName: Boolean = true,
     disableScrollingText: Boolean
 ) {
+    val context = LocalContext.current
+
+    val playlistThumbnailUrl = remember { mutableStateOf("") }
+
+    fun initialisePlaylistThumbnail (){
+        val thumbnailName = "thumbnail/playlist_${playlist.playlist.id}"
+        val presentThumbnailUrl: String? = checkFileExists(context, thumbnailName)
+        if (presentThumbnailUrl != null) {
+            playlistThumbnailUrl.value = presentThumbnailUrl
+        }
+    }
+    initialisePlaylistThumbnail()
+
     val thumbnails by remember {
         Database.playlistThumbnailUrls(playlist.playlist.id).distinctUntilChanged().map {
             it.map { url ->
@@ -111,7 +126,15 @@ fun PlaylistItem(
 
     PlaylistItem(
         thumbnailContent = {
-            if (thumbnails.toSet().size == 1) {
+            if (playlistThumbnailUrl.value != "") {
+                AsyncImage(
+                    model = playlistThumbnailUrl.value,
+                    contentDescription = null,
+                    modifier = Modifier
+                        .fillMaxSize(),
+                    contentScale = ContentScale.Crop
+                )
+            } else if (thumbnails.toSet().size == 1) {
                 AsyncImage(
                     model = ImageRequest.Builder(LocalContext.current)
                         .data(thumbnails.first())

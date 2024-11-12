@@ -834,7 +834,7 @@ fun Player(
         mutableStateOf(false)
     }
 
-    val thumbnailTapEnabled by rememberPreference(thumbnailTapEnabledKey, false)
+    val thumbnailTapEnabled by rememberPreference(thumbnailTapEnabledKey, true)
     val showNextSongsInPlayer by rememberPreference(showNextSongsInPlayerKey, false)
 
     var showQueue by rememberSaveable { mutableStateOf(false) }

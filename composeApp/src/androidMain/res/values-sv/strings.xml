@@ -459,7 +459,7 @@
     <string name="info_clean_cached_congs">Clean cached congs</string>
     <string name="info_pin_unpin_playlist">Fäst/Lossa spellista</string>
     <string name="info_lock_unlock_reorder_songs">Lås/Lås upp omsortering av låtar</string>
-    <string name="info_add_in_playlist">Add in playlist</string>
+    <string name="info_add_in_playlist">Lägg till i spellista</string>
     <string name="info_not_find_application_audio">Couldn\'t find an application to equalize audio</string>
     <string name="info_error">Error</string>
     <string name="info_not_find_app_open_doc">Kunde inte hitta en app för att öppna dokument</string>
@@ -580,7 +580,7 @@
     <string name="debug">DEBUG</string>
     <string name="enable_log_debug">Enable log debug</string>
     <string name="if_enabled_create_a_log_file_to_highlight_errors">If enabled, create a log file to highlight errors</string>
-    <string name="copy_log_to_clipboard">Copy log to clipboard</string>
+    <string name="copy_log_to_clipboard">Kopiera logg till urklipp</string>
     <string name="piped_account">PIPED</string>
     <string name="enable_piped_syncronization">Enable piped syncronization</string>
     <string name="piped_change_instance">Change instance</string>
@@ -718,7 +718,7 @@
     <string name="error_unknown">Okänt fel</string>
     <string name="delete_song">Do you really want to delete this song? It will be deleted from database.\\nThis action is irreversible.</string>
     <string name="info_check_update_now">Check Now</string>
-    <string name="info_no_update_available">No update available</string>
+    <string name="info_no_update_available">Ingen uppdatering tillgänglig</string>
     <string name="lang_galician">Galiciska</string>
     <string name="lang_norwegian">Norska</string>
     <string name="translate_to">Översätt till %s</string>
@@ -751,8 +751,8 @@
     <string name="titleartist">Title and Artists</string>
     <string name="miniqueue">Mini Queue</string>
     <string name="controls">Controls</string>
-    <string name="add_to_favorites">Add to favorites</string>
-    <string name="import_favorites">Import favorites</string>
+    <string name="add_to_favorites">Lägg till i favoriter</string>
+    <string name="import_favorites">Importera favoriter</string>
     <string name="skip_media_on_error">Autoskip on error</string>
     <string name="skip_media_on_error_description">If an error occurs, the media is changed</string>
     <string name="skip_media_on_error_message">The media %1$s went wrong</string>
@@ -764,9 +764,18 @@
     <string name="center">Center</string>
     <string name="lyricsalignment">Lyrics Alignment</string>
     <string name="lang_azerbaijani">Azerbaijani</string>
-    <string name="translators">Translators</string>
+    <string name="translators">Översättare</string>
     <string name="lang_tamil">Tamil</string>
     <string name="player_auto_load_songs_in_queue">Auto load songs in queue</string>
     <string name="player_auto_load_songs_in_queue_description">Adds songs when the queue is about to end</string>
     <string name="show_vinyl_thumbnail_animation">Show Vinyl animation as thumbnail</string>
+    <string name="toggle_romanization">Toggle Romanization</string>
+    <string name="edit_thumbnail">Edit Thumbnail</string>
+    <string name="thumbnail_not_selected">Thumbnail Not Selected</string>
+    <string name="reset_thumbnail">Reset Thumbnail</string>
+    <string name="no_thumbnail_present">No Thumbnail Present</string>
+    <string name="removed_thumbnail">Removed Thumbnail</string>
+    <string name="failed_to_remove_thumbnail">Failed to Remove Thumbnail</string>
+    <string name="showsecondline">Show Translation in the Second Line</string>
+    <string name="enter_the_value">Enter The Value</string>
 </resources>

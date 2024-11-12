@@ -189,8 +189,8 @@ fun DefaultAppearanceSettings() {
     playerTimelineSize = PlayerTimelineSize.Biggest
     var effectRotationEnabled by rememberPreference(effectRotationKey, true)
     effectRotationEnabled = true
-    var thumbnailTapEnabled by rememberPreference(thumbnailTapEnabledKey, false)
-    thumbnailTapEnabled = false
+    var thumbnailTapEnabled by rememberPreference(thumbnailTapEnabledKey, true)
+    thumbnailTapEnabled = true
     var showButtonPlayerAddToPlaylist by rememberPreference(showButtonPlayerAddToPlaylistKey, true)
     showButtonPlayerAddToPlaylist = true
     var showButtonPlayerArrow by rememberPreference(showButtonPlayerArrowKey, false)
@@ -376,7 +376,7 @@ fun AppearanceSettings(
 
     var effectRotationEnabled by rememberPreference(effectRotationKey, true)
 
-    var thumbnailTapEnabled by rememberPreference(thumbnailTapEnabledKey, false)
+    var thumbnailTapEnabled by rememberPreference(thumbnailTapEnabledKey, true)
 
 
     var showButtonPlayerAddToPlaylist by rememberPreference(showButtonPlayerAddToPlaylistKey, true)

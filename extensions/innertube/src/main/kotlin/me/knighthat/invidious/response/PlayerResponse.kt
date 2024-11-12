@@ -11,14 +11,17 @@ data class PlayerResponse(
 ): MediaFormatContainer<PlayerResponse.AdaptiveFormat> {
 
     override val formats: SortedSet<out AdaptiveFormat> =
-        sortedSetOf<AdaptiveFormat>().apply { addAll( adaptiveFormats.filter { it.mimeType.contains( "audio" ) } ) }
+        sortedSetOf<AdaptiveFormat>().apply {
+            // Should filter format starts with "audio" as in "audio/webm"
+            addAll( adaptiveFormats.filter { it.mimeType.startsWith("audio") } )
+        }
 
     @Serializable
     data class AdaptiveFormat(
         val type: String,
-        override val itag: UByte,
+        override val itag: UShort,
         override val url: String,
-        override val bitrate: Int
+        override val bitrate: UInt
     ): AudioFormat {
 
         override val mimeType: String

@@ -1,9 +1,14 @@
 package it.fast4x.rimusic.utils
 
+import android.content.Context
+import android.net.Uri
 import android.os.Build
 import androidx.annotation.RequiresApi
 import timber.log.Timber
+import java.io.File
+import java.io.FileOutputStream
 import java.io.IOException
+import java.io.InputStream
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.StandardCopyOption
@@ -31,6 +36,66 @@ fun copyDir(src: Path, dest: Path) {
         Files.copy(source, dest.resolve(src.relativize(source)),
             StandardCopyOption.REPLACE_EXISTING
         )
+    }
+}
+
+fun saveImageToInternalStorage(context: Context, imageUri: Uri, dirPath: String, thumbnailName: String): Uri? {
+    try {
+        // Open input stream from the URI
+        val inputStream: InputStream? = context.contentResolver.openInputStream(imageUri)
+
+        // Create a new file in the app's internal storage
+        if ( !createDirIfNotExists(context, dirPath)) {
+            Timber.e("Failed to create directory: $dirPath")
+            return null
+        }
+        val outputFile = File(context.filesDir, "$dirPath/$thumbnailName")
+
+        val outputStream = FileOutputStream(outputFile)
+
+        // Copy the data from the input stream to the output stream (internal storage)
+        inputStream?.copyTo(outputStream)
+
+        // Close the streams
+        inputStream?.close()
+        outputStream.flush()
+        outputStream.close()
+
+        // Return the URI to the saved file in internal storage
+        return Uri.fromFile(outputFile)
+    } catch (e: IOException) {
+        Timber.e(e)
+        return null
+    }
+}
+
+fun checkFileExists(context: Context, filePath: String): String? {
+    val file = File(context.filesDir, filePath)
+
+    return if (file.exists()) {
+        file.toURI().toString()
+    } else {
+        null
+    }
+}
+
+fun deleteFileIfExists(context: Context, filePath: String): Boolean {
+    val file = File(context.filesDir, filePath)
+
+    return if (file.exists()) {
+        file.delete()
+    } else {
+        false
+    }
+}
+
+fun createDirIfNotExists(context: Context, dirPath: String): Boolean {
+    val directory = File(context.filesDir, dirPath)
+
+    return if (!directory.exists()) {
+        directory.mkdirs()
+    } else {
+        true
     }
 }
 

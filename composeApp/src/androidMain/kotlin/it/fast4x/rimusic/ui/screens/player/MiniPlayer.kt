@@ -200,7 +200,7 @@ fun MiniPlayer(
         targetValue = if (isRotated) 360F else 0f,
         animationSpec = tween(durationMillis = 200), label = ""
     )
-    val disableClosingPlayerSwipingDown by rememberPreference(disableClosingPlayerSwipingDownKey, true)
+    val disableClosingPlayerSwipingDown by rememberPreference(disableClosingPlayerSwipingDownKey, false)
 
     val disableScrollingText by rememberPreference(disableScrollingTextKey, false)
 

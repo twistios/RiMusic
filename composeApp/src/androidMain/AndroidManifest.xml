@@ -310,6 +310,5 @@
 
         <meta-data android:name="com.google.android.gms.car.notification.SmallIcon"
             android:resource="@drawable/app_icon" />
-
     </application>
 </manifest>

@@ -41,7 +41,10 @@ data class PlayerResponse(
     ): MediaFormatContainer<StreamingData.AdaptiveFormat> {
 
         override val formats: SortedSet<AdaptiveFormat> =
-            sortedSetOf<AdaptiveFormat>().apply { addAll( adaptiveFormats.filter { it.isAudio } ) }
+            sortedSetOf<AdaptiveFormat>().apply {
+                // Should filter format starts with "audio" as in "audio/webm"
+                addAll( adaptiveFormats.filter { it.mimeType.startsWith("audio") } )
+            }
 
         @Serializable
         data class AdaptiveFormat(
@@ -52,9 +55,9 @@ data class PlayerResponse(
             val width: Int?,
             @SerialName("mimeType")
             val mimeTypeCodec: String,
-            override val itag: UByte,
+            override val itag: UShort,
             override val url: String,
-            override val bitrate: Int
+            override val bitrate: UInt
         ): AudioFormat {
 
             override val mimeType: String

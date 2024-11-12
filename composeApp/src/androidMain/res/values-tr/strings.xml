@@ -763,10 +763,19 @@
     <string name="actionbar">Eylem Çubuğu</string>
     <string name="center">Orta</string>
     <string name="lyricsalignment">Şarkı Sözleri Hizalama</string>
-    <string name="lang_azerbaijani">Azerbaijani</string>
-    <string name="translators">Translators</string>
+    <string name="lang_azerbaijani">Azerbaycanca</string>
+    <string name="translators">Çevirmenler</string>
     <string name="lang_tamil">Tamil</string>
-    <string name="player_auto_load_songs_in_queue">Auto load songs in queue</string>
-    <string name="player_auto_load_songs_in_queue_description">Adds songs when the queue is about to end</string>
-    <string name="show_vinyl_thumbnail_animation">Show Vinyl animation as thumbnail</string>
+    <string name="player_auto_load_songs_in_queue">Oynatma sırasındaki şarkıları otomatik yükle</string>
+    <string name="player_auto_load_songs_in_queue_description">Oynatma sırası bitmeye yaklaştığında yeni şarkılar ekle</string>
+    <string name="show_vinyl_thumbnail_animation">Kapak resmi olarak plak animasyonu göster</string>
+    <string name="toggle_romanization">Latin Alfabesine Dönüştür</string>
+    <string name="edit_thumbnail">Kapak Resmini Düzenle</string>
+    <string name="thumbnail_not_selected">Kapak Resmi Seçilmedi</string>
+    <string name="reset_thumbnail">Kapak Resmini Sıfırla</string>
+    <string name="no_thumbnail_present">Kapak Resmi Mevcut Değil</string>
+    <string name="removed_thumbnail">Kapak Resmi Kaldırıldı</string>
+    <string name="failed_to_remove_thumbnail">Kapak Resmi Silinemedi</string>
+    <string name="showsecondline">İkinci Satırda Çeviriyi Göster</string>
+    <string name="enter_the_value">Enter The Value</string>
 </resources>

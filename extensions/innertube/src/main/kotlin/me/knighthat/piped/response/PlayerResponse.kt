@@ -11,15 +11,18 @@ data class PlayerResponse(
 ): MediaFormatContainer<PlayerResponse.AudioStream> {
 
     override val formats: SortedSet<AudioStream> =
-        sortedSetOf<AudioStream>().apply { addAll( audioStreams.filter { it.mimeType.contains("audio") } ) }
+        sortedSetOf<AudioStream>().apply {
+            // Should filter format starts with "audio" as in "audio/webm"
+            addAll( audioStreams.filter { it.mimeType.startsWith("audio") } )
+        }
 
     @Serializable
     data class AudioStream(
         val contentLength: UInt,
-        override val itag: UByte,
+        override val itag: UShort,
         override val url: String,
         override val mimeType: String,
         override val codec: String,
-        override val bitrate: Int
+        override val bitrate: UInt
     ): AudioFormat
 }
