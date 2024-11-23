@@ -138,7 +138,7 @@ android {
 
     buildTypes {
         debug {
-            applicationIdSuffix = ".twistios_debug"
+            applicationIdSuffix = ".twri_debug"
             manifestPlaceholders["appName"] = "TwRiMusic-Debug"
         }
 
@@ -147,7 +147,7 @@ android {
             isMinifyEnabled = true
             isShrinkResources = true
             manifestPlaceholders["appName"] = "TwRiMusic"
-            applicationIdSuffix = ".twistios_release"
+            applicationIdSuffix = ".twri_release"
             signingConfig = signingConfigs.getByName("debug")
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
         }
@@ -159,7 +159,7 @@ android {
             .map { it as com.android.build.gradle.internal.api.BaseVariantOutputImpl }
             .forEach { output ->
                 //val outputFileName = "app-${variant.baseName}-${variant.versionName}-${variant.versionCode}.apk"
-                val outputFileName = "tw_app-${variant.baseName}.apk"
+                val outputFileName = "twri_app-${variant.baseName}.apk"
                 output.outputFileName = outputFileName
             }
     }
@@ -173,7 +173,7 @@ android {
     productFlavors {
         create("accrescent") {
             dimension = "version"
-            manifestPlaceholders["appName"] = "RiMusic-Acc"
+            manifestPlaceholders["appName"] = "TwRiMusic-Acc"
         }
     }
 
