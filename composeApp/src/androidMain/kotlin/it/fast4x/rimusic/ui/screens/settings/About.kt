@@ -72,7 +72,7 @@ fun About() {
                 .fillMaxSize()
         ) {
             BasicText(
-                text = "RiMusic v${getVersionName()} by fast4x",
+                text = "TwMusic v${getVersionName()} by fast4x, modified by twistios",
                 style = typography().s.secondary,
 
                 )

@@ -138,15 +138,15 @@ android {
 
     buildTypes {
         debug {
-            applicationIdSuffix = ".debug"
-            manifestPlaceholders["appName"] = "RiMusic-Debug"
+            applicationIdSuffix = ".tw_debug"
+            manifestPlaceholders["appName"] = "TwMusic-Debug"
         }
 
         release {
             vcsInfo.include = false
             isMinifyEnabled = true
             isShrinkResources = true
-            manifestPlaceholders["appName"] = "RiMusic"
+            manifestPlaceholders["appName"] = "TwMusic"
             signingConfig = signingConfigs.getByName("debug")
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
         }
@@ -158,7 +158,7 @@ android {
             .map { it as com.android.build.gradle.internal.api.BaseVariantOutputImpl }
             .forEach { output ->
                 //val outputFileName = "app-${variant.baseName}-${variant.versionName}-${variant.versionCode}.apk"
-                val outputFileName = "app-${variant.baseName}.apk"
+                val outputFileName = "tw_app-${variant.baseName}.apk"
                 output.outputFileName = outputFileName
             }
     }
@@ -172,7 +172,7 @@ android {
     productFlavors {
         create("accrescent") {
             dimension = "version"
-            manifestPlaceholders["appName"] = "RiMusic-Acc"
+            manifestPlaceholders["appName"] = "TwMusic-Acc"
         }
     }
 
