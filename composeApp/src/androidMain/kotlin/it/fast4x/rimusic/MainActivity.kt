@@ -6,7 +6,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.ServiceConnection
 import android.content.SharedPreferences
-import android.graphics.Bitmap
+import android.content.res.Configuration
 import android.graphics.drawable.BitmapDrawable
 import android.hardware.Sensor
 import android.hardware.SensorEvent
@@ -29,9 +29,12 @@ import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
@@ -40,8 +43,12 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.requiredSize
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBars
+import androidx.compose.foundation.text.BasicText
 import androidx.compose.material.ExperimentalMaterialApi
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.LocalRippleConfiguration
 import androidx.compose.material3.RippleConfiguration
@@ -53,6 +60,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -62,21 +70,30 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.runtime.staticCompositionLocalOf
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.ExperimentalTextApi
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.coerceIn
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.times
 import androidx.core.content.ContextCompat
+import androidx.core.content.edit
 import androidx.core.net.toUri
 import androidx.core.os.LocaleListCompat
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.core.view.WindowCompat
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.lifecycleScope
 import androidx.media3.common.MediaItem
@@ -85,6 +102,7 @@ import androidx.media3.common.util.Log
 import androidx.media3.common.util.UnstableApi
 import androidx.navigation.compose.rememberNavController
 import androidx.palette.graphics.Palette
+import coil.compose.AsyncImage
 import coil.imageLoader
 import coil.request.ImageRequest
 import com.kieronquinn.monetcompat.core.MonetActivityAccessException
@@ -111,13 +129,18 @@ import it.fast4x.rimusic.enums.FontType
 import it.fast4x.rimusic.enums.HomeScreenTabs
 import it.fast4x.rimusic.enums.Languages
 import it.fast4x.rimusic.enums.NavRoutes
+import it.fast4x.rimusic.enums.PipModule
 import it.fast4x.rimusic.enums.PlayerBackgroundColors
 import it.fast4x.rimusic.enums.PopupType
 import it.fast4x.rimusic.enums.ThumbnailRoundness
+import it.fast4x.rimusic.extensions.pip.PipEventContainer
+import it.fast4x.rimusic.extensions.pip.PipModuleContainer
+import it.fast4x.rimusic.extensions.pip.PipModuleCover
 import it.fast4x.rimusic.service.MyDownloadHelper
 import it.fast4x.rimusic.service.modern.PlayerServiceModern
 import it.fast4x.rimusic.ui.components.CustomModalBottomSheet
 import it.fast4x.rimusic.ui.components.LocalMenuState
+import it.fast4x.rimusic.ui.components.themed.CrossfadeContainer
 import it.fast4x.rimusic.ui.components.themed.SmartMessage
 import it.fast4x.rimusic.ui.screens.AppNavigation
 import it.fast4x.rimusic.ui.screens.player.MiniPlayer
@@ -125,8 +148,6 @@ import it.fast4x.rimusic.ui.screens.player.Player
 import it.fast4x.rimusic.ui.screens.player.components.YoutubePlayer
 import it.fast4x.rimusic.ui.screens.player.rememberPlayerSheetState
 import it.fast4x.rimusic.ui.styling.Appearance
-import it.fast4x.rimusic.ui.styling.ColorPalette
-import it.fast4x.rimusic.ui.styling.DefaultDarkColorPalette
 import it.fast4x.rimusic.ui.styling.Dimensions
 import it.fast4x.rimusic.ui.styling.LocalAppearance
 import it.fast4x.rimusic.ui.styling.applyPitchBlack
@@ -169,6 +190,7 @@ import it.fast4x.rimusic.utils.customThemeLight_textSecondaryKey
 import it.fast4x.rimusic.utils.disableClosingPlayerSwipingDownKey
 import it.fast4x.rimusic.utils.disablePlayerHorizontalSwipeKey
 import it.fast4x.rimusic.utils.effectRotationKey
+import it.fast4x.rimusic.utils.enableYouTubeLoginKey
 import it.fast4x.rimusic.utils.encryptedPreferences
 import it.fast4x.rimusic.utils.fontTypeKey
 import it.fast4x.rimusic.utils.forcePlay
@@ -183,10 +205,12 @@ import it.fast4x.rimusic.utils.isValidIP
 import it.fast4x.rimusic.utils.isVideo
 import it.fast4x.rimusic.utils.keepPlayerMinimizedKey
 import it.fast4x.rimusic.utils.languageAppKey
+import it.fast4x.rimusic.utils.loadedDataKey
 import it.fast4x.rimusic.utils.miniPlayerTypeKey
 import it.fast4x.rimusic.utils.navigationBarPositionKey
 import it.fast4x.rimusic.utils.navigationBarTypeKey
 import it.fast4x.rimusic.utils.parentalControlEnabledKey
+import it.fast4x.rimusic.utils.pipModuleKey
 import it.fast4x.rimusic.utils.playNext
 import it.fast4x.rimusic.utils.playerBackgroundColorsKey
 import it.fast4x.rimusic.utils.playerThumbnailSizeKey
@@ -197,6 +221,7 @@ import it.fast4x.rimusic.utils.proxyModeKey
 import it.fast4x.rimusic.utils.proxyPortKey
 import it.fast4x.rimusic.utils.rememberEncryptedPreference
 import it.fast4x.rimusic.utils.rememberPreference
+import it.fast4x.rimusic.utils.resize
 import it.fast4x.rimusic.utils.restartActivityKey
 import it.fast4x.rimusic.utils.setDefaultPalette
 import it.fast4x.rimusic.utils.shakeEventEnabledKey
@@ -209,7 +234,6 @@ import it.fast4x.rimusic.utils.useSystemFontKey
 import it.fast4x.rimusic.utils.ytCookieKey
 import it.fast4x.rimusic.utils.ytVisitorDataKey
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
@@ -230,7 +254,6 @@ import java.util.Locale
 import java.util.Objects
 import kotlin.math.sqrt
 
-
 @UnstableApi
 class MainActivity :
     //MonetCompatActivity(),
@@ -238,7 +261,6 @@ class MainActivity :
     MonetColorsChangedListener
     //,PersistMapOwner
 {
-
     var downloadUtil = MyDownloadHelper
 
     var client = OkHttpClient()
@@ -272,6 +294,8 @@ class MainActivity :
     private var _monet: MonetCompat? by mutableStateOf(null)
     private val monet get() = _monet ?: throw MonetActivityAccessException()
 
+    private val pipState: MutableState<Boolean> = mutableStateOf(false)
+
     override fun onStart() {
         super.onStart()
 
@@ -285,7 +309,6 @@ class MainActivity :
     @ExperimentalMaterialApi
     @ExperimentalTextApi
     @UnstableApi
-    @OptIn(ExperimentalFoundationApi::class, ExperimentalAnimationApi::class)
     @ExperimentalComposeUiApi
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -343,11 +366,37 @@ class MainActivity :
 
     }
 
+    override fun onPictureInPictureModeChanged(
+        isInPictureInPictureMode: Boolean,
+        newConfig: Configuration
+    ) {
+        pipState.value = isInPictureInPictureMode
+        println("MainActivity.onPictureInPictureModeChanged isInPictureInPictureMode: $isInPictureInPictureMode")
+        super.onPictureInPictureModeChanged(isInPictureInPictureMode, newConfig)
+
+    }
+
+
+    /*
+    @Suppress("DEPRECATION")
+    override fun onUserLeaveHint() {
+        super.onUserLeaveHint()
+        if (isAtLeastAndroid8 && !isInPictureInPictureMode) {
+            enterPictureInPictureMode()
+            println("MainActivity.onUserLeaveHint isInPictureInPictureMode: $isInPictureInPictureMode")
+        }
+    }
+    */
+
+
     @OptIn(ExperimentalTextApi::class,
         ExperimentalFoundationApi::class, ExperimentalAnimationApi::class,
         ExperimentalMaterial3Api::class
     )
     fun startApp() {
+
+        // Used in QuickPics for load data from remote instead of last saved in SharedPreferences
+        preferences.edit(commit = true) { putBoolean(loadedDataKey, false) }
 
         if (!preferences.getBoolean(closeWithBackButtonKey, false))
             if (Build.VERSION.SDK_INT >= 33) {
@@ -439,19 +488,26 @@ class MainActivity :
                     //gl = "US" // US IMPORTANT
                 )
 
-            var visitorData by rememberEncryptedPreference(key = ytVisitorDataKey, defaultValue = Innertube.DEFAULT_VISITOR_DATA)
+            if ( preferences.getBoolean(enableYouTubeLoginKey, false)
+                && encryptedPreferences.getString(ytCookieKey, "") != "" ) {
 
-            if (visitorData.isEmpty())  runBlocking {
-                Innertube.visitorData().getOrNull()?.also {
-                    visitorData = it
-                }
-            }
-
-            YoutubePreferences.preference =
-                YoutubePreferenceItem(
-                    cookie = encryptedPreferences.getString(ytCookieKey, ""),
-                    visitordata = visitorData
+                var visitorData by rememberEncryptedPreference(
+                    key = ytVisitorDataKey,
+                    defaultValue = Innertube.DEFAULT_VISITOR_DATA
                 )
+
+                if (visitorData.isEmpty()) runBlocking {
+                    Innertube.visitorData().getOrNull()?.also {
+                        visitorData = it
+                    }
+                }
+
+                YoutubePreferences.preference =
+                    YoutubePreferenceItem(
+                        cookie = encryptedPreferences.getString(ytCookieKey, ""),
+                        visitordata = visitorData
+                    )
+            }
 
             preferences.getEnum(audioQualityFormatKey, AudioQualityFormat.Auto)
 
@@ -508,7 +564,7 @@ class MainActivity :
                         playerBackgroundColors == PlayerBackgroundColors.CoverColor ||
                         playerBackgroundColors == PlayerBackgroundColors.FluidCoverColorGradient
 
-                if (!isDynamicPalette && !isCoverColor) return
+                if (!isDynamicPalette) return
 
                 val colorPaletteMode = preferences.getEnum(colorPaletteModeKey, ColorPaletteMode.Dark)
                 coroutineScope.launch(Dispatchers.Main) {
@@ -518,27 +574,37 @@ class MainActivity :
                             .allowHardware(false)
                             .build()
                     )
+                    val isPicthBlack = colorPaletteMode == ColorPaletteMode.PitchBlack
+                    val isDark =
+                        colorPaletteMode == ColorPaletteMode.Dark || isPicthBlack || (colorPaletteMode == ColorPaletteMode.System && isSystemInDarkTheme)
+
                     val bitmap = (result.drawable as? BitmapDrawable)?.bitmap
                     if (bitmap != null) {
                         val palette = Palette
                             .from(bitmap)
                             .maximumColorCount(8)
-                            //.addFilter(if (isDark || isPitchBlack) ({ _, hsl -> hsl[0] !in 36f..100f }) else null)
+                            .addFilter(if (isDark) ({ _, hsl -> hsl[0] !in 36f..100f }) else null)
                             .generate()
                         println("Mainactivity onmediaItemTransition palette dominantSwatch: ${palette.dominantSwatch}")
-                        val isDark =
-                            colorPaletteMode == ColorPaletteMode.Dark || (colorPaletteMode == ColorPaletteMode.System && isSystemInDarkTheme)
-                        val isPicthBlack = colorPaletteMode == ColorPaletteMode.PitchBlack
+
                         dynamicColorPaletteOf(bitmap, isDark)?.let {
                             withContext(Dispatchers.Main) {
                                 setSystemBarAppearance(it.isDark)
                             }
                             appearance = appearance.copy(
-                                colorPalette = it,
+                                colorPalette = if (!isPicthBlack) it else it.copy(
+                                    background0 = Color.Black,
+                                    background1 = Color.Black,
+                                    background2 = Color.Black,
+                                    background3 = Color.Black,
+                                    background4 = Color.Black,
+                                   // text = Color.White
+                                ),
                                 typography = appearance.typography.copy(it.text)
                             )
                             println("Mainactivity onmediaItemTransition appearance inside: ${appearance.colorPalette}")
                         }
+
                     }
                 }
                 println("Mainactivity onmediaItemTransition appearance outside: ${appearance.colorPalette}")
@@ -675,11 +741,17 @@ class MainActivity :
                                         if (it.isNotEmpty())
                                             setDynamicPalette(it)
                                         else {
-
+                                            val isPicthBlack = colorPaletteMode == ColorPaletteMode.PitchBlack
                                             setSystemBarAppearance(colorPalette.isDark)
-
                                             appearance = appearance.copy(
-                                                colorPalette = colorPalette,
+                                                colorPalette = if (!isPicthBlack) colorPalette else colorPalette.copy(
+                                                        background0 = Color.Black,
+                                                        background1 = Color.Black,
+                                                        background2 = Color.Black,
+                                                        background3 = Color.Black,
+                                                        background4 = Color.Black,
+                                                        // text = Color.White
+                                                    ),
                                                 typography = appearance.typography.copy(colorPalette.text),
                                             )
                                         }
@@ -702,10 +774,17 @@ class MainActivity :
                                     }
 
                                     setSystemBarAppearance(colorPalette.isDark)
-
+                                    val isPicthBlack = colorPaletteMode == ColorPaletteMode.PitchBlack
                                     appearance = appearance.copy(
-                                        colorPalette = colorPalette,
-                                        typography = appearance.typography.copy(colorPalette.text),
+                                        colorPalette = if (!isPicthBlack) colorPalette else colorPalette.copy(
+                                            background0 = Color.Black,
+                                            background1 = Color.Black,
+                                            background2 = Color.Black,
+                                            background3 = Color.Black,
+                                            background4 = Color.Black,
+                                            text = Color.White
+                                        ),
+                                        typography = appearance.typography.copy(if (!isPicthBlack) colorPalette.text else Color.White),
                                     )
                                 }
                             }
@@ -795,7 +874,8 @@ class MainActivity :
                 preferences.getEnum(colorPaletteModeKey, ColorPaletteMode.PitchBlack)
             if (colorPaletteMode == ColorPaletteMode.PitchBlack)
                 appearance = appearance.copy(
-                    colorPalette = appearance.colorPalette.applyPitchBlack
+                    colorPalette = appearance.colorPalette.applyPitchBlack,
+                    typography = appearance.typography.copy(appearance.colorPalette.text)
                 )
 
 
@@ -850,108 +930,154 @@ class MainActivity :
                     intent.action = null
                 }
 
-                CompositionLocalProvider(
-                    LocalAppearance provides appearance,
-                    LocalIndication provides ripple(bounded = true),
-                    LocalRippleConfiguration provides rippleConfiguration,
-                    LocalShimmerTheme provides shimmerTheme,
-                    LocalPlayerServiceBinder provides binder,
-                    LocalPlayerAwareWindowInsets provides playerAwareWindowInsets,
-                    LocalLayoutDirection provides LayoutDirection.Ltr,
-                    LocalDownloader provides downloadUtil,
-                    LocalPlayerSheetState provides playerState,
-                    LocalMonetCompat provides monet
-                ) {
 
-                    AppNavigation(
-                        navController = navController,
-                        miniPlayer = {
-                            MiniPlayer(
-                                showPlayer = { showPlayer = true },
-                                hidePlayer = { showPlayer = false },
-                                navController = navController
-                            )
-                        },
-                        openTabFromShortcut = openTabFromShortcut
-                    )
-
-                    checkIfAppIsRunningInBackground()
-                    if (appRunningInBackground) showPlayer = false
-
-
-                    val thumbnailRoundness by rememberPreference(
-                        thumbnailRoundnessKey,
-                        ThumbnailRoundness.Heavy
-                    )
-
-                    val isVideo = binder?.player?.currentMediaItem?.isVideo ?: false
-                    val isVideoEnabled = preferences.getBoolean(showButtonPlayerVideoKey, false)
-                    val player: @Composable () -> Unit = {
-                        Player(
-                            navController = navController,
-                            onDismiss = {
-                                showPlayer = false
-                            }
-                        )
+                /*
+                isInPip(
+                    onChange = {
+                        println("MainActivity isInPip change $it")
+                        //if (!it || vm.binder?.player?.shouldBePlaying != true) return@isInPip
+                        //showPlayer = true
+                        pipState.value = it
                     }
+                )
+                */
 
-                    val youtubePlayer: @Composable () -> Unit = {
-                        binder?.player?.currentMediaItem?.mediaId?.let {
-                            YoutubePlayer(
-                                ytVideoId = it,
-                                lifecycleOwner = LocalLifecycleOwner.current,
-                                onCurrentSecond = {},
-                                showPlayer = showPlayer,
-                                onSwitchToAudioPlayer = {
-                                    showPlayer = false
-                                    switchToAudioPlayer = true
+
+                CrossfadeContainer(state = pipState.value) { isCurrentInPip ->
+                    println("MainActivity pipState ${pipState.value} CrossfadeContainer isCurrentInPip $isCurrentInPip ")
+                    val pipModule by rememberPreference(pipModuleKey, PipModule.Cover)
+                    if (isCurrentInPip) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .background(Color.Transparent)
+                        ) {
+                            when (pipModule) {
+                                PipModule.Cover -> {
+                                    PipModuleContainer {
+                                        PipModuleCover(
+                                            url = binder?.player?.currentMediaItem?.mediaMetadata?.artworkUri.toString()
+                                                .resize(1200, 1200)
+                                        )
+                                    }
                                 }
-                            )
+
+                            }
+
                         }
-                    }
 
-                    CustomModalBottomSheet(
-                        showSheet = switchToAudioPlayer || showPlayer,
-                        onDismissRequest = {
-                            showPlayer = false
-                            switchToAudioPlayer = false
-                        },
-                        containerColor = colorPalette().background0,
-                        contentColor = colorPalette().background0,
-                        modifier = Modifier.fillMaxWidth(),
-                        sheetState = playerState,
-                        dragHandle = {
-                            Surface(
-                                modifier = Modifier.padding(vertical = 0.dp),
-                                color = colorPalette().background0,
-                                shape = thumbnailShape()
-                            ) {}
-                        },
-                        shape = thumbnailRoundness.shape()
-                    ) {
-                         player()
-                    }
+                    } else
+                        CompositionLocalProvider(
+                            LocalAppearance provides appearance,
+                            LocalIndication provides ripple(bounded = true),
+                            LocalRippleConfiguration provides rippleConfiguration,
+                            LocalShimmerTheme provides shimmerTheme,
+                            LocalPlayerServiceBinder provides binder,
+                            LocalPlayerAwareWindowInsets provides playerAwareWindowInsets,
+                            LocalLayoutDirection provides LayoutDirection.Ltr,
+                            LocalDownloader provides downloadUtil,
+                            LocalPlayerSheetState provides playerState,
+                            LocalMonetCompat provides monet
+                        ) {
 
-                    CustomModalBottomSheet(
-                        showSheet = isVideo && isVideoEnabled && showPlayer,
-                        onDismissRequest = { showPlayer = false },
-                        containerColor = colorPalette().background0,
-                        contentColor = colorPalette().background0,
-                        modifier = Modifier.fillMaxWidth(),
-                        sheetState = playerState,
-                        dragHandle = {
-                            Surface(
-                                modifier = Modifier.padding(vertical = 0.dp),
-                                color = colorPalette().background0,
-                                shape = thumbnailShape()
-                            ) {}
-                        },
-                        shape = thumbnailRoundness.shape()
-                    ) {
-                        youtubePlayer()
-                    }
+                            AppNavigation(
+                                navController = navController,
+                                miniPlayer = {
+                                    MiniPlayer(
+                                        showPlayer = { showPlayer = true },
+                                        hidePlayer = { showPlayer = false },
+                                        navController = navController
+                                    )
+                                },
+                                openTabFromShortcut = openTabFromShortcut
+                            )
 
-                    /*
+                            checkIfAppIsRunningInBackground()
+                            if (appRunningInBackground) showPlayer = false
+
+
+                            val thumbnailRoundness by rememberPreference(
+                                thumbnailRoundnessKey,
+                                ThumbnailRoundness.Heavy
+                            )
+
+                            val isVideo = binder?.player?.currentMediaItem?.isVideo ?: false
+                            val isVideoEnabled =
+                                preferences.getBoolean(showButtonPlayerVideoKey, false)
+                            val player: @Composable () -> Unit = {
+                                Player(
+                                    navController = navController,
+                                    onDismiss = {
+                                        showPlayer = false
+                                    }
+                                )
+                            }
+
+                            val youtubePlayer: @Composable () -> Unit = {
+                                binder?.player?.currentMediaItem?.mediaId?.let {
+                                    YoutubePlayer(
+                                        ytVideoId = it,
+                                        lifecycleOwner = LocalLifecycleOwner.current,
+                                        onCurrentSecond = {},
+                                        showPlayer = showPlayer,
+                                        onSwitchToAudioPlayer = {
+                                            showPlayer = false
+                                            switchToAudioPlayer = true
+                                        }
+                                    )
+                                }
+                            }
+
+                            PipEventContainer (
+                                enable = true,
+                                onPipOutAction = {
+                                    showPlayer = false
+                                    switchToAudioPlayer = false
+                                }
+                            ) {
+                                CustomModalBottomSheet(
+                                    showSheet = switchToAudioPlayer || showPlayer,
+                                    onDismissRequest = {
+                                        showPlayer = false
+                                        switchToAudioPlayer = false
+                                    },
+                                    containerColor = colorPalette().background0,
+                                    contentColor = colorPalette().background0,
+                                    modifier = Modifier.fillMaxWidth(),
+                                    sheetState = playerState,
+                                    dragHandle = {
+                                        Surface(
+                                            modifier = Modifier.padding(vertical = 0.dp),
+                                            color = colorPalette().background0,
+                                            shape = thumbnailShape()
+                                        ) {}
+                                    },
+                                    shape = thumbnailRoundness.shape()
+                                ) {
+                                    player()
+                                }
+                            }
+
+                            CustomModalBottomSheet(
+                                showSheet = isVideo && isVideoEnabled && showPlayer,
+                                onDismissRequest = { showPlayer = false },
+                                containerColor = colorPalette().background0,
+                                contentColor = colorPalette().background0,
+                                modifier = Modifier.fillMaxWidth(),
+                                sheetState = playerState,
+                                dragHandle = {
+                                    Surface(
+                                        modifier = Modifier.padding(vertical = 0.dp),
+                                        color = colorPalette().background0,
+                                        shape = thumbnailShape()
+                                    ) {}
+                                },
+                                shape = thumbnailRoundness.shape()
+                            ) {
+                                youtubePlayer()
+                            }
+
+                            /*
                     BottomSheetMenu(
                         state = LocalMenuState.current,
                         modifier = Modifier
@@ -959,26 +1085,27 @@ class MainActivity :
                     )
                      */
 
-                    val menuState = LocalMenuState.current
-                        CustomModalBottomSheet(
-                            showSheet = menuState.isDisplayed,
-                            onDismissRequest = menuState::hide,
-                            containerColor = Color.Transparent,
-                            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-                            dragHandle = {
-                                Surface(
-                                    modifier = Modifier.padding(vertical = 0.dp),
-                                    color = Color.Transparent,
-                                    //shape = thumbnailShape
-                                ) {}
-                            },
-                            shape = thumbnailRoundness.shape()
-                        ) {
-                            menuState.content()
+                            val menuState = LocalMenuState.current
+                            CustomModalBottomSheet(
+                                showSheet = menuState.isDisplayed,
+                                onDismissRequest = menuState::hide,
+                                containerColor = Color.Transparent,
+                                sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+                                dragHandle = {
+                                    Surface(
+                                        modifier = Modifier.padding(vertical = 0.dp),
+                                        color = Color.Transparent,
+                                        //shape = thumbnailShape
+                                    ) {}
+                                },
+                                shape = thumbnailRoundness.shape()
+                            ) {
+                                menuState.content()
+                            }
+
                         }
 
                 }
-
                 DisposableEffect(binder?.player) {
                     val player = binder?.player ?: return@DisposableEffect onDispose { }
 
@@ -1103,7 +1230,7 @@ class MainActivity :
                                 val binder = snapshotFlow { binder }.filterNotNull().first()
                                 withContext(Dispatchers.Main) {
                                     if (!song.explicit && !preferences.getBoolean(parentalControlEnabledKey, false))
-                                        binder.player.forcePlay(song.asMediaItem)
+                                        binder?.player?.forcePlay(song.asMediaItem)
                                     else
                                         SmartMessage("Parental control is enabled", PopupType.Warning, context = this@MainActivity)
                                 }

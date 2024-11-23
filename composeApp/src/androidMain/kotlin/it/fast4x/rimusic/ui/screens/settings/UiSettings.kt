@@ -4,9 +4,7 @@ import android.os.Build
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -52,6 +50,7 @@ import it.fast4x.rimusic.enums.MiniPlayerType
 import it.fast4x.rimusic.enums.NavigationBarPosition
 import it.fast4x.rimusic.enums.NavigationBarType
 import it.fast4x.rimusic.enums.PauseBetweenSongs
+import it.fast4x.rimusic.enums.PipModule
 import it.fast4x.rimusic.enums.PlayerBackgroundColors
 import it.fast4x.rimusic.enums.PlayerControlsType
 import it.fast4x.rimusic.enums.PlayerInfoType
@@ -119,6 +118,8 @@ import it.fast4x.rimusic.utils.disableScrollingTextKey
 import it.fast4x.rimusic.utils.discoverKey
 import it.fast4x.rimusic.utils.effectRotationKey
 import it.fast4x.rimusic.utils.enableCreateMonthlyPlaylistsKey
+import it.fast4x.rimusic.utils.enablePictureInPictureKey
+import it.fast4x.rimusic.utils.enablePictureInPictureAutoKey
 import it.fast4x.rimusic.utils.excludeSongsWithDurationLimitKey
 import it.fast4x.rimusic.utils.exoPlayerMinTimeForEventKey
 import it.fast4x.rimusic.utils.expandedlyricsKey
@@ -127,6 +128,7 @@ import it.fast4x.rimusic.utils.fadingedgeKey
 import it.fast4x.rimusic.utils.fontTypeKey
 import it.fast4x.rimusic.utils.iconLikeTypeKey
 import it.fast4x.rimusic.utils.indexNavigationTabKey
+import it.fast4x.rimusic.utils.isAtLeastAndroid12
 import it.fast4x.rimusic.utils.isAtLeastAndroid6
 import it.fast4x.rimusic.utils.isPauseOnVolumeZeroEnabledKey
 import it.fast4x.rimusic.utils.isSwipeToActionEnabledKey
@@ -148,6 +150,7 @@ import it.fast4x.rimusic.utils.navigationBarTypeKey
 import it.fast4x.rimusic.utils.pauseBetweenSongsKey
 import it.fast4x.rimusic.utils.pauseListenHistoryKey
 import it.fast4x.rimusic.utils.persistentQueueKey
+import it.fast4x.rimusic.utils.pipModuleKey
 import it.fast4x.rimusic.utils.playbackFadeAudioDurationKey
 import it.fast4x.rimusic.utils.playerBackgroundColorsKey
 import it.fast4x.rimusic.utils.playerControlsTypeKey
@@ -166,6 +169,7 @@ import it.fast4x.rimusic.utils.queueTypeKey
 import it.fast4x.rimusic.utils.recommendationsNumberKey
 import it.fast4x.rimusic.utils.rememberEqualizerLauncher
 import it.fast4x.rimusic.utils.rememberPreference
+import it.fast4x.rimusic.utils.resumePlaybackOnStartKey
 import it.fast4x.rimusic.utils.resumePlaybackWhenDeviceConnectedKey
 import it.fast4x.rimusic.utils.shakeEventEnabledKey
 import it.fast4x.rimusic.utils.showButtonPlayerAddToPlaylistKey
@@ -220,6 +224,8 @@ fun DefaultUiSettings() {
     exoPlayerMinTimeForEvent = ExoPlayerMinTimeForEvent.`20s`
     var persistentQueue by rememberPreference(persistentQueueKey, false)
     persistentQueue = false
+    var resumePlaybackOnStart by rememberPreference(resumePlaybackOnStartKey, false)
+    resumePlaybackOnStart = false
     var closebackgroundPlayer by rememberPreference(closebackgroundPlayerKey, false)
     closebackgroundPlayer = false
     var closeWithBackButton by rememberPreference(closeWithBackButtonKey, true)
@@ -390,9 +396,9 @@ fun DefaultUiSettings() {
     pauseListenHistory = false
     var showTopActionsBar by rememberPreference(showTopActionsBarKey, true)
     showTopActionsBar = true
-    var playerControlsType by rememberPreference(playerControlsTypeKey, PlayerControlsType.Modern)
+    var playerControlsType by rememberPreference(playerControlsTypeKey, PlayerControlsType.Essential)
     playerControlsType = PlayerControlsType.Modern
-    var playerInfoType by rememberPreference(playerInfoTypeKey, PlayerInfoType.Modern)
+    var playerInfoType by rememberPreference(playerInfoTypeKey, PlayerInfoType.Essential)
     playerInfoType = PlayerInfoType.Modern
     var playerType by rememberPreference(playerTypeKey, PlayerType.Essential)
     playerType = PlayerType.Essential
@@ -408,7 +414,7 @@ fun DefaultUiSettings() {
     thumbnailType = ThumbnailType.Modern
     var expandedlyrics by rememberPreference(expandedlyricsKey, true)
     expandedlyrics = true
-    var playerTimelineType by rememberPreference(playerTimelineTypeKey, PlayerTimelineType.Default)
+    var playerTimelineType by rememberPreference(playerTimelineTypeKey, PlayerTimelineType.FakeAudioBar)
     playerTimelineType = PlayerTimelineType.Default
     var playerThumbnailSize by rememberPreference(
         playerThumbnailSizeKey,
@@ -434,9 +440,9 @@ fun DefaultUiSettings() {
     playerSwapControlsWithTimeline = false
     var playerPlayButtonType by rememberPreference(
         playerPlayButtonTypeKey,
-        PlayerPlayButtonType.Rectangular
+        PlayerPlayButtonType.Disabled
     )
-    playerPlayButtonType = PlayerPlayButtonType.Rectangular
+    playerPlayButtonType = PlayerPlayButtonType.Disabled
     var buttonzoomout by rememberPreference(buttonzoomoutKey, false)
     buttonzoomout = false
     var iconLikeType by rememberPreference(iconLikeTypeKey, IconLikeType.Essential)
@@ -510,8 +516,8 @@ fun DefaultUiSettings() {
     playerEnableLyricsPopupMessage = true
     var visualizerEnabled by rememberPreference(visualizerEnabledKey, false)
     visualizerEnabled = false
-    var showthumbnail by rememberPreference(showthumbnailKey, false)
-    showthumbnail = false
+    var showthumbnail by rememberPreference(showthumbnailKey, true)
+    showthumbnail = true
 }
 
 @ExperimentalAnimationApi
@@ -530,6 +536,7 @@ fun UiSettings(
         ExoPlayerMinTimeForEvent.`20s`
     )
     var persistentQueue by rememberPreference(persistentQueueKey, false)
+    var resumePlaybackOnStart by rememberPreference(resumePlaybackOnStartKey, false)
     var closebackgroundPlayer by rememberPreference(closebackgroundPlayerKey, false)
     var closeWithBackButton by rememberPreference(closeWithBackButtonKey, true)
     var resumePlaybackWhenDeviceConnected by rememberPreference(
@@ -663,8 +670,8 @@ fun UiSettings(
 
     /*  ViMusic Mode Settings  */
     var showTopActionsBar by rememberPreference(showTopActionsBarKey, true)
-    var playerControlsType by rememberPreference(playerControlsTypeKey, PlayerControlsType.Modern)
-    var playerInfoType by rememberPreference(playerInfoTypeKey, PlayerInfoType.Modern)
+    var playerControlsType by rememberPreference(playerControlsTypeKey, PlayerControlsType.Essential)
+    var playerInfoType by rememberPreference(playerInfoTypeKey, PlayerInfoType.Essential)
     var playerType by rememberPreference(playerTypeKey, PlayerType.Essential)
     var queueType by rememberPreference(queueTypeKey, QueueType.Essential)
     var fadingedge by rememberPreference(fadingedgeKey, false)
@@ -672,7 +679,7 @@ fun UiSettings(
     var carouselSize by rememberPreference(carouselSizeKey, CarouselSize.Biggest)
     var thumbnailType by rememberPreference(thumbnailTypeKey, ThumbnailType.Modern)
     var expandedlyrics by rememberPreference(expandedlyricsKey, true)
-    var playerTimelineType by rememberPreference(playerTimelineTypeKey, PlayerTimelineType.Default)
+    var playerTimelineType by rememberPreference(playerTimelineTypeKey, PlayerTimelineType.FakeAudioBar)
     var playerThumbnailSize by rememberPreference(
         playerThumbnailSizeKey,
         PlayerThumbnailSize.Biggest
@@ -692,7 +699,7 @@ fun UiSettings(
     )
     var playerPlayButtonType by rememberPreference(
         playerPlayButtonTypeKey,
-        PlayerPlayButtonType.Rectangular
+        PlayerPlayButtonType.Disabled
     )
     var buttonzoomout by rememberPreference(buttonzoomoutKey, false)
     var iconLikeType by rememberPreference(iconLikeTypeKey, IconLikeType.Essential)
@@ -738,11 +745,15 @@ fun UiSettings(
         true
     )
     var visualizerEnabled by rememberPreference(visualizerEnabledKey, false)
-    var showthumbnail by rememberPreference(showthumbnailKey, false)
+    var showthumbnail by rememberPreference(showthumbnailKey, true)
     /*  ViMusic Mode Settings  */
 
     var loudnessBaseGain by rememberPreference(loudnessBaseGainKey, 5.00f)
     var autoLoadSongsInQueue by rememberPreference(autoLoadSongsInQueueKey, true)
+
+    var enablePictureInPicture by rememberPreference(enablePictureInPictureKey, false)
+    var enablePictureInPictureAuto by rememberPreference(enablePictureInPictureAutoKey, false)
+    var pipModule by rememberPreference(pipModuleKey, PipModule.Cover)
 
     Column(
         modifier = Modifier
@@ -1075,6 +1086,23 @@ fun UiSettings(
                 }
             )
             RestartPlayerService(restartService, onRestart = { restartService = false })
+
+            AnimatedVisibility(visible = persistentQueue) {
+                Column(
+                    modifier = Modifier.padding(start = 25.dp)
+                ) {
+                    SwitchSettingEntry(
+                        title =  stringResource(R.string.resume_playback_on_start),
+                        text = stringResource(R.string.resume_automatically_when_app_opens),
+                        isChecked = resumePlaybackOnStart,
+                        onCheckedChange = {
+                            resumePlaybackOnStart = it
+                            restartService = true
+                        }
+                    )
+                    RestartPlayerService(restartService, onRestart = { restartService = false } )
+                }
+            }
         }
 
 
@@ -1231,6 +1259,52 @@ fun UiSettings(
                 }
             )
             RestartPlayerService(restartService, onRestart = { restartService = false } )
+        }
+
+        if (searchInput.isBlank() || stringResource(R.string.settings_enable_pip).contains(searchInput,true)) {
+            SwitchSettingEntry(
+                title = stringResource(R.string.settings_enable_pip),
+                text = "",
+                isChecked = enablePictureInPicture,
+                onCheckedChange = {
+                    enablePictureInPicture = it
+                    restartActivity = true
+                }
+            )
+            RestartActivity(restartActivity, onRestart = { restartActivity = false })
+            AnimatedVisibility(visible = enablePictureInPicture) {
+                Column(
+                    modifier = Modifier.padding(start = 25.dp)
+                ) {
+
+                    EnumValueSelectorSettingsEntry(
+                        title = stringResource(R.string.settings_pip_module),
+                        selectedValue = pipModule,
+                        onValueSelected = {
+                            pipModule = it
+                            restartActivity = true
+                        },
+                        valueText = {
+                            when (it) {
+                                PipModule.Cover -> stringResource(R.string.pipmodule_cover)
+                            }
+                        }
+                    )
+
+                    SwitchSettingEntry(
+                        isEnabled = isAtLeastAndroid12,
+                        title = stringResource(R.string.settings_enable_pip_auto),
+                        text = stringResource(R.string.pip_info_from_android_12_pip_can_be_automatically_enabled),
+                        isChecked = enablePictureInPictureAuto,
+                        onCheckedChange = {
+                            enablePictureInPictureAuto = it
+                            restartActivity = true
+                        }
+                    )
+                    RestartActivity(restartActivity, onRestart = { restartActivity = false })
+                }
+
+            }
         }
 
         if (searchInput.isBlank() || stringResource(R.string.equalizer).contains(searchInput,true))

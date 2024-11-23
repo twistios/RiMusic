@@ -100,6 +100,7 @@ import it.fast4x.rimusic.utils.blurStrengthKey
 import it.fast4x.rimusic.utils.bold
 import it.fast4x.rimusic.utils.center
 import it.fast4x.rimusic.cleanPrefix
+import it.fast4x.rimusic.utils.VinylSizeKey
 import it.fast4x.rimusic.utils.colorPaletteModeKey
 import it.fast4x.rimusic.utils.drawCircle
 import it.fast4x.rimusic.utils.fadingedgeKey
@@ -117,6 +118,7 @@ import it.fast4x.rimusic.utils.resize
 import it.fast4x.rimusic.utils.secondary
 import it.fast4x.rimusic.utils.semiBold
 import it.fast4x.rimusic.utils.setDeviceVolume
+import it.fast4x.rimusic.utils.showVinylThumbnailAnimationKey
 import it.fast4x.rimusic.utils.thumbnailFadeKey
 import it.fast4x.rimusic.utils.thumbnailOffsetKey
 import it.fast4x.rimusic.utils.thumbnailRoundnessKey
@@ -304,15 +306,15 @@ inline fun DefaultDialog(
 }
 
 @Composable
-inline fun <T> ValueSelectorDialog(
+fun <T> ValueSelectorDialog(
     modifier: Modifier = Modifier,
-    noinline onDismiss: () -> Unit,
+    onDismiss: () -> Unit,
     title: String,
     titleSecondary: String? = null,
     selectedValue: T,
     values: List<T>,
-    crossinline onValueSelected: (T) -> Unit,
-    crossinline valueText: @Composable (T) -> String = { it.toString() }
+    onValueSelected: (T) -> Unit,
+    valueText: @Composable (T) -> String = { it.toString() }
 ) {
     val colorPalette = colorPalette()
     Dialog(onDismissRequest = onDismiss) {
@@ -1168,7 +1170,7 @@ fun BlurParamsDialog(
     scaleValue: (Float) -> Unit,
     darkenFactorValue: (Float) -> Unit
 ) {
-    val defaultStrength = 5f
+    val defaultStrength = 25f
     //val defaultStrength2 = 30f
     val defaultDarkenFactor = 0.2f
     var blurStrength  by rememberPreference(blurStrengthKey, defaultStrength)
@@ -1278,14 +1280,18 @@ fun BlurParamsDialog(
         scaleValue: (Float) -> Unit,
         spacingValue: (Float) -> Unit,
         fadeValue: (Float) -> Unit,
+        vinylSizeValue: (Float) -> Unit
     ) {
         val defaultFade = 5f
         val defaultOffset = 10f
         val defaultSpacing = 0f
+        val defaultVinylSize = 50f
         var thumbnailOffset by rememberPreference(thumbnailOffsetKey, defaultOffset)
         var thumbnailSpacing by rememberPreference(thumbnailSpacingKey, defaultOffset)
         var thumbnailFade by rememberPreference(thumbnailFadeKey, defaultFade)
         var fadingedge by rememberPreference(fadingedgeKey, false)
+        var vinylSize by rememberPreference(VinylSizeKey, defaultVinylSize)
+        val showVinylThumbnailAnimation by rememberPreference(showVinylThumbnailAnimationKey, false)
         DefaultDialog(
             onDismiss = {
                 scaleValue(thumbnailOffset)
@@ -1294,6 +1300,33 @@ fun BlurParamsDialog(
                 onDismiss()
             }
         ) {
+            if (showVinylThumbnailAnimation) {
+                Row(
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                ) {
+                    IconButton(
+                        onClick = {
+                            vinylSize = defaultVinylSize
+                        },
+                        icon = R.drawable.album,
+                        color = colorPalette().favoritesIcon,
+                        modifier = Modifier
+                            .size(24.dp)
+                    )
+
+                    SliderControl(
+                        state = vinylSize,
+                        onSlide = { vinylSize = it },
+                        onSlideComplete = {},
+                        toDisplay = { "%.0f".format(it) },
+                        steps = 10,
+                        range = 50f..100f
+                    )
+                }
+            }
 
             Row(
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -1659,7 +1692,7 @@ fun PlaybackParamsDialog(
     //val defaultVolume = 0.5f //binder?.player?.volume ?: 1f
     //val defaultDeviceVolume = getDeviceVolume(context)
     val defaultDuration = 0f
-    val defaultStrength = 5f
+    val defaultStrength = 25f
     var playbackSpeed  by rememberPreference(playbackSpeedKey,   defaultSpeed)
     var playbackPitch  by rememberPreference(playbackPitchKey,   defaultPitch)
     var playbackVolume  by rememberPreference(playbackVolumeKey, 0.5f)

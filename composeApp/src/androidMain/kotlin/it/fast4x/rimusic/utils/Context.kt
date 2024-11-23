@@ -5,6 +5,7 @@ import android.app.PendingIntent
 import android.content.ActivityNotFoundException
 import android.content.BroadcastReceiver
 import android.content.Context
+import android.content.ContextWrapper
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.ConnectivityManager
@@ -109,4 +110,13 @@ inline fun <reified T : DownloadService> Context.download(request: DownloadReque
 fun Context.isConnectionMetered(): Boolean {
     val manager = getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
     return manager.isActiveNetworkMetered
+}
+
+fun Context.findActivity(): Activity {
+    var context = this
+    while (context is ContextWrapper) {
+        if (context is Activity) return context
+        context = context.baseContext
+    }
+    error("Should be called in the context of an Activity")
 }

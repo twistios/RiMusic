@@ -68,6 +68,7 @@ class MediaLibrarySessionCallback @Inject constructor(
     var toggleDownload: () -> Unit = {}
     var toggleRepeat: () -> Unit = {}
     var toggleShuffle: () -> Unit = {}
+    var startRadio: () -> Unit = {}
     var callPause: () -> Unit = {}
     var searchedSongs: List<Song> = emptyList()
 
@@ -82,6 +83,7 @@ class MediaLibrarySessionCallback @Inject constructor(
                 .add(MediaSessionConstants.CommandToggleLike)
                 .add(MediaSessionConstants.CommandToggleShuffle)
                 .add(MediaSessionConstants.CommandToggleRepeatMode)
+                .add(MediaSessionConstants.CommandStartRadio)
                 .build(),
             connectionResult.availablePlayerCommands
         )
@@ -141,7 +143,8 @@ class MediaLibrarySessionCallback @Inject constructor(
             MediaSessionConstants.ACTION_TOGGLE_LIKE -> toggleLike()
             MediaSessionConstants.ACTION_TOGGLE_DOWNLOAD -> toggleDownload()
             MediaSessionConstants.ACTION_TOGGLE_SHUFFLE -> toggleShuffle()
-            MediaSessionConstants.ACTION_TOGGLE_REPEAT_MODE -> toggleRepeat() //session.player.toggleRepeatMode()
+            MediaSessionConstants.ACTION_TOGGLE_REPEAT_MODE -> toggleRepeat()
+            MediaSessionConstants.ACTION_START_RADIO -> startRadio()
         }
         return Futures.immediateFuture(SessionResult(SessionResult.RESULT_SUCCESS))
     }
@@ -579,8 +582,10 @@ object MediaSessionConstants {
     const val ACTION_TOGGLE_LIKE = "TOGGLE_LIKE"
     const val ACTION_TOGGLE_SHUFFLE = "TOGGLE_SHUFFLE"
     const val ACTION_TOGGLE_REPEAT_MODE = "TOGGLE_REPEAT_MODE"
+    const val ACTION_START_RADIO = "START_RADIO"
     val CommandToggleDownload = SessionCommand(ACTION_TOGGLE_DOWNLOAD, Bundle.EMPTY)
     val CommandToggleLike = SessionCommand(ACTION_TOGGLE_LIKE, Bundle.EMPTY)
     val CommandToggleShuffle = SessionCommand(ACTION_TOGGLE_SHUFFLE, Bundle.EMPTY)
     val CommandToggleRepeatMode = SessionCommand(ACTION_TOGGLE_REPEAT_MODE, Bundle.EMPTY)
+    val CommandStartRadio = SessionCommand(ACTION_START_RADIO, Bundle.EMPTY)
 }

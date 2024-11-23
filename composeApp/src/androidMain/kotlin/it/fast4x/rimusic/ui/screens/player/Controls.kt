@@ -45,6 +45,7 @@ import it.fast4x.rimusic.enums.PlayerTimelineSize
 import it.fast4x.rimusic.enums.PlayerTimelineType
 import it.fast4x.rimusic.enums.PlayerType
 import it.fast4x.rimusic.models.Info
+import it.fast4x.rimusic.models.Song
 import it.fast4x.rimusic.models.ui.UiMedia
 import it.fast4x.rimusic.ui.screens.player.components.controls.InfoAlbumAndArtistEssential
 import it.fast4x.rimusic.ui.screens.player.components.controls.InfoAlbumAndArtistModern
@@ -101,6 +102,14 @@ fun Controls(
     val binder = LocalPlayerServiceBinder.current
     binder?.player ?: return
 
+    var currentSong by remember { mutableStateOf<Song?>(null) }
+    LaunchedEffect(mediaId) {
+        Database.song(mediaId).distinctUntilChanged().collect {
+            currentSong = it
+        }
+    }
+
+    println("Controls currentSong: ${currentSong?.title}")
 
     /*
     var scrubbingPosition by remember(mediaId) {
@@ -129,7 +138,7 @@ fun Controls(
 
     var effectRotationEnabled by rememberPreference(effectRotationKey, true)
     var disableScrollingText by rememberPreference(disableScrollingTextKey, false)
-    var playerTimelineType by rememberPreference(playerTimelineTypeKey, PlayerTimelineType.Default)
+    var playerTimelineType by rememberPreference(playerTimelineTypeKey, PlayerTimelineType.FakeAudioBar)
 
 
     val scope = rememberCoroutineScope()
@@ -202,7 +211,7 @@ fun Controls(
         mutableStateOf(false)
     }
      */
-    val playerInfoType by rememberPreference(playerInfoTypeKey, PlayerInfoType.Modern)
+    val playerInfoType by rememberPreference(playerInfoTypeKey, PlayerInfoType.Essential)
     var playerSwapControlsWithTimeline by rememberPreference(
         playerSwapControlsWithTimelineKey,
         false
@@ -212,9 +221,9 @@ fun Controls(
         transparentBackgroundPlayerActionBarKey,
         false
     )
-    var playerControlsType by rememberPreference(playerControlsTypeKey, PlayerControlsType.Modern)
-    var playerPlayButtonType by rememberPreference(playerPlayButtonTypeKey, PlayerPlayButtonType.Default)
-    var showthumbnail by rememberPreference(showthumbnailKey, false)
+    var playerControlsType by rememberPreference(playerControlsTypeKey, PlayerControlsType.Essential)
+    var playerPlayButtonType by rememberPreference(playerPlayButtonTypeKey, PlayerPlayButtonType.Disabled)
+    var showthumbnail by rememberPreference(showthumbnailKey, true)
     var playerType by rememberPreference(playerTypeKey, PlayerType.Essential)
     val expandedlandscape = (isLandscape && playerType == PlayerType.Modern) || (expandedplayer && !showthumbnail)
 
@@ -235,7 +244,7 @@ fun Controls(
                             binder = binder,
                             navController = navController,
                             media = media,
-                            title = title,
+                            title = currentSong?.title,
                             albumId = albumId,
                             mediaId = mediaId,
                             likedAt = likedAt,
@@ -250,7 +259,7 @@ fun Controls(
                             binder = binder,
                             navController = navController,
                             media = media,
-                            title = title,
+                            title = currentSong?.title,
                             albumId = albumId,
                             mediaId = mediaId,
                             likedAt = likedAt,
@@ -311,7 +320,7 @@ fun Controls(
                         binder = binder,
                         navController = navController,
                         media = media,
-                        title = title,
+                        title = currentSong?.title,
                         albumId = albumId,
                         mediaId = mediaId,
                         likedAt = likedAt,
@@ -326,7 +335,7 @@ fun Controls(
                         binder = binder,
                         navController = navController,
                         media = media,
-                        title = title,
+                        title = currentSong?.title,
                         albumId = albumId,
                         mediaId = mediaId,
                         likedAt = likedAt,
@@ -406,7 +415,7 @@ fun Controls(
                     binder = binder,
                     navController = navController,
                     media = media,
-                    title = title,
+                    title = currentSong?.title,
                     albumId = albumId,
                     mediaId = mediaId,
                     likedAt = likedAt,
@@ -421,7 +430,7 @@ fun Controls(
                     binder = binder,
                     navController = navController,
                     media = media,
-                    title = title,
+                    title = currentSong?.title,
                     albumId = albumId,
                     mediaId = mediaId,
                     likedAt = likedAt,

@@ -776,6 +776,20 @@
     <string name="no_thumbnail_present">Мініатюра відсутня</string>
     <string name="removed_thumbnail">Мініатюру видалено</string>
     <string name="failed_to_remove_thumbnail">Не вдалося видалити мініатюру</string>
+    <string name="settings_enable_pip">Увімкнути \"Картинку в картинці\"</string>
+    <string name="settings_enable_pip_auto">Увімкнути автоматично \"Картинка в картинці\"</string>
+    <string name="pipmodule_cover">Обкладинка</string>
+    <string name="settings_pip_module">Модуль Pip</string>
+    <string name="menu_go_to_picture_in_picture">PIP</string>
+    <string name="pip_info_from_android_12_pip_can_be_automatically_enabled">З Android 12 pip можна увімкнути автоматично</string>
     <string name="showsecondline">Показати переклад у другому рядку</string>
-    <string name="enter_the_value">Enter The Value</string>
+    <string name="enter_the_value">Введіть значення</string>
+    <string name="resume_playback_on_start">Відновити відтворення під час запуску</string>
+    <string name="resume_automatically_when_app_opens">Автоматично відновлювати програвання під час відкриття програми</string>
+    <string name="notificationPlayerFirstIcon">Перша кнопка</string>
+    <string name="notificationPlayerSecondIcon">Друга кнопка</string>
+    <string name="notification_player">ПОВІДОМЛЕННЯ ПЛЕЄРА</string>
+    <string name="repeat">Повторити</string>
+    <string name="original_lyrics">Оригінальний текст</string>
+    <string name="translated_lyrics">Переклад тексту</string>
 </resources>

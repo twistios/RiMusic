@@ -30,6 +30,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import it.fast4x.rimusic.enums.NavRoutes
+import it.fast4x.rimusic.enums.NavigationBarPosition
 import it.fast4x.rimusic.enums.NavigationBarType
 import it.fast4x.rimusic.enums.UiType
 import it.fast4x.rimusic.ui.styling.Dimensions
@@ -173,7 +174,7 @@ class VerticalNavigationBar(
     override fun StatsButton(): NavigationButton {
         val button = super.StatsButton()
         button.modifier {
-            it.offset( 0.dp, 70.dp )
+            it.offset( 0.dp, 7.dp )
               .clip( CircleShape )
               .padding( top = 12.dp, bottom = 12.dp )
               .size( 24.dp )
@@ -185,8 +186,10 @@ class VerticalNavigationBar(
     override fun SearchButton(): NavigationButton {
         val button = super.SearchButton()
         button.modifier {
-            it.padding( all = 12.dp )
-              .size( 24.dp )
+            it.offset( 0.dp, 7.dp )
+                .clip( CircleShape )
+                .padding( top = 12.dp, bottom = 12.dp )
+                .size( 24.dp )
         }
         return button
     }
@@ -199,12 +202,13 @@ class VerticalNavigationBar(
         ) {
             val boxPadding: Dp =
                 if( UiType.ViMusic.isCurrent() )
-                    30.dp
+                    50.dp
                 else
                     Dp.Hairline
             Box(
                 contentAlignment = Alignment.TopCenter,
                 modifier = Modifier
+                    /*
                     .height(
                         if( UiType.ViMusic.isCurrent() )
                             if ( showStatsIconInNav() )
@@ -212,14 +216,19 @@ class VerticalNavigationBar(
                             else
                                 Dimensions.halfheaderHeight
                         else 0.dp
-                    ).padding( top = boxPadding )
+                    )*/
+                    .padding( top = boxPadding )
+
             ) {
                 // Show settings and statistics buttons in homepage
                 // Show back button in other screens
-                if( navController.currentBackStackEntry?.destination?.route == NavRoutes.home.name ) {
-                    SettingsButton().Draw()
-                    StatsButton().Draw()
-                } else
+//                if( navController.currentBackStackEntry?.destination?.route == NavRoutes.home.name ) {
+//                    SettingsButton().Draw()
+//                    StatsButton().Draw()
+//                } else
+//                    BackButton().Draw()
+                if(navController.currentBackStackEntry?.destination?.route != NavRoutes.home.name
+                    && UiType.ViMusic.isCurrent())
                     BackButton().Draw()
             }
 
@@ -231,17 +240,33 @@ class VerticalNavigationBar(
             // Only show search icon when UI is ViMusic and
             // setting is turned on
             if( UiType.ViMusic.isCurrent() && showSearchIconInNav() ) {
-                val iconWidth: Dp =
+                val iconSize: Dp =
                     if( isLandscape )
                         Dimensions.navigationRailWidthLandscape
                     else
                         Dimensions.navigationRailWidth
-                val iconHeight: Dp = Dimensions.halfheaderHeight
+                //val iconHeight: Dp = Dimensions.halfheaderHeight
 
                 Box(
                     contentAlignment = Alignment.TopCenter,
-                    modifier = Modifier.size( iconWidth, iconHeight ),
-                    content = { SearchButton().Draw() }
+                    modifier = Modifier.size(iconSize),
+                    content = {
+                        SearchButton().Draw()
+                    }
+                )
+                Box(
+                    contentAlignment = Alignment.TopCenter,
+                    modifier = Modifier.size(iconSize),
+                    content = {
+                        StatsButton().Draw()
+                    }
+                )
+                Box(
+                    contentAlignment = Alignment.TopCenter,
+                    modifier = Modifier.size(iconSize),
+                    content = {
+                        SettingsButton().Draw()
+                    }
                 )
             }
         }

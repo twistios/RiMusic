@@ -16,7 +16,7 @@ import android.media.AudioDeviceInfo
 import android.media.AudioManager
 import android.media.audiofx.AudioEffect
 import android.media.audiofx.LoudnessEnhancer
-import android.net.ConnectivityManager
+import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import androidx.annotation.OptIn
@@ -24,22 +24,16 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.core.app.NotificationCompat
-import androidx.core.content.ContextCompat
 import androidx.core.content.edit
-import androidx.core.content.getSystemService
 import androidx.core.text.isDigitsOnly
 import androidx.media3.common.AudioAttributes
 import androidx.media3.common.C
 import androidx.media3.common.ForwardingPlayer
 import androidx.media3.common.MediaItem
-import androidx.media3.common.MediaMetadata
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
 import androidx.media3.common.Player.EVENT_POSITION_DISCONTINUITY
 import androidx.media3.common.Player.EVENT_TIMELINE_CHANGED
-import androidx.media3.common.Player.REPEAT_MODE_ALL
-import androidx.media3.common.Player.REPEAT_MODE_OFF
-import androidx.media3.common.Player.REPEAT_MODE_ONE
 import androidx.media3.common.Player.STATE_IDLE
 import androidx.media3.common.Timeline
 import androidx.media3.common.audio.SonicAudioProcessor
@@ -71,10 +65,11 @@ import androidx.media3.session.CommandButton
 import androidx.media3.session.DefaultMediaNotificationProvider
 import androidx.media3.session.MediaController
 import androidx.media3.session.MediaLibraryService
+import androidx.media3.session.MediaNotification
 import androidx.media3.session.MediaSession
+import androidx.media3.session.MediaStyleNotificationHelper
 import androidx.media3.session.SessionToken
-import androidx.media3.session.legacy.MediaDescriptionCompat
-import androidx.media3.session.legacy.MediaSessionCompat
+import com.google.common.collect.ImmutableList
 import com.google.common.util.concurrent.MoreExecutors
 import it.fast4x.innertube.Innertube
 import it.fast4x.innertube.models.NavigationEndpoint
@@ -84,12 +79,12 @@ import it.fast4x.innertube.utils.from
 import it.fast4x.rimusic.Database
 import it.fast4x.rimusic.MainActivity
 import it.fast4x.rimusic.R
-import it.fast4x.rimusic.cleanPrefix
 import it.fast4x.rimusic.enums.AudioQualityFormat
 import it.fast4x.rimusic.enums.DurationInMilliseconds
 import it.fast4x.rimusic.enums.ExoPlayerCacheLocation
 import it.fast4x.rimusic.enums.ExoPlayerDiskCacheMaxSize
 import it.fast4x.rimusic.enums.ExoPlayerMinTimeForEvent
+import it.fast4x.rimusic.enums.NotificationButtons
 import it.fast4x.rimusic.enums.PopupType
 import it.fast4x.rimusic.enums.QueueLoopType
 import it.fast4x.rimusic.extensions.audiovolume.AudioVolumeObserver
@@ -105,10 +100,6 @@ import it.fast4x.rimusic.query
 import it.fast4x.rimusic.service.BitmapProvider
 import it.fast4x.rimusic.service.MyDownloadHelper
 import it.fast4x.rimusic.service.MyDownloadService
-import it.fast4x.rimusic.service.modern.MediaSessionConstants.CommandToggleDownload
-import it.fast4x.rimusic.service.modern.MediaSessionConstants.CommandToggleLike
-import it.fast4x.rimusic.service.modern.MediaSessionConstants.CommandToggleRepeatMode
-import it.fast4x.rimusic.service.modern.MediaSessionConstants.CommandToggleShuffle
 import it.fast4x.rimusic.transaction
 import it.fast4x.rimusic.ui.components.themed.SmartMessage
 import it.fast4x.rimusic.ui.widgets.PlayerHorizontalWidget
@@ -133,6 +124,7 @@ import it.fast4x.rimusic.utils.getEnum
 import it.fast4x.rimusic.utils.intent
 import it.fast4x.rimusic.utils.isAtLeastAndroid10
 import it.fast4x.rimusic.utils.isAtLeastAndroid6
+import it.fast4x.rimusic.utils.isAtLeastAndroid8
 import it.fast4x.rimusic.utils.isAtLeastAndroid81
 import it.fast4x.rimusic.utils.isDiscordPresenceEnabledKey
 import it.fast4x.rimusic.utils.isPauseOnVolumeZeroEnabledKey
@@ -140,6 +132,8 @@ import it.fast4x.rimusic.utils.loudnessBaseGainKey
 import it.fast4x.rimusic.utils.manageDownload
 import it.fast4x.rimusic.utils.mediaItems
 import it.fast4x.rimusic.utils.minimumSilenceDurationKey
+import it.fast4x.rimusic.utils.notificationPlayerFirstIconKey
+import it.fast4x.rimusic.utils.notificationPlayerSecondIconKey
 import it.fast4x.rimusic.utils.pauseListenHistoryKey
 import it.fast4x.rimusic.utils.persistentQueueKey
 import it.fast4x.rimusic.utils.playNext
@@ -147,6 +141,7 @@ import it.fast4x.rimusic.utils.playbackFadeAudioDurationKey
 import it.fast4x.rimusic.utils.preferences
 import it.fast4x.rimusic.utils.putEnum
 import it.fast4x.rimusic.utils.queueLoopTypeKey
+import it.fast4x.rimusic.utils.resumePlaybackOnStartKey
 import it.fast4x.rimusic.utils.resumePlaybackWhenDeviceConnectedKey
 import it.fast4x.rimusic.utils.setLikeState
 import it.fast4x.rimusic.utils.showDownloadButtonBackgroundPlayerKey
@@ -164,7 +159,6 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancel
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -179,6 +173,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.plus
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
+import me.knighthat.appContext
 import timber.log.Timber
 import java.io.IOException
 import java.io.ObjectInputStream
@@ -187,7 +182,6 @@ import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 import kotlin.math.roundToInt
 import kotlin.system.exitProcess
-import kotlin.time.Duration.Companion.seconds
 import android.os.Binder as AndroidBinder
 
 const val LOCAL_KEY_PREFIX = "local:"
@@ -251,10 +245,13 @@ class PlayerServiceModern : MediaLibraryService(),
     private var notificationManager: NotificationManager? = null
     private val playerVerticalWidget = PlayerVerticalWidget()
     private val playerHorizontalWidget = PlayerHorizontalWidget()
+//    private var nBuilder: NotificationCompat.Builder =
+//            NotificationCompat.Builder(this@PlayerServiceModern, NotificationChannelId)
 
     @kotlin.OptIn(FlowPreview::class, ExperimentalCoroutinesApi::class)
     override fun onCreate() {
         super.onCreate()
+
         setMediaNotificationProvider(
             DefaultMediaNotificationProvider(
                 this,
@@ -266,6 +263,31 @@ class PlayerServiceModern : MediaLibraryService(),
                     setSmallIcon(R.drawable.app_icon)
                 }
         )
+
+        /*
+        setMediaNotificationProvider(object : MediaNotification.Provider{
+            override fun createNotification(
+                mediaSession: MediaSession,// this is the session we pass to style
+                customLayout: ImmutableList<CommandButton>,
+                actionFactory: MediaNotification.ActionFactory,
+                onNotificationChangedCallback: MediaNotification.Provider.Callback
+            ): MediaNotification {
+                createCustomNotification(mediaSession)
+                // notification should be created before you return here
+                return MediaNotification(NotificationId,nBuilder.build())
+            }
+
+            override fun handleCustomCommand(
+                session: MediaSession,
+                action: String,
+                extras: Bundle
+            ): Boolean {
+                return false
+            }
+        })
+        */
+
+
 
         runCatching {
             bitmapProvider = BitmapProvider(
@@ -369,6 +391,7 @@ class PlayerServiceModern : MediaLibraryService(),
             toggleDownload = ::toggleDownload
             toggleRepeat = ::toggleRepeat
             toggleShuffle = ::toggleShuffle
+            startRadio = ::startRadio
             callPause = ::callActionPause
         }
 
@@ -384,7 +407,11 @@ class PlayerServiceModern : MediaLibraryService(),
                         PendingIntent.FLAG_IMMUTABLE
                     )
                 )
-                //.setBitmapLoader(CoilBitmapLoader(this, coroutineScope))
+                .setBitmapLoader(CoilBitmapLoader(
+                    this,
+                    coroutineScope,
+                    512 * resources.displayMetrics.density.toInt()
+                ))
                 .build()
 
         player.skipSilenceEnabled = preferences.getBoolean(skipSilenceKey, false)
@@ -432,11 +459,14 @@ class PlayerServiceModern : MediaLibraryService(),
             }
         }
 
+        maybeRestorePlayerQueue()
+
         maybeResumePlaybackWhenDeviceConnected()
 
+        /* Queue is saved in events without scheduling it (remove this in future)*/
         // Load persistent queue when start activity and save periodically in background
         if (isPersistentQueueEnabled) {
-            maybeRestorePlayerQueue()
+            maybeResumePlaybackOnStart()
 
             val scheduler = Executors.newScheduledThreadPool(1)
             scheduler.scheduleWithFixedDelay({
@@ -457,6 +487,7 @@ class PlayerServiceModern : MediaLibraryService(),
 
              */
         }
+
 
     }
 
@@ -533,6 +564,11 @@ class PlayerServiceModern : MediaLibraryService(),
     fun toggleShuffle() {
         player.toggleShuffleMode()
         updateNotification()
+    }
+
+    fun startRadio() {
+        binder.stopRadio()
+        binder.playRadio(NavigationEndpoint.Endpoint.Watch(videoId = binder.player.currentMediaItem?.mediaId))
     }
 
     fun callActionPause() {
@@ -841,6 +877,7 @@ class PlayerServiceModern : MediaLibraryService(),
     override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
         //super.onMediaItemTransition(mediaItem, reason)
         println("PlayerServiceModern onMediaItemTransition mediaItem $mediaItem reason $reason")
+
         currentMediaItem.update { mediaItem }
         maybeRecoverPlaybackError()
         maybeNormalizeVolume()
@@ -1052,9 +1089,107 @@ class PlayerServiceModern : MediaLibraryService(),
         }
     )
 
+/*
+    fun  createCustomNotification(session: MediaSession) {
+
+        nBuilder
+//            NotificationCompat.Builder(this@PlayerServiceModern, NotificationChannelId)
+            .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+            .setSmallIcon(R.drawable.app_icon)
+            .setContentTitle("your Content title")
+            .setContentText("your content text")
+            .setLargeIcon(bitmapProvider.bitmap)
+            .addAction(R.drawable.play_skip_back, "Previous", Action.previous.pendingIntent) // #0
+            .addAction(R.drawable.pause, "Pause", Action.pause.pendingIntent) // #1
+            .addAction(R.drawable.play_skip_forward, "Next", Action.next.pendingIntent) // #2
+            .setStyle(MediaStyleNotificationHelper.MediaStyle(session)
+                .setShowActionsInCompactView(0,1,2))
+    }
+    */
+
+
+    private fun buildCommandButtons(): MutableList<CommandButton> {
+        val notificationPlayerFirstIcon = preferences.getEnum(notificationPlayerFirstIconKey, NotificationButtons.Download)
+        val notificationPlayerSecondIcon = preferences.getEnum(notificationPlayerSecondIconKey, NotificationButtons.Favorites)
+
+        val commandButtonsList = mutableListOf<CommandButton>()
+        val firstCommandButton = NotificationButtons.entries.let { buttons ->
+            buttons
+                .filter { it == notificationPlayerFirstIcon }
+                .map {
+                    CommandButton.Builder()
+                        .setDisplayName(it.displayName)
+                        .setIconResId(
+                            it.getStateIcon(
+                                it,
+                                currentSong.value?.likedAt,
+                                currentSongStateDownload.value,
+                                player.repeatMode,
+                                player.shuffleModeEnabled
+                            )
+                        )
+                        .setSessionCommand(it.sessionCommand)
+                        .build()
+                }
+        }
+
+        val secondCommandButton =  NotificationButtons.entries.let { buttons ->
+            buttons
+                .filter { it == notificationPlayerSecondIcon }
+                .map {
+                    CommandButton.Builder()
+                        .setDisplayName(it.displayName)
+                        .setIconResId(
+                            it.getStateIcon(
+                                it,
+                                currentSong.value?.likedAt,
+                                currentSongStateDownload.value,
+                                player.repeatMode,
+                                player.shuffleModeEnabled
+                            )
+                        )
+                        .setSessionCommand(it.sessionCommand)
+                        .build()
+                }
+        }
+
+        val otherCommandButtons = NotificationButtons.entries.let { buttons ->
+            buttons
+                .filterNot { it == notificationPlayerFirstIcon || it == notificationPlayerSecondIcon }
+                .map {
+                    CommandButton.Builder()
+                        .setDisplayName(it.displayName)
+                        .setIconResId(
+                            it.getStateIcon(
+                                it,
+                                currentSong.value?.likedAt,
+                                currentSongStateDownload.value,
+                                player.repeatMode,
+                                player.shuffleModeEnabled
+                            )
+                        )
+                        .setSessionCommand(it.sessionCommand)
+                        .build()
+                }
+        }
+
+        commandButtonsList += firstCommandButton + secondCommandButton + otherCommandButtons
+
+        return commandButtonsList
+    }
+
     private fun updateNotification() {
         coroutineScope.launch(Dispatchers.Main) {
+
+//            nBuilder.setContentTitle("text")
+//            nBuilder.setContentText("subtext")
+//            notificationManager?.notify(NotificationId,nBuilder.build())
+
             mediaSession.setCustomLayout(
+
+                buildCommandButtons()
+
+                /*
                 listOf(
 
                     CommandButton.Builder()
@@ -1085,9 +1220,9 @@ class PlayerServiceModern : MediaLibraryService(),
                         .setDisplayName(
                             getString(
                                 when (player.repeatMode) {
-                                    REPEAT_MODE_OFF -> R.string.favorites
-                                    REPEAT_MODE_ONE -> R.string.favorites
-                                    REPEAT_MODE_ALL -> R.string.favorites
+                                    REPEAT_MODE_OFF -> R.string.repeat
+                                    REPEAT_MODE_ONE -> R.string.repeat
+                                    REPEAT_MODE_ALL -> R.string.repeat
                                     else -> throw IllegalStateException()
                                 }
                             )
@@ -1111,7 +1246,17 @@ class PlayerServiceModern : MediaLibraryService(),
                         .setSessionCommand(CommandToggleShuffle)
                         .build(),
 
+
+                    CommandButton.Builder()
+                        .setDisplayName(getString(R.string.start_radio))
+                        .setIconResId(R.drawable.radio)
+                        .setSessionCommand(CommandStartRadio)
+                        .build(),
+
+
+
                     )
+                 */
             )
         }
 
@@ -1272,6 +1417,7 @@ class PlayerServiceModern : MediaLibraryService(),
     }
 
     private fun maybeSavePlayerQueue() {
+        println("PlayerServiceModern onCreate savePersistentQueue")
         if (!isPersistentQueueEnabled) return
         /*
         if (player.playbackState == Player.STATE_IDLE) {
@@ -1306,6 +1452,13 @@ class PlayerServiceModern : MediaLibraryService(),
         }
     }
 
+    private fun maybeResumePlaybackOnStart() {
+        if(!isPersistentQueueEnabled || !preferences.getBoolean(resumePlaybackOnStartKey, false)) return
+
+        if(!player.isPlaying) {
+            player.play()
+        }
+    }
 
     @ExperimentalCoroutinesApi
     @FlowPreview
@@ -1335,14 +1488,25 @@ class PlayerServiceModern : MediaLibraryService(),
                 )
                 player.prepare()
 
+                /*
                 runCatching {
                     ContextCompat.startForegroundService(
                         this@PlayerServiceModern,
                         intent<PlayerServiceModern>()
                     )
+                    startForeground(
+                        NotificationId,
+                        Notification.Builder(this@PlayerServiceModern, NotificationChannelId)
+                            .setSmallIcon(R.drawable.app_icon)
+                            .setContentTitle("RiMusic")
+                            .setContentText("Loading...")
+                            .build()
+                    )
+                    updateNotification()
                 }.onFailure {
-                    Timber.e("maybeRestorePlayerQueue startForegroundService ${it.stackTraceToString()}")
+                    Timber.e("PlayerServiceModern maybeRestorePlayerQueue startForegroundService ${it.stackTraceToString()}")
                 }
+                */
 
             }
         }
@@ -1464,6 +1628,30 @@ class PlayerServiceModern : MediaLibraryService(),
             }.onFailure {
                 Timber.e("Failed NotificationDismissReceiver stopService in PlayerServiceModern (PlayerServiceModern) ${it.stackTraceToString()}")
             }
+        }
+    }
+
+    @JvmInline
+    private value class Action(val value: String) {
+        //context(Context)
+        val pendingIntent: PendingIntent
+            get() = PendingIntent.getBroadcast(
+                appContext(),
+                100,
+                Intent(value).setPackage(appContext().packageName),
+                PendingIntent.FLAG_UPDATE_CURRENT.or(if (isAtLeastAndroid6) PendingIntent.FLAG_IMMUTABLE else 0)
+            )
+
+        companion object {
+
+            val pause = Action("it.fast4x.rimusic.pause")
+            val play = Action("it.fast4x.rimusic.play")
+            val next = Action("it.fast4x.rimusic.next")
+            val previous = Action("it.fast4x.rimusic.previous")
+            val like = Action("it.fast4x.rimusic.like")
+            val download = Action("it.fast4x.rimusic.download")
+            val playradio = Action("it.fast4x.rimusic.playradio")
+            val shuffle = Action("it.fast4x.rimusic.shuffle")
         }
     }
 

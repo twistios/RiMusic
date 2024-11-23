@@ -776,6 +776,20 @@
     <string name="no_thumbnail_present">Kapak Resmi Mevcut Değil</string>
     <string name="removed_thumbnail">Kapak Resmi Kaldırıldı</string>
     <string name="failed_to_remove_thumbnail">Kapak Resmi Silinemedi</string>
+    <string name="settings_enable_pip">Resim İçinde Resmi Etkinleştir</string>
+    <string name="settings_enable_pip_auto">Otomatik Resim İçinde Resmi Etkinleştir</string>
+    <string name="pipmodule_cover">Kapak</string>
+    <string name="settings_pip_module">Resim İçinde Resim modülü</string>
+    <string name="menu_go_to_picture_in_picture">RİR</string>
+    <string name="pip_info_from_android_12_pip_can_be_automatically_enabled">Android 12\'den itibaren rir otomatik etkinleştirilebilir</string>
     <string name="showsecondline">İkinci Satırda Çeviriyi Göster</string>
-    <string name="enter_the_value">Enter The Value</string>
+    <string name="enter_the_value">Değer Giriniz</string>
+    <string name="resume_playback_on_start">Başlangıçta Oynatmayı Devam Ettir</string>
+    <string name="resume_automatically_when_app_opens">Uygulama açıldığında oynatmayı otomatik olarak devam ettir</string>
+    <string name="notificationPlayerFirstIcon">İlk düğme</string>
+    <string name="notificationPlayerSecondIcon">İkinci düğme</string>
+    <string name="notification_player">BİLDİRİM OYNATICISI</string>
+    <string name="repeat">Tekrarla</string>
+    <string name="original_lyrics">Orijinal Şarkı Sözleri</string>
+    <string name="translated_lyrics">Çevrilmiş Şarkı Sözleri</string>
 </resources>

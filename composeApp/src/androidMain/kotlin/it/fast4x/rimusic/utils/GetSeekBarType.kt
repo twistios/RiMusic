@@ -64,7 +64,7 @@ fun GetSeekBar(
     ) {
     val binder = LocalPlayerServiceBinder.current
     binder?.player ?: return
-    val playerTimelineType by rememberPreference(playerTimelineTypeKey, PlayerTimelineType.Default)
+    val playerTimelineType by rememberPreference(playerTimelineTypeKey, PlayerTimelineType.FakeAudioBar)
     var scrubbingPosition by remember(mediaId) {
         mutableStateOf<Long?>(null)
     }
@@ -79,7 +79,6 @@ fun GetSeekBar(
     LaunchedEffect(mediaId) {
         if (compositionLaunched) animatedPosition.animateTo(0f)
     }
-    //var showthumbnail by rememberPreference(showthumbnailKey, true)
     val colorPaletteMode by rememberPreference(colorPaletteModeKey, ColorPaletteMode.System)
     LaunchedEffect(position) {
         if (!isSeeking && !animatedPosition.isRunning)

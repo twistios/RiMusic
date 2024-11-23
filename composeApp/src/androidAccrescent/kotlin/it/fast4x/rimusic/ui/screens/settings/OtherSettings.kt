@@ -247,6 +247,7 @@ fun OtherSettings() {
         val isLoggedIn = remember(cookie) {
             "SAPISID" in parseCookieString(cookie)
         }
+        //if (!isLoggedIn) isYouTubeLoginEnabled = false // disable if not logged in
 
         SettingsGroupSpacer()
         SettingsEntryGroupText(title = "YOUTUBE MUSIC")
@@ -255,7 +256,16 @@ fun OtherSettings() {
             title = "Enable YouTube Music Login",
             text = "",
             isChecked = isYouTubeLoginEnabled,
-            onCheckedChange = { isYouTubeLoginEnabled = it }
+            onCheckedChange = {
+                isYouTubeLoginEnabled = it
+                if (!it) {
+                    visitorData = ""
+                    cookie = ""
+                    accountName = ""
+                    accountChannelHandle = ""
+                    accountEmail = ""
+                }
+            }
         )
 
         AnimatedVisibility(visible = isYouTubeLoginEnabled) {
@@ -439,6 +449,7 @@ fun OtherSettings() {
                         icon = R.drawable.chevron_back,
                         text = stringResource(R.string.cancel),
                         onClick = {
+                            loadInstances = false
                             showInstances = false
                             menuState.hide()
                         }
@@ -459,6 +470,7 @@ fun OtherSettings() {
                                     //println("mediaItem Instance ${instances[index].apiBaseUrl}")
                                 }
                                  */
+                                loadInstances = false
                                 showInstances = false
                             }
                         )
@@ -467,6 +479,7 @@ fun OtherSettings() {
                         icon = R.drawable.chevron_back,
                         text = stringResource(R.string.cancel),
                         onClick = {
+                            loadInstances = false
                             showInstances = false
                             menuState.hide()
                         }

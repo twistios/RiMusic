@@ -9,9 +9,14 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.content.edit
+import com.google.gson.Gson
+import it.fast4x.innertube.Innertube
+import it.fast4x.rimusic.models.Song
 import kotlinx.serialization.InternalSerializationApi
+import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.serializer
+import timber.log.Timber
 
 const val lastPlayerThumbnailSizeKey = "lastPlayerThumbnailSize"
 const val lastPlayerPlayButtonTypeKey = "lastPlayerPlayButtonType"
@@ -26,7 +31,6 @@ const val thumbnailTapEnabledKey = "thumbnailTapEnabled"
 const val wavedPlayerTimelineKey = "wavedPlayerTimeline"
 const val languageAppKey = "languageApp"
 const val otherLanguageAppKey = "otherLanguageApp"
-const val romanizationEnabeledKey = "romanizationEnabeled"
 const val indexNavigationTabKey = "indexNavigationTab"
 const val effectRotationKey = "effectRotation"
 const val playerThumbnailSizeKey = "playerThumbnailSize"
@@ -60,6 +64,7 @@ const val skipMediaOnErrorKey = "skipMediaOnError"
 const val volumeNormalizationKey = "volumeNormalization"
 const val resumePlaybackWhenDeviceConnectedKey = "resumePlaybackWhenDeviceConnected"
 const val persistentQueueKey = "persistentQueue"
+const val resumePlaybackOnStartKey = "resumePlaybackOnStart"
 const val closebackgroundPlayerKey = "closebackgroundPlayer"
 const val closeWithBackButtonKey = "closeWithBackButton"
 const val isShowingSynchronizedLyricsKey = "isShowingSynchronizedLyrics"
@@ -284,8 +289,25 @@ const val enableYouTubeLoginKey = "enableYoutubeLogin"
 
 const val autoLoadSongsInQueueKey = "autoLoadSongsInQueue"
 const val showSecondLineKey = "showSecondLine"
+const val VinylSizeKey = "VinylSize"
+const val romanizationKey = "romanization"
+
+const val quickPicsTrendingSongKey = "quickPicsTrendingSong"
+const val quickPicsRelatedPageKey = "quickPicsRelatedPage"
+const val quickPicsChartsPageKey = "quickPicsChartsPage"
+const val quickPicsDiscoverPageKey = "quickPicsDiscoverPage"
+const val loadedDataKey = "loadedData"
+
+const val enablePictureInPictureKey = "enablePicturInPicture"
+const val enablePictureInPictureAutoKey = "enablePicturInPictureAuto"
+const val pipModuleKey = "pipModule"
+
+const val notificationPlayerFirstIconKey = "notificationPlayerFirstIcon"
+const val notificationPlayerSecondIconKey = "notificationPlayerSecondIcon"
 
 
+
+/*
 @PublishedApi
 internal val defaultJson = Json {
     isLenient = true
@@ -323,7 +345,7 @@ inline fun <reified T : Json> SharedPreferences.getJson(
             null
         }
     } ?: defaultValue
-
+*/
 
 inline fun <reified T : Enum<T>> SharedPreferences.getEnum(
     key: String,
@@ -346,12 +368,102 @@ inline fun <reified T : Enum<T>> SharedPreferences.Editor.putEnum(
 val Context.preferences: SharedPreferences
     get() = getSharedPreferences("preferences", Context.MODE_PRIVATE)
 
+/*
 @Composable
 inline fun <reified T : Json> rememberPreference(key: String, defaultValue: T, json: Json = defaultJson): MutableState<T> {
     val context = LocalContext.current
     return remember {
         mutableStatePreferenceOf(context.preferences.getJson(key, defaultValue)) {
             context.preferences.edit { putJson(key, it) }
+        }
+    }
+}
+*/
+
+@Composable
+fun rememberPreference(key: String, defaultValue: Song?): MutableState<Song?> {
+    val context = LocalContext.current
+    val json = Json.encodeToString(defaultValue)
+    return remember {
+        mutableStatePreferenceOf(
+            try {
+                context.preferences.getString(key, json)
+                    ?.let { Json.decodeFromString<Song>(it) }
+            } catch (e: Exception) {
+                Timber.e("RememberPreference RelatedPage Error: ${ e.stackTraceToString() }")
+                null
+            }
+        ) {
+            context.preferences.edit { putString(
+                key,
+                Json.encodeToString(it)
+            ) }
+        }
+    }
+}
+
+@Composable
+fun rememberPreference(key: String, defaultValue: Innertube.DiscoverPage?): MutableState<Innertube.DiscoverPage?> {
+    val context = LocalContext.current
+    val json = Json.encodeToString(defaultValue)
+    return remember {
+        mutableStatePreferenceOf(
+            try {
+                context.preferences.getString(key, json)
+                    ?.let { Json.decodeFromString<Innertube.DiscoverPage>(it) }
+            } catch (e: Exception) {
+                Timber.e("RememberPreference DiscoverPage Error: ${ e.stackTraceToString() }")
+                null
+            }
+        ) {
+            context.preferences.edit { putString(
+                key,
+                Json.encodeToString(it)
+            ) }
+        }
+    }
+}
+
+@Composable
+fun rememberPreference(key: String, defaultValue: Innertube.ChartsPage?): MutableState<Innertube.ChartsPage?> {
+    val context = LocalContext.current
+    val json = Json.encodeToString(defaultValue)
+    return remember {
+        mutableStatePreferenceOf(
+            try {
+                context.preferences.getString(key, json)
+                    ?.let { Json.decodeFromString<Innertube.ChartsPage>(it) }
+            } catch (e: Exception) {
+                Timber.e("RememberPreference ChartsPage Error: ${ e.stackTraceToString() }")
+                null
+            }
+        ) {
+            context.preferences.edit { putString(
+                key,
+                Json.encodeToString(it)
+            ) }
+        }
+    }
+}
+
+@Composable
+fun rememberPreference(key: String, defaultValue: Innertube.RelatedPage?): MutableState<Innertube.RelatedPage?> {
+    val context = LocalContext.current
+    val json = Json.encodeToString(defaultValue)
+    return remember {
+        mutableStatePreferenceOf(
+            try {
+                context.preferences.getString(key, json)
+                    ?.let { Json.decodeFromString<Innertube.RelatedPage>(it) }
+            } catch (e: Exception) {
+                Timber.e("RememberPreference RelatedPage Error: ${ e.stackTraceToString() }")
+                null
+            }
+        ) {
+            context.preferences.edit { putString(
+                key,
+                Json.encodeToString(it)
+            ) }
         }
     }
 }

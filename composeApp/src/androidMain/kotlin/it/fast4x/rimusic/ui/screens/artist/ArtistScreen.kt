@@ -35,13 +35,11 @@ import androidx.navigation.NavController
 import com.valentinilk.shimmer.shimmer
 import it.fast4x.compose.persist.PersistMapCleanup
 import it.fast4x.compose.persist.persist
-import it.fast4x.compose.routing.RouteHandler
 import it.fast4x.innertube.Innertube
 import it.fast4x.innertube.models.bodies.BrowseBody
 import it.fast4x.innertube.models.bodies.ContinuationBody
 import it.fast4x.innertube.requests.artistPage
 import it.fast4x.innertube.requests.itemsPage
-import it.fast4x.innertube.requests.playlistPage
 import it.fast4x.innertube.utils.from
 import it.fast4x.rimusic.Database
 import it.fast4x.rimusic.LocalPlayerServiceBinder
@@ -66,7 +64,6 @@ import it.fast4x.rimusic.ui.items.AlbumItem
 import it.fast4x.rimusic.ui.items.AlbumItemPlaceholder
 import it.fast4x.rimusic.ui.items.SongItem
 import it.fast4x.rimusic.ui.items.SongItemPlaceholder
-import it.fast4x.rimusic.ui.screens.globalRoutes
 import it.fast4x.rimusic.ui.screens.searchresult.ItemsPage
 import it.fast4x.rimusic.ui.styling.Dimensions
 import it.fast4x.rimusic.ui.styling.px
@@ -170,45 +167,6 @@ fun ArtistScreen(
 
     val listMediaItems = remember { mutableListOf<MediaItem>() }
 
-    RouteHandler(listenToGlobalEmitter = true) {
-        globalRoutes()
-/*
-        settingsRoute {
-            SettingsScreen(
-                navController = navController,
-            )
-        }
-
-        searchResultRoute { query ->
-            SearchResultScreen(
-                navController = navController,
-                query = query,
-                onSearchAgain = {
-                    searchRoute(query)
-                }
-            )
-        }
-
-        searchRoute { initialTextInput ->
-            SearchScreen(
-                navController = navController,
-                initialTextInput = initialTextInput,
-                onSearch = { query ->
-                    pop()
-                    searchResultRoute(query)
-
-                    if (!context.preferences.getBoolean(pauseSearchHistoryKey, false)) {
-                        query {
-                            Database.insert(SearchQuery(query = query))
-                        }
-                    }
-                },
-                onViewPlaylist = {}, //onPlaylistUrl,
-                onDismiss = { homeRoute::global }
-            )
-        }
-*/
-        host {
             val thumbnailContent =
                 adaptiveThumbnailContent(
                     artist?.timestamp == null,
@@ -409,10 +367,10 @@ fun ArtistScreen(
                 navController = navController,
                 miniPlayer = miniPlayer,
                 topIconButtonId = R.drawable.chevron_back,
-                onTopIconButtonClick = pop,
+                onTopIconButtonClick = {},
                 showButton1 = UiType.RiMusic.isNotCurrent(),
                 topIconButton2Id = R.drawable.chevron_back,
-                onTopIconButton2Click = pop,
+                onTopIconButton2Click = {},
                 showButton2 = false,
                 tabIndex = tabIndex,
                 onHomeClick = {
@@ -430,7 +388,7 @@ fun ArtistScreen(
                 saveableStateHolder.SaveableStateProvider(key = currentTabIndex) {
                     when (currentTabIndex) {
                         0 -> {
-                            ArtistOverviewModern(
+                            ArtistOverview(
                                 navController = navController,
                                 browseId = browseId,
                                 youtubeArtistPage = artistPage,
@@ -712,6 +670,5 @@ fun ArtistScreen(
                     }
                 }
             }
-        }
-    }
+
 }

@@ -776,6 +776,20 @@
     <string name="no_thumbnail_present">No Thumbnail Present</string>
     <string name="removed_thumbnail">Removed Thumbnail</string>
     <string name="failed_to_remove_thumbnail">Failed to Remove Thumbnail</string>
+    <string name="settings_enable_pip">Enable Picture in Picture</string>
+    <string name="settings_enable_pip_auto">Enable Automatic Picture in Picture</string>
+    <string name="pipmodule_cover">Cover</string>
+    <string name="settings_pip_module">Pip module</string>
+    <string name="menu_go_to_picture_in_picture">PIP</string>
+    <string name="pip_info_from_android_12_pip_can_be_automatically_enabled">From Android 12 pip can be automatically enabled</string>
     <string name="showsecondline">Show Translation in the Second Line</string>
     <string name="enter_the_value">Enter The Value</string>
+    <string name="resume_playback_on_start">Resume Playback On Start</string>
+    <string name="resume_automatically_when_app_opens">Resume Playback automatically when the app is opened</string>
+    <string name="notificationPlayerFirstIcon">First button</string>
+    <string name="notificationPlayerSecondIcon">Second button</string>
+    <string name="notification_player">NOTIFICATION PLAYER</string>
+    <string name="repeat">Repeat</string>
+    <string name="original_lyrics">Original Lyrics</string>
+    <string name="translated_lyrics">Translated Lyrics</string>
 </resources>

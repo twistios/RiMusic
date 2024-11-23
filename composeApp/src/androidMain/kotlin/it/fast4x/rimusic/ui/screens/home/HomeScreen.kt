@@ -21,24 +21,13 @@ import androidx.lifecycle.Lifecycle
 import androidx.media3.common.util.UnstableApi
 import androidx.navigation.NavController
 import it.fast4x.compose.persist.PersistMapCleanup
-import it.fast4x.compose.routing.RouteHandler
-import it.fast4x.compose.routing.defaultStacking
-import it.fast4x.compose.routing.defaultStill
-import it.fast4x.compose.routing.defaultUnstacking
-import it.fast4x.compose.routing.isStacking
-import it.fast4x.compose.routing.isUnknown
-import it.fast4x.compose.routing.isUnstacking
 import it.fast4x.rimusic.R
 import it.fast4x.rimusic.enums.CheckUpdateState
 import it.fast4x.rimusic.enums.HomeScreenTabs
 import it.fast4x.rimusic.enums.NavRoutes
-import it.fast4x.rimusic.enums.PopupType
 import it.fast4x.rimusic.models.toUiMood
 import it.fast4x.rimusic.ui.components.themed.ConfirmationDialog
 import it.fast4x.rimusic.ui.components.themed.SmartMessage
-import it.fast4x.rimusic.ui.screens.globalRoutes
-import it.fast4x.rimusic.ui.screens.searchResultRoute
-import it.fast4x.rimusic.ui.screens.searchRoute
 import it.fast4x.rimusic.utils.CheckAvailableNewVersion
 import it.fast4x.rimusic.utils.checkUpdateStateKey
 import it.fast4x.rimusic.utils.enableQuickPicksPageKey
@@ -86,25 +75,7 @@ fun HomeScreen(
 
     PersistMapCleanup("home/")
 
-    RouteHandler(
-        listenToGlobalEmitter = true,
-        transitionSpec = {
-            when {
-                isStacking -> defaultStacking
-                isUnstacking -> defaultUnstacking
-                isUnknown -> when {
-                    initialState.route == searchRoute && targetState.route == searchResultRoute -> defaultStacking
-                    initialState.route == searchResultRoute && targetState.route == searchRoute -> defaultUnstacking
-                    else -> defaultStill
-                }
 
-                else -> defaultStill
-            }
-        }
-    ) {
-        globalRoutes()
-
-        host {
 
             val openTabFromShortcut1 by remember{ mutableIntStateOf(openTabFromShortcut) }
 
@@ -141,7 +112,7 @@ fun HomeScreen(
             ) { currentTabIndex ->
                 saveableStateHolder.SaveableStateProvider(key = currentTabIndex) {
                     when (currentTabIndex) {
-                        0 -> QuickPicksModern(
+                        0 -> QuickPicks(
                             onAlbumClick = {
                                 navController.navigate(route = "${NavRoutes.album.name}/$it")
                             },
@@ -165,7 +136,7 @@ fun HomeScreen(
 
                         )
 
-                        1 -> HomeSongsModern(
+                        1 -> HomeSongs(
                             navController = navController,
                             onSearchClick = {
                                 //searchRoute("")
@@ -177,7 +148,7 @@ fun HomeScreen(
                             }
                         )
 
-                        2 -> HomeArtistsModern(
+                        2 -> HomeArtists(
                             onArtistClick = {
                                 navController.navigate(route = "${NavRoutes.artist.name}/${it.id}")
                             },
@@ -191,7 +162,7 @@ fun HomeScreen(
                             }
                         )
 
-                        3 -> HomeAlbumsModern(
+                        3 -> HomeAlbums(
                             onAlbumClick = {
                                 //albumRoute(it.id)
                                 navController.navigate(route = "${NavRoutes.album.name}/${it.id}")
@@ -206,7 +177,7 @@ fun HomeScreen(
                             }
                         )
 
-                        4 -> HomeLibraryModern(
+                        4 -> HomeLibrary(
                             onPlaylistClick = {
                                 //localPlaylistRoute(it.id)
                                 navController.navigate(route = "${NavRoutes.localPlaylist.name}/${it.id}")
@@ -224,8 +195,7 @@ fun HomeScreen(
                     }
                 }
             }
-        }
-    }
+
 
     if (showNewversionDialog && checkUpdateState == CheckUpdateState.Enabled)
         CheckAvailableNewVersion(

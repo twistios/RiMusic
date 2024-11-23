@@ -33,10 +33,10 @@ fun GetControls(
     mediaId: String,
     onBlurScaleChange: (Float) -> Unit
 ) {
-    val playerControlsType by rememberPreference(playerControlsTypeKey, PlayerControlsType.Modern)
+    val playerControlsType by rememberPreference(playerControlsTypeKey, PlayerControlsType.Essential)
     val playerPlayButtonType by rememberPreference(
         playerPlayButtonTypeKey,
-        PlayerPlayButtonType.Rectangular
+        PlayerPlayButtonType.Disabled
     )
     var isRotated by rememberSaveable { mutableStateOf(false) }
     val rotationAngle by animateFloatAsState(

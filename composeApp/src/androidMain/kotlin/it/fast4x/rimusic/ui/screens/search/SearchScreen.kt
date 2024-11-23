@@ -29,11 +29,9 @@ import androidx.compose.ui.unit.dp
 import androidx.media3.common.util.UnstableApi
 import androidx.navigation.NavController
 import it.fast4x.compose.persist.PersistMapCleanup
-import it.fast4x.compose.routing.RouteHandler
 import it.fast4x.rimusic.R
 import it.fast4x.rimusic.enums.UiType
 import it.fast4x.rimusic.ui.components.themed.IconButton
-import it.fast4x.rimusic.ui.screens.globalRoutes
 import it.fast4x.rimusic.ui.styling.favoritesIcon
 import it.fast4x.rimusic.utils.secondary
 import me.knighthat.Skeleton
@@ -75,11 +73,6 @@ fun SearchScreen(
 
     PersistMapCleanup(tagPrefix = "search/")
 
-    RouteHandler(listenToGlobalEmitter = true) {
-        globalRoutes()
-        //val onGoToHome = homeRoute::global
-
-        host {
             val decorationBox: @Composable (@Composable () -> Unit) -> Unit = { innerTextField ->
                 Box(
                     contentAlignment = Alignment.CenterStart,
@@ -180,7 +173,7 @@ fun SearchScreen(
                             onAction3 = { onTabChanged(2) },
                             onAction4 = {
                                 //onGoToHome()
-                                pop()
+                                //pop()
                             },
                         )
 
@@ -194,12 +187,10 @@ fun SearchScreen(
                             onAction3 = { onTabChanged(2) },
                             onAction4 = {
                                 //onGoToHome()
-                                pop()
+                                //pop()
                             },
                         )
                     }
                 }
             }
-        }
-    }
 }

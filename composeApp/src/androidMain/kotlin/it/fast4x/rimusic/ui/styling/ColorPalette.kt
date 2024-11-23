@@ -279,4 +279,5 @@ inline val ColorPalette.applyPitchBlack: ColorPalette
         background2 = Color.Black,
         background3 = Color.Black,
         background4 = Color.Black,
+        text = Color.White,
     )

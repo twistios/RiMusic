@@ -15,13 +15,11 @@ import androidx.compose.ui.text.ExperimentalTextApi
 import androidx.media3.common.util.UnstableApi
 import androidx.navigation.NavController
 import it.fast4x.compose.persist.PersistMapCleanup
-import it.fast4x.compose.routing.RouteHandler
 import it.fast4x.rimusic.R
 import it.fast4x.rimusic.enums.BuiltInPlaylist
 import it.fast4x.rimusic.enums.DeviceLists
 import it.fast4x.rimusic.enums.MaxTopPlaylistItems
 import it.fast4x.rimusic.enums.NavRoutes
-import it.fast4x.rimusic.ui.screens.globalRoutes
 import it.fast4x.rimusic.ui.screens.ondevice.DeviceListSongs
 import it.fast4x.rimusic.utils.MaxTopPlaylistItemsKey
 import it.fast4x.rimusic.utils.rememberPreference
@@ -70,10 +68,6 @@ fun BuiltInPlaylistScreen(
 
     PersistMapCleanup(tagPrefix = "${builtInPlaylist.name}/")
 
-    RouteHandler(listenToGlobalEmitter = true) {
-        globalRoutes()
-
-        host {
             Skeleton(
                 navController,
                 tabIndex,
@@ -116,6 +110,5 @@ fun BuiltInPlaylistScreen(
                         )
                 }
             }
-        }
-    }
+
 }

@@ -28,7 +28,6 @@ import androidx.media3.exoplayer.offline.Download
 import androidx.navigation.NavController
 import it.fast4x.compose.persist.PersistMapCleanup
 import it.fast4x.compose.persist.persist
-import it.fast4x.compose.routing.RouteHandler
 import it.fast4x.innertube.Innertube
 import it.fast4x.innertube.models.bodies.BrowseBody
 import it.fast4x.innertube.models.bodies.ContinuationBody
@@ -60,7 +59,6 @@ import it.fast4x.rimusic.ui.items.SongItem
 import it.fast4x.rimusic.ui.items.SongItemPlaceholder
 import it.fast4x.rimusic.ui.items.VideoItem
 import it.fast4x.rimusic.ui.items.VideoItemPlaceholder
-import it.fast4x.rimusic.ui.screens.globalRoutes
 import it.fast4x.rimusic.ui.styling.Dimensions
 import it.fast4x.rimusic.ui.styling.px
 import it.fast4x.rimusic.utils.addNext
@@ -116,10 +114,6 @@ fun SearchResultScreen(
 
     PersistMapCleanup(tagPrefix = "searchResults/$query/")
 
-    RouteHandler(listenToGlobalEmitter = true) {
-        globalRoutes()
-
-        host {
             val headerContent: @Composable (textButton: (@Composable () -> Unit)?) -> Unit = {
                 Title(
                     title = stringResource(R.string.search_results_for),
@@ -649,6 +643,4 @@ fun SearchResultScreen(
                     }
                 }
             }
-        }
-    }
 }

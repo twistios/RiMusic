@@ -11,6 +11,10 @@ import androidx.compose.ui.Modifier
 import androidx.navigation.NavController
 import it.fast4x.rimusic.R
 import it.fast4x.rimusic.enums.NavRoutes
+import it.fast4x.rimusic.extensions.pip.isPipSupported
+import it.fast4x.rimusic.extensions.pip.rememberPipHandler
+import it.fast4x.rimusic.utils.enablePictureInPictureKey
+import it.fast4x.rimusic.utils.rememberPreference
 import me.knighthat.colorPalette
 import me.knighthat.menu.DropdownMenu
 
@@ -20,6 +24,9 @@ private fun HamburgerMenu(
     onItemClick: (NavRoutes) -> Unit,
     onDismissRequest: () -> Unit
 ) {
+    val enablePictureInPicture by rememberPreference(enablePictureInPictureKey, false)
+    val pipHandler = rememberPipHandler()
+
     val menu = DropdownMenu(
         expanded = expanded,
         modifier = Modifier.background( colorPalette().background0.copy(0.90f) ),
@@ -39,6 +46,14 @@ private fun HamburgerMenu(
             R.string.statistics
         ) { onItemClick( NavRoutes.statistics ) }
     )
+    // Picture in picture button
+    if (isPipSupported && enablePictureInPicture)
+        menu.add(
+            DropdownMenu.Item(
+                R.drawable.picture,
+                R.string.menu_go_to_picture_in_picture
+            ) { pipHandler.enterPictureInPictureMode() }
+        )
     menu.add { HorizontalDivider() }
     // Settings button
     menu.add(
@@ -47,6 +62,7 @@ private fun HamburgerMenu(
             R.string.settings
         ) { onItemClick( NavRoutes.settings ) }
     )
+
     menu.Draw()
 }
 

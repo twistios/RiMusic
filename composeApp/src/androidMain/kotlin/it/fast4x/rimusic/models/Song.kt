@@ -4,7 +4,9 @@ import androidx.compose.runtime.Immutable
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 import it.fast4x.rimusic.utils.setLikeState
+import kotlinx.serialization.Serializable
 
+@Serializable
 @Immutable
 @Entity
 data class Song(

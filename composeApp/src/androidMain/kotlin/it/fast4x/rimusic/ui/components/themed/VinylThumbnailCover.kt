@@ -10,6 +10,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.pager.PagerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -31,6 +32,8 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.LayoutDirection
 import it.fast4x.rimusic.R
+import it.fast4x.rimusic.utils.VinylSizeKey
+import it.fast4x.rimusic.utils.rememberPreference
 
 @Composable
 fun VinylThumnbailCover(
@@ -38,7 +41,7 @@ fun VinylThumnbailCover(
     rotationDegrees: Float = 0f,
     painter: Painter
 ) {
-
+    var vinylSize by rememberPreference(VinylSizeKey, 50f)
     val roundedShape = object : Shape {
         override fun createOutline(
             size: Size,
@@ -82,7 +85,7 @@ fun VinylThumnbailCover(
 
         Image(
             modifier = Modifier
-                .fillMaxSize(0.5f)
+                .fillMaxSize(vinylSize*0.01f)
                 .rotate(rotationDegrees)
                 .aspectRatio(1.0f)
                 .align(Alignment.Center)
@@ -109,6 +112,56 @@ fun VinylThumbnailCoverAnimation(
 
     LaunchedEffect(isSongPlaying) {
         if (isSongPlaying) {
+            rotation.animateTo(
+                targetValue = currentRotation + 360f,
+                animationSpec = infiniteRepeatable(
+                    animation = tween(8000, easing = LinearEasing),
+                    repeatMode = RepeatMode.Restart
+                )
+            ) {
+                currentRotation = value
+            }
+        } else {
+            if (currentRotation > 0f) {
+                rotation.animateTo(
+                    targetValue = currentRotation + 50,
+                    animationSpec = tween(
+                        1250,
+                        easing = LinearOutSlowInEasing
+                    )
+                ) {
+                    currentRotation = value
+                }
+            }
+        }
+    }
+
+    VinylThumnbailCover(
+        painter = painter,
+        rotationDegrees = rotation.value,
+        modifier = modifier
+    )
+}
+
+@Composable
+fun VinylThumbnailCoverAnimationModern(
+    modifier: Modifier = Modifier,
+    isSongPlaying: Boolean = true,
+    painter: Painter,
+    state : PagerState,
+    it : Int,
+    vinylSize : Float
+) {
+    var currentRotation by remember {
+        mutableFloatStateOf(0f)
+    }
+
+    val rotation = remember {
+        Animatable(currentRotation)
+    }
+
+    LaunchedEffect(isSongPlaying) {
+        if (isSongPlaying && it == state.settledPage) {
             rotation.animateTo(
                 targetValue = currentRotation + 360f,
                 animationSpec = infiniteRepeatable(

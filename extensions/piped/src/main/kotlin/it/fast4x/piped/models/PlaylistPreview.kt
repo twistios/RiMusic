@@ -72,7 +72,7 @@ data class Playlist(
 
         val uploaderId
             get() = if (uploaderUrl.startsWith("/channel/")) uploaderUrl.substringAfter("/channel/")
-            else Url(uploaderUrl).pathSegments.lastOrNull()
+            else Url(uploaderUrl).rawSegments.lastOrNull()
 
         val duration get() = durationSeconds.seconds
         val durationText: String

@@ -69,13 +69,13 @@ fun Player.playAtMedia(mediaItems: List<MediaItem>, mediaId: String) {
 }
 
 fun Player.forcePlay(mediaItem: MediaItem) {
-    setMediaItem(mediaItem, true)
+    setMediaItem(mediaItem.cleaned, true)
     prepare()
     playWhenReady = true
 }
 
 fun Player.playVideo(mediaItem: MediaItem) {
-    setMediaItem(mediaItem, true)
+    setMediaItem(mediaItem.cleaned, true)
     pause()
 }
 
@@ -84,7 +84,7 @@ fun Player.playVideo(mediaItem: MediaItem) {
 fun Player.forcePlayAtIndex(mediaItems: List<MediaItem>, mediaItemIndex: Int) {
     if (mediaItems.isEmpty()) return
 
-    setMediaItems(mediaItems, mediaItemIndex, C.TIME_UNSET)
+    setMediaItems(mediaItems.map { it.cleaned }, mediaItemIndex, C.TIME_UNSET)
     prepare()
     playWhenReady = true
 }
@@ -125,7 +125,7 @@ fun Player.addNext(mediaItem: MediaItem, context: Context? = null) {
     if (playbackState == Player.STATE_IDLE || playbackState == Player.STATE_ENDED) {
         forcePlay(mediaItem)
     } else {
-        addMediaItem(currentMediaItemIndex + 1, mediaItem)
+        addMediaItem(currentMediaItemIndex + 1, mediaItem.cleaned)
     }
 }
 
@@ -142,7 +142,7 @@ fun Player.addNext(mediaItems: List<MediaItem>, context: Context? = null) {
     if (playbackState == Player.STATE_IDLE || playbackState == Player.STATE_ENDED) {
         forcePlay(filteredMediaItems.first())
     } else {
-        addMediaItems(currentMediaItemIndex + 1, filteredMediaItems)
+        addMediaItems(currentMediaItemIndex + 1, filteredMediaItems.map { it.cleaned })
     }
 
 }
@@ -154,7 +154,7 @@ fun Player.enqueue(mediaItem: MediaItem, context: Context? = null) {
     if (playbackState == Player.STATE_IDLE || playbackState == Player.STATE_ENDED) {
         forcePlay(mediaItem)
     } else {
-        addMediaItem(mediaItemCount, mediaItem)
+        addMediaItem(mediaItemCount, mediaItem.cleaned)
     }
 }
 
@@ -169,7 +169,7 @@ fun Player.enqueue(mediaItems: List<MediaItem>, context: Context? = null) {
         forcePlayFromBeginning(filteredMediaItems)
     } else {
         //addMediaItems(mediaItemCount, mediaItems)
-        addMediaItems(mediaItemCount, filteredMediaItems)
+        addMediaItems(mediaItemCount, filteredMediaItems.map { it.cleaned })
     }
 }
 

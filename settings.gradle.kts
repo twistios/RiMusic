@@ -27,7 +27,6 @@ dependencyResolutionManagement {
 
 rootProject.name = "RiMusic"
 include(":composeApp")
-include(":compose-routing")
 include(":compose-reordering")
 include(":compose-persist")
 // Projects from extensions

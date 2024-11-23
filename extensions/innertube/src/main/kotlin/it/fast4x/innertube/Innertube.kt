@@ -38,6 +38,7 @@ import it.fast4x.innertube.utils.YoutubePreferences
 import it.fast4x.innertube.utils.parseCookieString
 import it.fast4x.innertube.utils.sha1
 import kotlinx.serialization.ExperimentalSerializationApi
+import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.jsonArray
@@ -62,7 +63,6 @@ object Innertube {
         }
 
         install(ContentEncoding) {
-            //brotli()
             brotli(1.0F)
             gzip(0.9F)
             deflate(0.8F)
@@ -156,7 +156,7 @@ object Innertube {
         header("X-Goog-FieldMask", value)
 
 
-
+    @Serializable
     data class Info<T : NavigationEndpoint.Endpoint>(
         val name: String?,
         val endpoint: T?
@@ -186,6 +186,7 @@ object Innertube {
         abstract val key: String
     }
 
+    @Serializable
     data class SongItem(
         val info: Info<NavigationEndpoint.Endpoint.Watch>?,
         val authors: List<Info<NavigationEndpoint.Endpoint.Browse>>?,
@@ -200,6 +201,7 @@ object Innertube {
         companion object
     }
 
+    @Serializable
     data class VideoItem(
         val info: Info<NavigationEndpoint.Endpoint.Watch>?,
         val authors: List<Info<NavigationEndpoint.Endpoint.Browse>>?,
@@ -226,6 +228,7 @@ object Innertube {
         companion object
     }
 
+    @Serializable
     data class AlbumItem(
         val info: Info<NavigationEndpoint.Endpoint.Browse>?,
         val authors: List<Info<NavigationEndpoint.Endpoint.Browse>>?,
@@ -237,6 +240,7 @@ object Innertube {
         companion object
     }
 
+    @Serializable
     data class ArtistItem(
         val info: Info<NavigationEndpoint.Endpoint.Browse>?,
         val subscribersCountText: String?,
@@ -247,6 +251,7 @@ object Innertube {
         companion object
     }
 
+    @Serializable
     data class PlaylistItem(
         val info: Info<NavigationEndpoint.Endpoint.Browse>?,
         val channel: Info<NavigationEndpoint.Endpoint.Browse>?,
@@ -293,6 +298,7 @@ object Innertube {
         val playlistSetVideoId: String? = null
     )
 
+    @Serializable
     data class RelatedPage(
         val songs: List<SongItem>? = null,
         val playlists: List<PlaylistItem>? = null,
@@ -303,6 +309,7 @@ object Innertube {
         val songs: List<SongItem>? = null
     )
 
+    @Serializable
     data class DiscoverPage(
         val newReleaseAlbums: List<AlbumItem>,
         val moods: List<Mood.Item>
@@ -313,10 +320,12 @@ object Innertube {
 
     )
 
+    @Serializable
     data class Mood(
         val title: String,
         val items: List<Item>
     ) {
+        @Serializable
         data class Item(
             val title: String,
             val stripeColor: Long,
@@ -329,6 +338,7 @@ object Innertube {
         val continuation: String?
     )
 
+    @Serializable
     data class ChartsPage(
         val playlists: List<PlaylistItem>? = null,
         val artists: List<ArtistItem>? = null,

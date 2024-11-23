@@ -2,10 +2,32 @@ package it.fast4x.rimusic.ui.screens.album
 
 import android.annotation.SuppressLint
 import android.content.Intent
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedContentTransitionScope
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.ExperimentalAnimationApi
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.LinearOutSlowInEasing
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.VisibilityThreshold
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandIn
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
+import androidx.compose.animation.shrinkOut
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.ExperimentalMaterialApi
@@ -18,18 +40,19 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.ExperimentalTextApi
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.media3.common.util.UnstableApi
 import androidx.navigation.NavController
 import com.valentinilk.shimmer.shimmer
 import it.fast4x.compose.persist.PersistMapCleanup
 import it.fast4x.compose.persist.persist
-import it.fast4x.compose.routing.RouteHandler
 import it.fast4x.innertube.Innertube
 import it.fast4x.innertube.models.bodies.BrowseBody
 import it.fast4x.innertube.requests.albumPage
@@ -37,29 +60,32 @@ import it.fast4x.rimusic.Database
 import it.fast4x.rimusic.MODIFIED_PREFIX
 import it.fast4x.rimusic.R
 import it.fast4x.rimusic.enums.NavRoutes
+import it.fast4x.rimusic.enums.PlayerPosition
 import it.fast4x.rimusic.enums.ThumbnailRoundness
+import it.fast4x.rimusic.enums.TransitionEffect
 import it.fast4x.rimusic.enums.UiType
 import it.fast4x.rimusic.models.Album
 import it.fast4x.rimusic.models.SongAlbumMap
 import it.fast4x.rimusic.query
-import it.fast4x.rimusic.ui.components.Scaffold
 import it.fast4x.rimusic.ui.components.themed.Header
 import it.fast4x.rimusic.ui.components.themed.HeaderIconButton
 import it.fast4x.rimusic.ui.components.themed.HeaderPlaceholder
 import it.fast4x.rimusic.ui.components.themed.adaptiveThumbnailContent
 import it.fast4x.rimusic.ui.items.AlbumItem
 import it.fast4x.rimusic.ui.items.AlbumItemPlaceholder
-import it.fast4x.rimusic.ui.screens.globalRoutes
 import it.fast4x.rimusic.ui.screens.searchresult.ItemsPage
 import it.fast4x.rimusic.ui.styling.px
 import it.fast4x.rimusic.utils.asMediaItem
 import it.fast4x.rimusic.utils.disableScrollingTextKey
+import it.fast4x.rimusic.utils.playerPositionKey
 import it.fast4x.rimusic.utils.rememberPreference
 import it.fast4x.rimusic.utils.thumbnailRoundnessKey
+import it.fast4x.rimusic.utils.transitionEffectKey
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.withContext
 import me.knighthat.colorPalette
+import me.knighthat.component.header.AppHeader
 
 
 @ExperimentalMaterialApi
@@ -73,7 +99,8 @@ import me.knighthat.colorPalette
 fun AlbumScreen(
     navController: NavController,
     browseId: String,
-    miniPlayer: @Composable () -> Unit = {},
+    modifier: Modifier = Modifier,
+    miniPlayer: @Composable () -> Unit = {}
 ) {
 
     //val uriHandler = LocalUriHandler.current
@@ -130,7 +157,7 @@ fun AlbumScreen(
                                     ),
                                     currentAlbumPage
                                         .songsPage
-                                        ?.items
+                                        ?.items?.distinct()
                                         ?.map(Innertube.SongItem::asMediaItem)
                                         ?.onEach(Database::insert)
                                         ?.mapIndexed { position, mediaItem ->
@@ -168,10 +195,7 @@ fun AlbumScreen(
      */
 
 
-    RouteHandler(listenToGlobalEmitter = true) {
-        globalRoutes()
 
-        host {
             val headerContent: @Composable (textButton: (@Composable () -> Unit)?) -> Unit =
                 { textButton ->
                     if (album?.timestamp == null) {
@@ -188,6 +212,7 @@ fun AlbumScreen(
                             modifier = Modifier.padding(horizontal = 12.dp),
                             actionsContent = {
                                 textButton?.invoke()
+
 
                                 Spacer(
                                     modifier = Modifier
@@ -252,86 +277,163 @@ fun AlbumScreen(
                     shape = if (changeShape) CircleShape else thumbnailRoundness.shape(),
                 )
 
-            Scaffold(
-                navController = navController,
-                miniPlayer = miniPlayer,
-                topIconButtonId = R.drawable.chevron_back,
-                showButton1 = UiType.RiMusic.isNotCurrent(),
-                onTopIconButtonClick = pop,
-                topIconButton2Id = R.drawable.chevron_back,
-                onTopIconButton2Click = pop,
-                showButton2 = false,
-                tabIndex = tabIndex,
-                onTabChanged = { tabIndex = it },
-                onHomeClick = {
-                    //homeRoute()
-                    navController.navigate(NavRoutes.home.name)
-                },
-                tabColumnContent = { Item ->
-                    Item(0,
-                        stringResource(R.string.album_and_alternative_versions), R.drawable.album)
-                    //Item(1, stringResource(R.string.other_versions), R.drawable.alternative_version)
+            val transitionEffect by rememberPreference(transitionEffectKey, TransitionEffect.Scale)
+            val playerPosition by rememberPreference(playerPositionKey, PlayerPosition.Bottom)
+
+            androidx.compose.material3.Scaffold(
+                modifier = Modifier,
+                containerColor = colorPalette().background0,
+                topBar = {
+                    if( UiType.RiMusic.isCurrent() )
+                        AppHeader( navController ).Draw()
                 }
-            ) { currentTabIndex ->
-                saveableStateHolder.SaveableStateProvider(key = currentTabIndex) {
-                    when (currentTabIndex) {
-                        0 -> AlbumDetailsModern(
-                            navController = navController,
-                            browseId = browseId,
-                            albumPage = albumPage,
-                            headerContent = headerContent,
-                            thumbnailContent = thumbnailContent,
-                            onSearchClick = {
-                                //searchRoute("")
-                                navController.navigate(NavRoutes.search.name)
-                            },
-                            onSettingsClick = {
-                                //settingsRoute()
-                                navController.navigate(NavRoutes.settings.name)
-                            }
-                        )
+            ) {
+                //**
+                Box(
+                    modifier = Modifier
+                        .padding(it)
+                        .fillMaxSize()
+                ) {
 
-                        1 -> {
-                            val thumbnailSizeDp = 108.dp
-                            val thumbnailSizePx = thumbnailSizeDp.px
+                    Row(
+                        modifier = Modifier
+                            .background(colorPalette().background0)
+                            .fillMaxSize()
+                    ) {
+                        val topPadding = if ( UiType.ViMusic.isCurrent() ) 30.dp else 0.dp
 
-                            ItemsPage(
-                                tag = "album/$browseId/alternatives",
-                                headerContent = headerContent,
-                                initialPlaceholderCount = 1,
-                                continuationPlaceholderCount = 1,
-                                emptyItemsText = stringResource(R.string.album_no_alternative_version),
-                                itemsPageProvider = albumPage?.let {
-                                    ({
-                                        Result.success(
-                                            Innertube.ItemsPage(
-                                                items = albumPage?.otherVersions,
-                                                continuation = null
-                                            )
+                        AnimatedContent(
+                            targetState = 0,
+                            transitionSpec = {
+                                when (transitionEffect) {
+                                    TransitionEffect.None -> EnterTransition.None togetherWith ExitTransition.None
+                                    TransitionEffect.Expand -> expandIn(
+                                        animationSpec = tween(
+                                            350,
+                                            easing = LinearOutSlowInEasing
+                                        ), expandFrom = Alignment.BottomStart
+                                    ).togetherWith(
+                                        shrinkOut(
+                                            animationSpec = tween(
+                                                350,
+                                                easing = FastOutSlowInEasing
+                                            ), shrinkTowards = Alignment.CenterStart
                                         )
-                                    })
-                                },
-                                itemContent = { album ->
-                                    AlbumItem(
-                                        album = album,
-                                        thumbnailSizePx = thumbnailSizePx,
-                                        thumbnailSizeDp = thumbnailSizeDp,
-                                        modifier = Modifier
-                                            .clickable {
-                                                //albumRoute(album.key)
-                                                navController.navigate(route = "${NavRoutes.album.name}/${album.key}")
-                                            },
-                                        disableScrollingText = disableScrollingText
                                     )
-                                },
-                                itemPlaceholderContent = {
-                                    AlbumItemPlaceholder(thumbnailSizeDp = thumbnailSizeDp)
+
+                                    TransitionEffect.Fade -> fadeIn(animationSpec = tween(350)).togetherWith(
+                                        fadeOut(animationSpec = tween(350))
+                                    )
+
+                                    TransitionEffect.Scale -> scaleIn(animationSpec = tween(350)).togetherWith(
+                                        scaleOut(animationSpec = tween(350))
+                                    )
+
+                                    TransitionEffect.SlideHorizontal, TransitionEffect.SlideVertical -> {
+                                        val slideDirection = when (targetState > initialState) {
+                                            true -> {
+                                                if (transitionEffect == TransitionEffect.SlideHorizontal)
+                                                    AnimatedContentTransitionScope.SlideDirection.Left
+                                                else AnimatedContentTransitionScope.SlideDirection.Up
+                                            }
+
+                                            false -> {
+                                                if (transitionEffect == TransitionEffect.SlideHorizontal)
+                                                    AnimatedContentTransitionScope.SlideDirection.Right
+                                                else AnimatedContentTransitionScope.SlideDirection.Down
+                                            }
+                                        }
+
+                                        val animationSpec = spring(
+                                            dampingRatio = 0.9f,
+                                            stiffness = Spring.StiffnessLow,
+                                            visibilityThreshold = IntOffset.VisibilityThreshold
+                                        )
+
+                                        slideIntoContainer(
+                                            slideDirection,
+                                            animationSpec
+                                        ) togetherWith
+                                                slideOutOfContainer(slideDirection, animationSpec)
+                                    }
                                 }
-                            )
+                            },
+                            label = "",
+                            modifier = Modifier
+                                //.fillMaxWidth()
+                                .fillMaxHeight()
+                                .padding(top = topPadding)
+                        ) { currentTabIndex ->
+                            saveableStateHolder.SaveableStateProvider(key = currentTabIndex) {
+                                when (currentTabIndex) {
+                                    0 -> AlbumDetails(
+                                        navController = navController,
+                                        browseId = browseId,
+                                        albumPage = albumPage,
+                                        headerContent = headerContent,
+                                        thumbnailContent = thumbnailContent,
+                                        onSearchClick = {
+                                            //searchRoute("")
+                                            navController.navigate(NavRoutes.search.name)
+                                        },
+                                        onSettingsClick = {
+                                            //settingsRoute()
+                                            navController.navigate(NavRoutes.settings.name)
+                                        }
+                                    )
+
+                                    1 -> {
+                                        val thumbnailSizeDp = 108.dp
+                                        val thumbnailSizePx = thumbnailSizeDp.px
+
+                                        ItemsPage(
+                                            tag = "album/$browseId/alternatives",
+                                            headerContent = headerContent,
+                                            initialPlaceholderCount = 1,
+                                            continuationPlaceholderCount = 1,
+                                            emptyItemsText = stringResource(R.string.album_no_alternative_version),
+                                            itemsPageProvider = albumPage?.let {
+                                                ({
+                                                    Result.success(
+                                                        Innertube.ItemsPage(
+                                                            items = albumPage?.otherVersions,
+                                                            continuation = null
+                                                        )
+                                                    )
+                                                })
+                                            },
+                                            itemContent = { album ->
+                                                AlbumItem(
+                                                    album = album,
+                                                    thumbnailSizePx = thumbnailSizePx,
+                                                    thumbnailSizeDp = thumbnailSizeDp,
+                                                    modifier = Modifier
+                                                        .clickable {
+                                                            //albumRoute(album.key)
+                                                            navController.navigate(route = "${NavRoutes.album.name}/${album.key}")
+                                                        },
+                                                    disableScrollingText = disableScrollingText
+                                                )
+                                            },
+                                            itemPlaceholderContent = {
+                                                AlbumItemPlaceholder(thumbnailSizeDp = thumbnailSizeDp)
+                                            }
+                                        )
+                                    }
+                                }
+                            }
                         }
+                    }
+
+                    //**
+                    Box(
+                        modifier = modifier.padding( vertical = 5.dp ).align(
+                            if( playerPosition == PlayerPosition.Top ) Alignment.TopCenter else Alignment.BottomCenter
+                        )
+                    ) {
+                        miniPlayer.invoke()
                     }
                 }
             }
-        }
-    }
+
 }

@@ -30,6 +30,7 @@ import it.fast4x.innertube.models.bodies.ContinuationBody
 import it.fast4x.innertube.requests.playlistPage
 import it.fast4x.innertube.utils.ProxyPreferences
 import it.fast4x.rimusic.Database
+import it.fast4x.rimusic.cleanPrefix
 import it.fast4x.rimusic.models.Album
 import it.fast4x.rimusic.models.Song
 import it.fast4x.rimusic.models.SongEntity
@@ -285,6 +286,27 @@ val MediaItem.asSong: Song
         durationText = mediaMetadata.extras?.getString("durationText"),
         thumbnailUrl = mediaMetadata.artworkUri.toString()
     )
+
+val MediaItem.cleaned: MediaItem
+    @UnstableApi
+    get() = MediaItem.Builder()
+        .setMediaMetadata(
+            MediaMetadata.Builder()
+                .setTitle(cleanPrefix(mediaMetadata.title.toString()))
+                .setArtist(mediaMetadata.artist)
+                .setArtworkUri(mediaMetadata.artworkUri)
+                .setExtras(mediaMetadata.extras)
+                .build()
+        )
+        .setMediaId(mediaId)
+        .setUri(
+            if (isLocal) ContentUris.withAppendedId(
+                MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
+                mediaId.substringAfter(LOCAL_KEY_PREFIX).toLong()
+            ) else mediaId.toUri()
+        )
+        .setCustomCacheKey(mediaId)
+        .build()
 
 val MediaItem.isVideo: Boolean
     get() = mediaMetadata.extras?.getBoolean("isVideo") == true

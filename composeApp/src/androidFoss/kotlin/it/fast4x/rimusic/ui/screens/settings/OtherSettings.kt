@@ -291,6 +291,7 @@ fun OtherSettings() {
         val isLoggedIn = remember(cookie) {
             "SAPISID" in parseCookieString(cookie)
         }
+        //if (!isLoggedIn) isYouTubeLoginEnabled = false // disable if not logged in
 
         SettingsGroupSpacer()
         SettingsEntryGroupText(title = "YOUTUBE MUSIC")
@@ -299,7 +300,16 @@ fun OtherSettings() {
             title = "Enable YouTube Music Login",
             text = "",
             isChecked = isYouTubeLoginEnabled,
-            onCheckedChange = { isYouTubeLoginEnabled = it }
+            onCheckedChange = {
+                isYouTubeLoginEnabled = it
+                if (!it) {
+                    visitorData = ""
+                    cookie = ""
+                    accountName = ""
+                    accountChannelHandle = ""
+                    accountEmail = ""
+                }
+            }
         )
 
         AnimatedVisibility(visible = isYouTubeLoginEnabled) {

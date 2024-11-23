@@ -37,7 +37,7 @@ private fun init( context: Context ) {
         // Convert each object of JSON array to Developer instance
         // then sort it based on their username
         DEVS = json.map { GSON.fromJson(it, Developer::class.java) }
-            .sortedByDescending { it.contributions }
+            .sortedByDescending { it.username }
     } catch ( e: Exception ) {
         Timber.e( e.stackTraceToString() )
         DEVS = emptyList()

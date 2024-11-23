@@ -15,9 +15,7 @@ import androidx.compose.ui.text.ExperimentalTextApi
 import androidx.media3.common.util.UnstableApi
 import androidx.navigation.NavController
 import it.fast4x.compose.persist.PersistMapCleanup
-import it.fast4x.compose.routing.RouteHandler
 import it.fast4x.rimusic.R
-import it.fast4x.rimusic.ui.screens.globalRoutes
 import me.knighthat.Skeleton
 
 @ExperimentalMaterialApi
@@ -39,10 +37,6 @@ fun NewreleasesScreen(
 
     PersistMapCleanup(tagPrefix = "newreleases")
 
-    RouteHandler(listenToGlobalEmitter = true) {
-        globalRoutes()
-
-        host {
             Skeleton(
                 navController,
                 tabIndex,
@@ -63,6 +57,4 @@ fun NewreleasesScreen(
                     }
                 }
             }
-        }
-    }
 }

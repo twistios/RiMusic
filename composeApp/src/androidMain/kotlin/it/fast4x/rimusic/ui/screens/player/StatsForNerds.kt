@@ -92,7 +92,7 @@ fun StatsForNerds(
         var format by remember {
             mutableStateOf<Format?>(null)
         }
-        val showThumbnail by rememberPreference(showthumbnailKey, false)
+        val showThumbnail by rememberPreference(showthumbnailKey, true)
         val statsForNerds by rememberPreference(statsfornerdsKey, false)
         val playerType by rememberPreference(playerTypeKey, PlayerType.Essential)
         val transparentBackgroundActionBarPlayer by rememberPreference(

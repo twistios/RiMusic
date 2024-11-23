@@ -41,7 +41,6 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.media3.common.util.UnstableApi
 import androidx.navigation.NavController
-import it.fast4x.compose.routing.RouteHandler
 import it.fast4x.rimusic.R
 import it.fast4x.rimusic.enums.ValidationType
 import it.fast4x.rimusic.ui.components.themed.DialogColorPicker
@@ -51,7 +50,6 @@ import it.fast4x.rimusic.ui.components.themed.SmartMessage
 import it.fast4x.rimusic.ui.components.themed.StringListDialog
 import it.fast4x.rimusic.ui.components.themed.Switch
 import it.fast4x.rimusic.ui.components.themed.ValueSelectorDialog
-import it.fast4x.rimusic.ui.screens.globalRoutes
 import it.fast4x.rimusic.utils.color
 import it.fast4x.rimusic.utils.secondary
 import it.fast4x.rimusic.utils.semiBold
@@ -71,16 +69,13 @@ fun SettingsScreen(
     navController: NavController,
     miniPlayer: @Composable () -> Unit = {},
 ) {
-    val context = LocalContext.current
+    //val context = LocalContext.current
     val saveableStateHolder = rememberSaveableStateHolder()
 
     val (tabIndex, onTabChanged) = rememberSaveable {
         mutableStateOf(0)
     }
 
-    RouteHandler(listenToGlobalEmitter = true) {
-        globalRoutes()
-        host {
             Skeleton(
                 navController,
                 tabIndex,
@@ -108,8 +103,6 @@ fun SettingsScreen(
                     }
                 }
             }
-        }
-    }
 }
 
 @Composable
@@ -159,11 +152,11 @@ inline fun <reified T : Enum<T>> EnumValueSelectorSettingsEntry(
     title: String,
     titleSecondary: String? = null,
     selectedValue: T,
-    crossinline onValueSelected: (T) -> Unit,
+    noinline onValueSelected: (T) -> Unit,
     modifier: Modifier = Modifier,
     isEnabled: Boolean = true,
-    crossinline valueText: @Composable (T) -> String,// = Enum<T>::name,
-    noinline trailingContent: (@Composable () -> Unit)? = null
+    noinline valueText: @Composable (T) -> String  = { it.name },
+    noinline trailingContent: (@Composable () -> Unit) = {}
 ) {
     ValueSelectorSettingsEntry(
         title = title,
@@ -184,11 +177,11 @@ inline fun <T> ValueSelectorSettingsEntry(
     titleSecondary: String? = null,
     selectedValue: T,
     values: List<T>,
-    crossinline onValueSelected: (T) -> Unit,
+    noinline onValueSelected: (T) -> Unit,
     modifier: Modifier = Modifier,
     isEnabled: Boolean = true,
-    crossinline valueText: @Composable (T) -> String, //= { it.toString() },
-    noinline trailingContent: (@Composable () -> Unit)? = null
+    noinline valueText: @Composable (T) -> String = { it.toString() },
+    noinline trailingContent: (@Composable () -> Unit) = {}
 ) {
     var isShowingDialog by remember {
         mutableStateOf(false)
