@@ -1,56 +1,43 @@
 package me.knighthat.component.tab.toolbar
 
-import android.content.Context
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.res.stringResource
+import androidx.media3.common.MediaItem
 import androidx.media3.common.util.UnstableApi
+import it.fast4x.rimusic.LocalPlayerServiceBinder
 import it.fast4x.rimusic.R
-import it.fast4x.rimusic.models.Song
 import it.fast4x.rimusic.service.modern.PlayerServiceModern
-import it.fast4x.rimusic.ui.components.themed.SmartMessage
-import it.fast4x.rimusic.utils.PlayShuffledSongs
+import it.fast4x.rimusic.utils.playShuffledSongs
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
-import me.knighthat.component.header.TabToolBar
-import kotlin.coroutines.CoroutineContext
+import me.knighthat.appContext
 
-interface SongsShuffle: Button {
+@UnstableApi
+class SongsShuffle private constructor(
+    private val binder: PlayerServiceModern.Binder?,
+    private val songs: () -> Flow<List<MediaItem>>
+): MenuIcon, Descriptive {
 
-    @get:UnstableApi
-    val binder: PlayerServiceModern.Binder?
-    val context: Context
-    val dispatcher: CoroutineContext
-        /**
-         * ATTENTION: If query() returns song list from
-         * data base, Dispatchers.IO must be indicated.
-         * <p>
-         * If query() returns a pre-defined list,
-         * Dispatchers.Main is the choice.
-         */
-        get() = Dispatchers.IO
+    companion object {
+        @JvmStatic
+        @Composable
+        fun init( songs: () -> Flow<List<MediaItem>> ) =
+            SongsShuffle( LocalPlayerServiceBinder.current, songs )
+    }
 
-    fun query(): Flow<List<Song>?>
+    override val iconId: Int = R.drawable.shuffle
+    override val messageId: Int = R.string.shuffle
+    override val menuIconTitle: String
+        @Composable
+        get() = stringResource( messageId )
 
-    @UnstableApi
-    @Composable
-    override fun ToolBarButton() {
-
-        TabToolBar.Icon(
-            iconId = R.drawable.shuffle,
-            onShortClick = {
-                CoroutineScope( dispatcher ).launch {
-                    query().collect {
-                        PlayShuffledSongs( it, context, binder )
-                    }
-                }
-            },
-            onLongClick = {
-                SmartMessage(
-                    context.resources.getString( R.string.shuffle ),
-                    context = context
-                )
+    override fun onShortClick() {
+        CoroutineScope( Dispatchers.IO ).launch {
+            songs().collect {
+                playShuffledSongs( it, appContext(), binder )
             }
-        )
+        }
     }
 }

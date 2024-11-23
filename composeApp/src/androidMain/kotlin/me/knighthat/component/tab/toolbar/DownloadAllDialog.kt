@@ -1,51 +1,87 @@
 package me.knighthat.component.tab.toolbar
 
-import androidx.annotation.DrawableRes
-import androidx.annotation.StringRes
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableIntState
+import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.ui.res.stringResource
 import androidx.media3.common.MediaItem
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.offline.Download
 import it.fast4x.rimusic.Database
+import it.fast4x.rimusic.LocalPlayerServiceBinder
 import it.fast4x.rimusic.R
 import it.fast4x.rimusic.query
 import it.fast4x.rimusic.service.isLocal
 import it.fast4x.rimusic.service.modern.PlayerServiceModern
 import it.fast4x.rimusic.utils.manageDownload
+import me.knighthat.appContext
+import org.intellij.lang.annotations.MagicConstant
 
 @UnstableApi
-interface DownloadAllDialog: ConfirmationDialog {
+class DownloadAllDialog private constructor(
+    private val binder: PlayerServiceModern.Binder?,
+    private val downloadState: MutableIntState,
+    private val activeState: MutableState<Boolean>,
+    private val songs: () -> List<MediaItem>
+): ConfirmDialog, Descriptive, MenuIcon {
 
-    val binder: PlayerServiceModern.Binder?
-    val downloadState: MutableIntState
+    companion object {
+        @JvmStatic
+        @Composable
+        fun init( songs: () -> List<MediaItem> ) =
+            DownloadAllDialog(
+                LocalPlayerServiceBinder.current,
+                rememberSaveable { mutableIntStateOf( Download.STATE_STOPPED ) },
+                rememberSaveable { mutableStateOf(false) },
+                songs
+            )
+    }
 
-    override val iconId: Int
-        @DrawableRes
-        get() = R.drawable.downloaded
-    override val titleId: Int
-        @StringRes
-        get() = R.string.do_you_really_want_to_download_all
-    override val messageId: Int
-        @StringRes
-        get() = R.string.info_download_all_songs
+    /**
+     * Indicates whether download process is currently in place.
+     *
+     * Should only use/return values from class [Download]
+     */
+    @MagicConstant(valuesFromClass = Download::class)
+    var state: Int = downloadState.intValue
+        set(value) {
+            downloadState.intValue = value
+            field = value
+        }
+    override var isActive: Boolean = activeState.value
+        set(value) {
+            activeState.value = value
+            field = value
+        }
+    override val messageId: Int = R.string.info_download_all_songs
+    override val iconId: Int = R.drawable.downloaded
+    override val dialogTitle: String
+        @Composable
+        get() = stringResource( R.string.do_you_really_want_to_download_all )
+    override val menuIconTitle: String
+        @Composable
+        get() = stringResource( R.string.download )
 
-    fun listToProcess(): List<MediaItem>
+    override fun onShortClick() = super.onShortClick()
 
     override fun onConfirm() {
-        downloadState.intValue = Download.STATE_DOWNLOADING
+        this.state = Download.STATE_DOWNLOADING
 
-        listToProcess().forEach {
-            if(binder == null){ // binder has to be non-null for remove from cache to work
-                return
-            }
-            binder?.cache?.removeResource(it.mediaId)
+        songs().forEach {
+            // binder has to be non-null for remove from cache to work
+            if(binder == null) return
+            binder.cache.removeResource(it.mediaId)
+
             query {
                 Database.resetFormatContentLength(it.mediaId)
             }
 
             if (!it.isLocal)
                 manageDownload(
-                    context = context,
+                    context = appContext(),
                     mediaItem = it,
                     downloadState = false
                 )

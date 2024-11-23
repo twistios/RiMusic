@@ -32,11 +32,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
@@ -49,11 +47,11 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.ExperimentalTextApi
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
+import androidx.lifecycle.Lifecycle
 import androidx.media3.common.MediaItem
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.offline.Download
@@ -77,16 +75,13 @@ import it.fast4x.rimusic.MONTHLY_PREFIX
 import it.fast4x.rimusic.PINNED_PREFIX
 import it.fast4x.rimusic.PIPED_PREFIX
 import it.fast4x.rimusic.R
-import it.fast4x.rimusic.enums.NavRoutes
 import it.fast4x.rimusic.enums.NavigationBarPosition
 import it.fast4x.rimusic.enums.PlaylistSongSortBy
 import it.fast4x.rimusic.enums.PopupType
 import it.fast4x.rimusic.enums.RecommendationsNumber
-import it.fast4x.rimusic.enums.SortOrder
 import it.fast4x.rimusic.enums.ThumbnailRoundness
 import it.fast4x.rimusic.enums.UiType
 import it.fast4x.rimusic.models.PlaylistPreview
-import it.fast4x.rimusic.models.Song
 import it.fast4x.rimusic.models.SongEntity
 import it.fast4x.rimusic.models.SongPlaylistMap
 import it.fast4x.rimusic.query
@@ -102,7 +97,6 @@ import it.fast4x.rimusic.ui.components.themed.IconInfo
 import it.fast4x.rimusic.ui.components.themed.InPlaylistMediaItemMenu
 import it.fast4x.rimusic.ui.components.themed.NowPlayingShow
 import it.fast4x.rimusic.ui.components.themed.Playlist
-import it.fast4x.rimusic.ui.components.themed.PlaylistsItemMenu
 import it.fast4x.rimusic.ui.components.themed.SmartMessage
 import it.fast4x.rimusic.ui.items.SongItem
 import it.fast4x.rimusic.ui.styling.Dimensions
@@ -120,7 +114,6 @@ import it.fast4x.rimusic.utils.completed
 import it.fast4x.rimusic.utils.deleteFileIfExists
 import it.fast4x.rimusic.utils.deletePipedPlaylist
 import it.fast4x.rimusic.utils.disableScrollingTextKey
-import it.fast4x.rimusic.utils.downloadedStateMedia
 import it.fast4x.rimusic.utils.durationTextToMillis
 import it.fast4x.rimusic.utils.enqueue
 import it.fast4x.rimusic.utils.forcePlay
@@ -136,35 +129,47 @@ import it.fast4x.rimusic.utils.isPipedEnabledKey
 import it.fast4x.rimusic.utils.isRecommendationEnabledKey
 import it.fast4x.rimusic.utils.manageDownload
 import it.fast4x.rimusic.utils.parentalControlEnabledKey
-import it.fast4x.rimusic.utils.playlistSongSortByKey
 import it.fast4x.rimusic.utils.recommendationsNumberKey
 import it.fast4x.rimusic.utils.rememberPreference
 import it.fast4x.rimusic.utils.removeFromPipedPlaylist
-import it.fast4x.rimusic.utils.renamePipedPlaylist
-import it.fast4x.rimusic.utils.reorderInQueueEnabledKey
 import it.fast4x.rimusic.utils.resetFormatContentLength
 import it.fast4x.rimusic.utils.saveImageToInternalStorage
 import it.fast4x.rimusic.utils.semiBold
 import it.fast4x.rimusic.utils.showFloatingIconKey
-import it.fast4x.rimusic.utils.songSortOrderKey
 import it.fast4x.rimusic.utils.syncSongsInPipedPlaylist
 import it.fast4x.rimusic.utils.thumbnailRoundnessKey
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
+import me.knighthat.appContext
 import me.knighthat.colorPalette
-import me.knighthat.component.tab.toolbar.ConfirmationDialog
-import me.knighthat.component.tab.toolbar.DeleteDownloadsDialog
-import me.knighthat.component.tab.toolbar.DetailedSort
+import me.knighthat.component.Enqueue
+import me.knighthat.component.ItemSelector
+import me.knighthat.component.LikeSongs
+import me.knighthat.component.ListenOnYouTube
+import me.knighthat.component.PlayNext
+import me.knighthat.component.PlaylistsMenu
+import me.knighthat.component.ResetThumbnail
+import me.knighthat.component.Search
+import me.knighthat.component.Synchronize
+import me.knighthat.component.ThumbnailPicker
+import me.knighthat.component.header.TabToolBar
+import me.knighthat.component.screen.DeletePlaylist
+import me.knighthat.component.screen.PlaylistSongsSort
+import me.knighthat.component.screen.PositionLock
+import me.knighthat.component.screen.RenameDialog
+import me.knighthat.component.screen.Reposition
+import me.knighthat.component.screen.pin
+import me.knighthat.component.tab.ExportSongsToCSVDialog
+import me.knighthat.component.tab.LocateComponent
+import me.knighthat.component.tab.toolbar.Button
+import me.knighthat.component.tab.toolbar.DelAllDownloadedDialog
+import me.knighthat.component.tab.toolbar.Dialog
 import me.knighthat.component.tab.toolbar.DownloadAllDialog
-import me.knighthat.component.tab.toolbar.ExportSongsToCSVDialog
-import me.knighthat.component.tab.toolbar.InputDialog
-import me.knighthat.component.tab.toolbar.Search
 import me.knighthat.component.tab.toolbar.SongsShuffle
 import me.knighthat.thumbnailShape
 import me.knighthat.typography
@@ -191,9 +196,16 @@ fun LocalPlaylistSongs(
     val binder = LocalPlayerServiceBinder.current
     val menuState = LocalMenuState.current
     val coroutineScope = rememberCoroutineScope()
+    val lazyListState = rememberLazyListState()
+    val uriHandler = LocalUriHandler.current
 
-    var playlistSongs by persistList<SongEntity>("localPlaylist/$playlistId/songs")
     var playlistPreview by persist<PlaylistPreview?>("localPlaylist/playlist")
+    var items by persistList<SongEntity>("localPlaylist/$playlistId/itemsOffShelve")
+    var itemsOnDisplay by persistList<SongEntity>("localPlaylist/$playlistId/songs/on_display")
+    // List should be cleared when tab changed
+    val selectedItems = remember { mutableListOf<SongEntity>() }
+
+    fun getMediaItems() = selectedItems.ifEmpty { itemsOnDisplay }.map( SongEntity::asMediaItem )
 
     // Non-vital
     val parentalControlEnabled by rememberPreference(parentalControlEnabledKey, false)
@@ -201,233 +213,45 @@ fun LocalPlaylistSongs(
     val disableScrollingText by rememberPreference(disableScrollingTextKey, false)
     val pipedSession = getPipedSession()
     var isRecommendationEnabled by rememberPreference(isRecommendationEnabledKey, false)
-    var downloadState = remember { mutableIntStateOf( Download.STATE_STOPPED ) }
-    var selectItems by remember { mutableStateOf( false ) }
     // Playlist non-vital
     val playlistName = remember { mutableStateOf( "" ) }
-    var listMediaItems = remember { mutableListOf<MediaItem>() }
     val thumbnailUrl = remember { mutableStateOf("") }
 
-    LaunchedEffect( playlistPreview?.playlist?.name ) {
-        playlistName.value =
-            playlistPreview?.playlist
-                ?.name
-                ?.let { name ->
-                    if( name.startsWith( MONTHLY_PREFIX, true ) )
-                        getTitleMonthlyPlaylist(context, name.substringAfter(MONTHLY_PREFIX))
-                    else
-                        name.substringAfter( PINNED_PREFIX )
-                            .substringAfter( PIPED_PREFIX )
-                } ?: "Unknown"
+    val search = Search.init()
 
-        val thumbnailName = "thumbnail/playlist_${playlistId}"
-        val presentThumbnailUrl: String? = checkFileExists(context, thumbnailName)
-        if (presentThumbnailUrl != null) {
-            thumbnailUrl.value = presentThumbnailUrl
+    val sort = PlaylistSongsSort.init()
+
+    val shuffle = SongsShuffle.init { flowOf( getMediaItems() ) }
+    val renameDialog = RenameDialog.init( pipedSession, coroutineScope, { isPipedEnabled }, playlistName, { playlistPreview } )
+    val exportDialog = ExportSongsToCSVDialog.init( playlistName, ::getMediaItems )
+    val deleteDialog = DeletePlaylist {
+        transaction {
+            playlistPreview?.playlist?.let(Database::delete)
         }
-    }
 
-    // Search states
-    val visibleState = rememberSaveable { mutableStateOf( false ) }
-    val focusState = rememberSaveable { mutableStateOf( false ) }
-    val inputState = rememberSaveable { mutableStateOf( "" ) }
-    // Sort states
-    val sortByState = rememberPreference( playlistSongSortByKey, PlaylistSongSortBy.Title )
-    val sortOrderState = rememberPreference( songSortOrderKey, SortOrder.Descending )
-    // Dialog states
-    val renamingToggleState = rememberSaveable { mutableStateOf( false ) }
-    val exportingToggleState = rememberSaveable { mutableStateOf( false ) }
-    val deletingToggleState = rememberSaveable { mutableStateOf( false ) }
-    val renumberingToggleState = rememberSaveable { mutableStateOf( false ) }
-    val downloadAllToggleState = rememberSaveable { mutableStateOf( false ) }
-    val deleteDownloadsToggleState = rememberSaveable { mutableStateOf( false ) }
-
-    val search = remember {
-        object: Search{
-            override val visibleState = visibleState
-            override val focusState = focusState
-            override val inputState = inputState
-        }
-    }
-    val sort = remember {
-        object: DetailedSort<PlaylistSongSortBy>{
-            override val menuState = menuState
-            override val sortOrderState = sortOrderState
-            override val sortByEnum = PlaylistSongSortBy.entries
-            override val sortByState = sortByState
-
-            @Composable
-            override fun title( currentValue: PlaylistSongSortBy ): String {
-                return when( currentValue ) {
-                    PlaylistSongSortBy.ArtistAndAlbum -> "${stringResource(R.string.sort_artist)}, ${stringResource(R.string.sort_album)}"
-                    else -> stringResource( currentValue.titleId )
-                }
-            }
-        }
-    }
-    val shuffle = remember {
-        object: SongsShuffle{
-            override val binder = binder
-            override val context = context
-            override val dispatcher = Dispatchers.Main
-
-            override fun query(): Flow<List<Song>?> = flowOf( playlistSongs.map( SongEntity::song ) )
-        }
-    }
-    val renameDialog = remember {
-        object: InputDialog {
-            override val context = context
-            override val toggleState = renamingToggleState
-            override val iconId = -1            // Unused
-            override val titleId = R.string.enter_the_playlist_name
-            override val messageId = -1         // Unused
-            override val valueState = playlistName
-
-            override fun onSet(newValue: String) {
-                val isPipedPlaylist =
-                    playlistPreview?.playlist?.name?.startsWith(PIPED_PREFIX) == true
-                            && isPipedEnabled
-                            && pipedSession.token.isNotEmpty()
-                val prefix = if( isPipedPlaylist ) PIPED_PREFIX else ""
-
-                query {
-                    playlistPreview?.playlist?.copy(name = "$prefix$newValue")?.let(Database::update)
-                }
-
-                if (isPipedPlaylist)
-                    renamePipedPlaylist(
-                        context = context,
-                        coroutineScope = coroutineScope,
-                        pipedSession = pipedSession.toApiSession(),
-                        id = UUID.fromString(playlistPreview?.playlist?.browseId),
-                        name = "$PIPED_PREFIX$newValue"
-                    )
-                onDismiss()
-            }
-        }
-    }
-    // START - Export playlist
-    val exportLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.CreateDocument("text/csv")
-    ) { uri ->
-        ExportSongsToCSVDialog.toFile(
-            uri ?: return@rememberLauncherForActivityResult,
-            context,
-            playlistPreview?.playlist?.browseId ?: "",
-            playlistName.value,
-            listMediaItems.ifEmpty { playlistSongs.map( SongEntity::asMediaItem ) }
+        if (
+            playlistPreview?.playlist?.name?.startsWith(PIPED_PREFIX) == true
+            && isPipedEnabled
+            && pipedSession.token.isNotEmpty()
         )
+            deletePipedPlaylist(
+                context = context,
+                coroutineScope = coroutineScope,
+                pipedSession = pipedSession.toApiSession(),
+                id = UUID.fromString(playlistPreview?.playlist?.browseId)
+            )
+
+        onDismiss()
+
+        if (navController.currentBackStackEntry?.lifecycle?.currentState == Lifecycle.State.RESUMED)
+            navController.popBackStack()
     }
-    // END - Export playlist
-    val exportDialog = remember {
-        object: ExportSongsToCSVDialog {
-            override val context = context
-            override val toggleState = exportingToggleState
-            override val valueState = playlistName
-
-            override fun onSet( newValue: String ) {
-                exportLauncher.launch( ExportSongsToCSVDialog.fileName( newValue ) )
-            }
-        }
-    }
-    val deleteDialog = remember {
-        object: ConfirmationDialog {
-            override val context = context
-            override val toggleState = deletingToggleState
-            override val iconId = -1            // Unused
-            override val titleId = R.string.delete_playlist
-            override val messageId = -1         // Unused
-
-            override fun onConfirm() {
-                query {
-                    playlistPreview?.playlist?.let(Database::delete)
-                }
-
-                if (
-                    playlistPreview?.playlist?.name?.startsWith(PIPED_PREFIX) == true
-                    && isPipedEnabled
-                    && pipedSession.token.isNotEmpty()
-                )
-                    deletePipedPlaylist(
-                        context = context,
-                        coroutineScope = coroutineScope,
-                        pipedSession = pipedSession.toApiSession(),
-                        id = UUID.fromString(playlistPreview?.playlist?.browseId)
-                    )
-
-                onDelete()
-                onDismiss()
-            }
-        }
-    }
-    val renumberDialog = remember {
-        object: ConfirmationDialog {
-            override val context = context
-            override val toggleState = renumberingToggleState
-            override val iconId = -1
-            override val titleId = R.string.do_you_really_want_to_renumbering_positions_in_this_playlist
-            override val messageId = -1
-
-            override fun onConfirm() {
-                query {
-                    val shuffled = playlistSongs.shuffled()
-
-                    shuffled.forEachIndexed { index, song ->
-                        playlistPreview?.playlist?.let {
-                            Database.updateSongPosition(it.id, song.song.id, index)
-                        }
-                    }
-                }
-
-                onDismiss()
-            }
-        }
-    }
-    val downloadAllDialog = remember {
-        object: DownloadAllDialog {
-            override val context = context
-            override val binder = binder
-            override val toggleState = downloadAllToggleState
-            override val downloadState = downloadState
-
-            override fun listToProcess(): List<MediaItem> =
-                if( listMediaItems.isNotEmpty() )
-                    listMediaItems
-                else if( playlistSongs.isNotEmpty() ) {
-                    playlistSongs.map {
-                        query {
-                            Database.insert(
-                                Song(
-                                    id = it.asMediaItem.mediaId,
-                                    title = it.asMediaItem.mediaMetadata.title.toString(),
-                                    artistsText = it.asMediaItem.mediaMetadata.artist.toString(),
-                                    thumbnailUrl = it.song.thumbnailUrl,
-                                    durationText = null
-                                )
-                            )
-                        }
-
-                        it.asMediaItem
-                    }
-                } else listOf()
-        }
-    }
-    val deleteDownloadsDialog = remember {
-        object: DeleteDownloadsDialog {
-            override val context = context
-            override val binder = binder
-            override val toggleState = deleteDownloadsToggleState
-            override val downloadState = downloadState
-
-            override fun listToProcess(): List<MediaItem> =
-                if( listMediaItems.isNotEmpty() )
-                    listMediaItems
-                else if( playlistSongs.isNotEmpty() )
-                    playlistSongs.map( SongEntity::asMediaItem )
-                else
-                    emptyList()
-        }
-    }
+    val renumberDialog = Reposition(
+        { playlistPreview?.playlist?.id },
+        { items.map(SongEntity::song) }
+    )
+    val downloadAllDialog = DownloadAllDialog.init( ::getMediaItems )
+    val deleteDownloadsDialog = DelAllDownloadedDialog.init( ::getMediaItems )
     val editThumbnailLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.GetContent()
     ) { uri ->
@@ -441,113 +265,55 @@ fun LocalPlaylistSongs(
             SmartMessage(context.resources.getString(R.string.thumbnail_not_selected), context = context)
         }
     }
-    fun openEditThumbnailPicker() {
-        editThumbnailLauncher.launch("image/*")
+    val pin = pin( playlistPreview, playlistId )
+    val positionLock = PositionLock.init( sort.sortOrder )
+
+    val itemSelector = ItemSelector.init()
+    LaunchedEffect( itemSelector.isActive ) {
+        // Clears selectedItems when check boxes are disabled
+        if( !itemSelector.isActive ) selectedItems.clear()
     }
 
-    fun resetThumbnail() {
-        if(thumbnailUrl.value == ""){
-            SmartMessage(context.resources.getString(R.string.no_thumbnail_present), context = context)
-            return
-        }
-        val thumbnailName = "thumbnail/playlist_${playlistPreview?.playlist?.id}"
-        val retVal = deleteFileIfExists(context, thumbnailName)
-        if(retVal == true){
-            SmartMessage(context.resources.getString(R.string.removed_thumbnail), context = context)
-            thumbnailUrl.value = ""
-        } else {
-            SmartMessage(context.resources.getString(R.string.failed_to_remove_thumbnail), context = context)
-        }
+    val playNext = PlayNext {
+        binder?.player?.addNext( getMediaItems(), appContext() )
+
+        // Turn of selector clears the selected list
+        itemSelector.isActive = false
     }
+    val enqueue = Enqueue {
+        binder?.player?.enqueue( getMediaItems(), context )
 
-    // Search mutable
-    var isSearchBarVisible by search.visibleState
-    var isSearchBarFocused by search.focusState
-    val searchInput by search.inputState
-    // Sort mutable
-    val sortBy by sort.sortByState
-    val sortOrder by sort.sortOrderState
-
-    LaunchedEffect(Unit, searchInput, sortOrder, sortBy) {
-        Database.songsPlaylist(playlistId, sortBy, sortOrder).filterNotNull()
-            .collect { playlistSongs = if (parentalControlEnabled)
-                it.filter { !it.song.title.startsWith(EXPLICIT_PREFIX) } else it }
+        // Turn of selector clears the selected list
+        itemSelector.isActive = false
     }
+    val addToFavorite = LikeSongs( ::getMediaItems )
 
+    val addToPlaylist = PlaylistsMenu.init(
+        navController,
+        {
+            if( it.playlist.name.startsWith(PIPED_PREFIX)
+                && isPipedEnabled
+                && pipedSession.token.isNotEmpty()
+            )
+                addToPipedPlaylist(
+                    context = context,
+                    coroutineScope = coroutineScope,
+                    pipedSession = pipedSession.toApiSession(),
+                    id = UUID.fromString(it.playlist.browseId),
+                    videos = getMediaItems().map( MediaItem::mediaId )
+                )
 
-    if ( searchInput.isNotBlank() )
-        playlistSongs = playlistSongs.filter { songItem ->
-            songItem.song.title.contains(searchInput, true)
-                    || songItem.song.artistsText?.contains(searchInput, true) ?: false
-                    || songItem.albumTitle?.contains(searchInput, true) ?: false
-        }
-
-    LaunchedEffect(Unit) {
-        Database.singlePlaylistPreview(playlistId).collect { playlistPreview = it }
-    }
-
-    //**** SMART RECOMMENDATION
-    val recommendationsNumber by rememberPreference(
-        recommendationsNumberKey,
-        RecommendationsNumber.`5`
-    )
-    var relatedSongsRecommendationResult by persist<Result<Innertube.RelatedSongs?>?>(tag = "home/relatedSongsResult")
-    var songBaseRecommendation by persist<SongEntity?>("home/songBaseRecommendation")
-    var positionsRecommendationList = arrayListOf<Int>()
-    var autosync by rememberPreference(autosyncKey, false)
-
-    if (isRecommendationEnabled) {
-        LaunchedEffect(Unit, isRecommendationEnabled) {
-            Database.songsPlaylist(playlistId, sortBy, sortOrder).distinctUntilChanged()
-                .collect { songs ->
-                    val song = songs.firstOrNull()
-                    if (relatedSongsRecommendationResult == null || songBaseRecommendation?.song?.id != song?.song?.id) {
-                        relatedSongsRecommendationResult =
-                            Innertube.relatedSongs(NextBody(videoId = (song?.song?.id ?: "HZnNt9nnEhw")))
-                    }
-                    songBaseRecommendation = song
-                }
-        }
-        if (relatedSongsRecommendationResult != null) {
-            for (index in 0..recommendationsNumber.number) {
-                positionsRecommendationList.add((0..playlistSongs.size).random())
-            }
-        }
-    }
-
-    var totalPlayTimes = 0L
-    playlistSongs.forEach {
-        totalPlayTimes += it.song.durationText?.let { it1 ->
-            durationTextToMillis(it1)
-        }?.toLong() ?: 0
-    }
-
-
-    val thumbnailRoundness by rememberPreference(
-        thumbnailRoundnessKey,
-        ThumbnailRoundness.Heavy
-    )
-
-    val lazyListState = rememberLazyListState()
-
-    val reorderingState = rememberReorderingState(
-        lazyListState = lazyListState,
-        key = playlistSongs,
-        onDragEnd = { fromIndex, toIndex ->
-            //Log.d("mediaItem","reoder playlist $playlistId, from $fromIndex, to $toIndex")
-            query {
-                Database.move(playlistId, fromIndex, toIndex)
-            }
+            getMediaItems()
         },
-        extraItemCount = 1
+        { throwable, preview ->
+            Timber.e( "Failed to add songs to playlist ${preview.playlist.name} on LocalPlaylistSongs" )
+            throwable.printStackTrace()
+        },
+        {
+            // Turn of selector clears the selected list
+            itemSelector.isActive = false
+        }
     )
-
-    renameDialog.Render()
-    exportDialog.Render()
-    deleteDialog.Render()
-    renumberDialog.Render()
-    downloadAllDialog.Render()
-    deleteDownloadsDialog.Render()
 
     fun sync() {
         playlistPreview?.let { playlistPreview ->
@@ -598,8 +364,132 @@ fun LocalPlaylistSongs(
             }
         }
     }
+    val syncComponent = Synchronize { sync() }
+    val listenOnYT = ListenOnYouTube {
+        val browseId = playlistPreview?.playlist?.browseId?.removePrefix( "VL" )
 
-    var isReorderDisabled by rememberPreference(reorderInQueueEnabledKey, defaultValue = true)
+        binder?.player?.pause()
+        uriHandler.openUri( "https://youtube.com/playlist?list=$browseId" )
+    }
+
+    fun openEditThumbnailPicker() {
+        editThumbnailLauncher.launch("image/*")
+    }
+    val thumbnailPicker = ThumbnailPicker { openEditThumbnailPicker() }
+
+    fun resetThumbnail() {
+        if(thumbnailUrl.value == ""){
+            SmartMessage(context.resources.getString(R.string.no_thumbnail_present), context = context)
+            return
+        }
+        val thumbnailName = "thumbnail/playlist_${playlistPreview?.playlist?.id}"
+        val retVal = deleteFileIfExists(context, thumbnailName)
+        if(retVal == true){
+            SmartMessage(context.resources.getString(R.string.removed_thumbnail), context = context)
+            thumbnailUrl.value = ""
+        } else {
+            SmartMessage(context.resources.getString(R.string.failed_to_remove_thumbnail), context = context)
+        }
+    }
+    val resetThumbnail = ResetThumbnail { resetThumbnail() }
+
+    val locator = LocateComponent.init( lazyListState, ::getMediaItems )
+
+    LaunchedEffect( sort.sortOrder, sort.sortBy ) {
+        Database.songsPlaylist( playlistId, sort.sortBy, sort.sortOrder )
+                .flowOn( Dispatchers.IO )
+                .distinctUntilChanged()
+                .collect { items = it }
+    }
+    LaunchedEffect( items, search.input, parentalControlEnabled ) {
+        items.filter {
+            if( parentalControlEnabled )
+                !it.song.title.startsWith(EXPLICIT_PREFIX)
+            else
+                true
+        }.filter {
+            val containsName = it.song.title.contains(search.input, true)
+            val containsArtist = it.song.artistsText?.contains(search.input, true) ?: false
+            val containsAlbum = it.albumTitle?.contains(search.input, true) ?: false
+
+            containsName || containsArtist || containsAlbum
+        }.let { itemsOnDisplay = it }
+    }
+    LaunchedEffect(Unit) {
+        Database.singlePlaylistPreview( playlistId )
+                .flowOn( Dispatchers.IO )
+                .distinctUntilChanged()
+                .collect { playlistPreview = it }
+
+        val thumbnailName = "thumbnail/playlist_${playlistId}"
+        val presentThumbnailUrl: String? = checkFileExists(context, thumbnailName)
+        if (presentThumbnailUrl != null) {
+            thumbnailUrl.value = presentThumbnailUrl
+        }
+    }
+    LaunchedEffect( playlistPreview?.playlist?.name ) {
+        renameDialog.playlistName = playlistPreview?.playlist?.name?.let { name ->
+            if( name.startsWith( MONTHLY_PREFIX, true ) )
+                getTitleMonthlyPlaylist(context, name.substringAfter(MONTHLY_PREFIX))
+            else
+                name.substringAfter( PINNED_PREFIX )
+                    .substringAfter( PIPED_PREFIX )
+        } ?: "Unknown"
+    }
+
+    //**** SMART RECOMMENDATION
+    val recommendationsNumber by rememberPreference(
+        recommendationsNumberKey,
+        RecommendationsNumber.`5`
+    )
+    var relatedSongsRecommendationResult by persist<Result<Innertube.RelatedSongs?>?>(tag = "home/relatedSongsResult")
+    var songBaseRecommendation by persist<SongEntity?>("home/songBaseRecommendation")
+    var positionsRecommendationList = arrayListOf<Int>()
+    var autosync by rememberPreference(autosyncKey, false)
+
+    if (isRecommendationEnabled) {
+        LaunchedEffect(Unit, isRecommendationEnabled) {
+            Database.songsPlaylist(playlistId, sort.sortBy, sort.sortOrder).distinctUntilChanged()
+                .collect { songs ->
+                    val song = songs.firstOrNull()
+                    if (relatedSongsRecommendationResult == null || songBaseRecommendation?.song?.id != song?.song?.id) {
+                        relatedSongsRecommendationResult =
+                            Innertube.relatedSongs(NextBody(videoId = (song?.song?.id ?: "HZnNt9nnEhw")))
+                    }
+                    songBaseRecommendation = song
+                }
+        }
+        if (relatedSongsRecommendationResult != null) {
+            for (index in 0..recommendationsNumber.number) {
+                positionsRecommendationList.add((0..items.size).random())
+            }
+        }
+    }
+
+    val thumbnailRoundness by rememberPreference(
+        thumbnailRoundnessKey,
+        ThumbnailRoundness.Heavy
+    )
+
+
+    val reorderingState = rememberReorderingState(
+        lazyListState = lazyListState,
+        key = items,
+        onDragEnd = { fromIndex, toIndex ->
+            //Log.d("mediaItem","reoder playlist $playlistId, from $fromIndex, to $toIndex")
+            query {
+                Database.move(playlistId, fromIndex, toIndex)
+            }
+        },
+        extraItemCount = 1
+    )
+
+    renameDialog.Render()
+    exportDialog.Render()
+    deleteDialog.Render()
+    (renumberDialog as Dialog).Render()
+    downloadAllDialog.Render()
+    deleteDownloadsDialog.Render()
 
     val playlistThumbnailSizeDp = Dimensions.thumbnails.playlist
     val playlistThumbnailSizePx = playlistThumbnailSizeDp.px
@@ -609,18 +499,8 @@ fun LocalPlaylistSongs(
 
     val rippleIndication = ripple(bounded = false)
 
-    val uriHandler = LocalUriHandler.current
-    var scrollToNowPlaying by remember {
-        mutableStateOf(false)
-    }
     var nowPlayingItem by remember {
         mutableStateOf(-1)
-    }
-    var plistId by remember {
-        mutableStateOf(0L)
-    }
-    var position by remember {
-        mutableIntStateOf(0)
     }
 
     val playlistNotMonthlyType =
@@ -713,12 +593,14 @@ fun LocalPlaylistSongs(
                         ) {
                             Spacer(modifier = Modifier.height(10.dp))
                             IconInfo(
-                                title = playlistSongs.size.toString(),
+                                title = items.size.toString(),
                                 icon = painterResource(R.drawable.musical_notes)
                             )
                             Spacer(modifier = Modifier.height(5.dp))
+
+                            val totalDuration = items.sumOf { durationTextToMillis(it.song.durationText ?: "0:0") }
                             IconInfo(
-                                title = formatAsTime(totalPlayTimes),
+                                title = formatAsTime( totalDuration ),
                                 icon = painterResource(R.drawable.time)
                             )
                             if (isRecommendationEnabled) {
@@ -762,292 +644,32 @@ fun LocalPlaylistSongs(
 
                     Spacer(modifier = Modifier.height(10.dp))
 
-                    Row(
-                        horizontalArrangement = Arrangement.SpaceEvenly,
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier
-                            .padding(horizontal = 10.dp)
-                            .fillMaxWidth()
-                    ) {
+                    TabToolBar.Buttons(
+                        mutableListOf<Button>().apply {
+                            if (playlistNotMonthlyType)
+                                this.add( pin )
+                            if ( sort.sortBy == PlaylistSongSortBy.Position )
+                                this.add( positionLock )
 
-                        if (playlistNotMonthlyType)
-                            HeaderIconButton(
-                                icon = R.drawable.pin,
-                                enabled = playlistSongs.isNotEmpty(),
-                                color = if (playlistPreview?.playlist?.name?.startsWith(
-                                        PINNED_PREFIX,
-                                        0,
-                                        true
-                                    ) == true
-                                )
-                                    colorPalette().text else colorPalette().textDisabled,
-                                onClick = {},
-                                modifier = Modifier
-                                    .combinedClickable(
-                                        onClick = {
-                                            query {
-                                                if (playlistPreview?.playlist?.name?.startsWith(
-                                                        PINNED_PREFIX,
-                                                        0,
-                                                        true
-                                                    ) == true
-                                                )
-                                                    Database.unPinPlaylist(playlistId) else
-                                                    Database.pinPlaylist(playlistId)
-                                            }
-                                        },
-                                        onLongClick = {
-                                            SmartMessage(
-                                                context.resources.getString(R.string.info_pin_unpin_playlist),
-                                                context = context
-                                            )
-                                        }
-                                    )
-                            )
-
-                        if (sortBy == PlaylistSongSortBy.Position && sortOrder == SortOrder.Ascending)
-                            HeaderIconButton(
-                                icon = if (isReorderDisabled) R.drawable.locked else R.drawable.unlocked,
-                                enabled = playlistSongs.isNotEmpty() == true,
-                                color = if (playlistSongs.isNotEmpty() == true) colorPalette().text else colorPalette().textDisabled,
-                                onClick = {},
-                                modifier = Modifier
-                                    .combinedClickable(
-                                        onClick = {
-                                            if (sortBy == PlaylistSongSortBy.Position && sortOrder == SortOrder.Ascending) {
-                                                isReorderDisabled = !isReorderDisabled
-                                            } else {
-                                                SmartMessage(
-                                                    context.resources.getString(R.string.info_reorder_is_possible_only_in_ascending_sort),
-                                                    type = PopupType.Warning, context = context
-                                                )
-                                            }
-                                        },
-                                        onLongClick = {
-                                            SmartMessage(
-                                                context.resources.getString(R.string.info_lock_unlock_reorder_songs),
-                                                context = context
-                                            )
-                                        }
-                                    )
-                            )
-
-                        downloadAllDialog.ToolBarButton()
-                        deleteDownloadsDialog.ToolBarButton()
-
-                        HeaderIconButton(
-                            icon = R.drawable.ellipsis_horizontal,
-                            color = colorPalette().text, //if (playlistWithSongs?.songs?.isNotEmpty() == true) colorPalette().text else colorPalette().textDisabled,
-                            enabled = true, //playlistWithSongs?.songs?.isNotEmpty() == true,
-                            modifier = Modifier
-                                .padding(end = 4.dp),
-                            onClick = {
-                                menuState.display {
-                                    playlistPreview?.let { playlistPreview ->
-                                        PlaylistsItemMenu(
-                                            navController = navController,
-                                            onDismiss = menuState::hide,
-                                            onSelectUnselect = {
-                                                selectItems = !selectItems
-                                                if (!selectItems) {
-                                                    listMediaItems.clear()
-                                                }
-                                            },
-                                            /*
-                                        onSelect = { selectItems = true },
-                                        onUncheck = {
-                                            selectItems = false
-                                            listMediaItems.clear()
-                                        },
-                                         */
-                                            playlist = playlistPreview,
-                                            onEnqueue = {
-                                                if (listMediaItems.isEmpty()) {
-                                                    binder?.player?.enqueue(
-                                                        playlistSongs.map(SongEntity::asMediaItem),
-                                                        context
-                                                    )
-                                                } else {
-                                                    binder?.player?.enqueue(listMediaItems, context)
-                                                    listMediaItems.clear()
-                                                    selectItems = false
-                                                }
-                                            },
-                                            onPlayNext = {
-                                                if (listMediaItems.isEmpty()) {
-                                                    binder?.player?.addNext(
-                                                        playlistSongs.map(SongEntity::asMediaItem),
-                                                        context
-                                                    )
-                                                } else {
-                                                    binder?.player?.addNext(listMediaItems, context)
-                                                    listMediaItems.clear()
-                                                    selectItems = false
-                                                }
-                                            },
-                                            showOnSyncronize = !playlistPreview.playlist.browseId.isNullOrBlank(),
-                                            onSyncronize = {
-                                                sync();SmartMessage(
-                                                context.resources.getString(
-                                                    R.string.done
-                                                ), context = context
-                                            )
-                                            },
-                                            onRename = {
-                                                if (playlistNotMonthlyType || playlistNotPipedType)
-                                                    renameDialog.toggleState.value = true
-                                                else
-                                                /*
-                                                SmartToast(context.resources.getString(R.string.info_cannot_rename_a_monthly_or_piped_playlist))
-                                                 */
-                                                    SmartMessage(
-                                                        context.resources.getString(R.string.info_cannot_rename_a_monthly_or_piped_playlist),
-                                                        context = context
-                                                    )
-                                            },
-                                            onAddToPreferites = {
-                                                if (listMediaItems.isNotEmpty()) {
-                                                    listMediaItems.map {
-                                                        transaction {
-                                                            Database.like(
-                                                                it.mediaId,
-                                                                System.currentTimeMillis()
-                                                            )
-                                                        }
-                                                    }
-                                                } else {
-                                                    playlistSongs.map {
-                                                        transaction {
-                                                            Database.like(
-                                                                it.asMediaItem.mediaId,
-                                                                System.currentTimeMillis()
-                                                            )
-                                                        }
-                                                    }
-                                                }
-                                            },
-                                            onAddToPlaylist = { playlistPreview ->
-                                                position =
-                                                    playlistPreview.songCount.minus(1) ?: 0
-                                                //Log.d("mediaItem", " maxPos in Playlist $it ${position}")
-                                                if (position > 0) position++ else position = 0
-                                                //Log.d("mediaItem", "next initial pos ${position}")
-                                                if (listMediaItems.isEmpty()) {
-                                                    playlistSongs.forEachIndexed { index, song ->
-                                                        transaction {
-                                                            Database.insert(song.asMediaItem)
-                                                            Database.insert(
-                                                                SongPlaylistMap(
-                                                                    songId = song.asMediaItem.mediaId,
-                                                                    playlistId = playlistPreview.playlist.id,
-                                                                    position = position + index
-                                                                )
-                                                            )
-                                                        }
-                                                        //Log.d("mediaItemPos", "added position ${position + index}")
-                                                    }
-                                                    //println("pipedInfo mediaitemmenu uuid ${playlistPreview.playlist.browseId}")
-
-                                                    if (playlistPreview.playlist.name.startsWith(
-                                                            PIPED_PREFIX
-                                                        ) && isPipedEnabled && pipedSession.token.isNotEmpty()
-                                                    ) {
-                                                        addToPipedPlaylist(
-                                                            context = context,
-                                                            coroutineScope = coroutineScope,
-                                                            pipedSession = pipedSession.toApiSession(),
-                                                            id = UUID.fromString(playlistPreview.playlist.browseId),
-                                                            videos = listMediaItems.map { it.mediaId }
-                                                                .toList()
-                                                        )
-                                                    }
-                                                } else {
-                                                    listMediaItems.forEachIndexed { index, song ->
-                                                        //Log.d("mediaItemMaxPos", position.toString())
-                                                        transaction {
-                                                            Database.insert(song)
-                                                            Database.insert(
-                                                                SongPlaylistMap(
-                                                                    songId = song.mediaId,
-                                                                    playlistId = playlistPreview.playlist.id,
-                                                                    position = position + index
-                                                                )
-                                                            )
-                                                        }
-                                                        //Log.d("mediaItemPos", "add position $position")
-                                                    }
-                                                    println("pipedInfo mediaitemmenu uuid ${playlistPreview.playlist.browseId}")
-
-                                                    if (playlistPreview.playlist.name.startsWith(
-                                                            PIPED_PREFIX
-                                                        ) && isPipedEnabled && pipedSession.token.isNotEmpty()
-                                                    )
-                                                        addToPipedPlaylist(
-                                                            context = context,
-                                                            coroutineScope = coroutineScope,
-                                                            pipedSession = pipedSession.toApiSession(),
-                                                            id = UUID.fromString(playlistPreview.playlist.browseId),
-                                                            videos = listMediaItems.map { it.mediaId }
-                                                                .toList()
-                                                        )
-                                                    listMediaItems.clear()
-                                                    selectItems = false
-                                                }
-                                            },
-                                            onRenumberPositions = {
-                                                if (playlistNotMonthlyType)
-                                                    renumberDialog.toggleState.value = true
-                                                else
-                                                /*
-                                                SmartToast(context.resources.getString(R.string.info_cannot_renumbering_a_monthly_playlist))
-                                                 */
-                                                    SmartMessage(
-                                                        context.resources.getString(R.string.info_cannot_renumbering_a_monthly_playlist),
-                                                        context = context
-                                                    )
-                                            },
-                                            onDelete = {
-                                                deleteDialog.toggleState.value = true
-                                                /*
-                                            if (playlistNotMonthlyType)
-                                                isDeleting = true
-                                            else
-                                                SmartToast(context.resources.getString(R.string.info_cannot_delete_a_monthly_playlist))
-
-                                             */
-                                            },
-                                            onEditThumbnail = {
-                                                openEditThumbnailPicker()
-                                            },
-                                            onResetThumbnail = {
-                                                resetThumbnail()
-                                            },
-                                            showonListenToYT = !playlistPreview.playlist.browseId.isNullOrBlank(),
-                                            onListenToYT = {
-                                                binder?.player?.pause()
-                                                uriHandler.openUri(
-                                                    "https://youtube.com/playlist?list=${
-                                                        playlistPreview?.playlist?.browseId?.removePrefix(
-                                                            "VL"
-                                                        )
-                                                    }"
-                                                )
-                                            },
-                                            onExport = {
-                                                exportDialog.toggleState.value = true
-                                            },
-                                            onGoToPlaylist = {
-                                                navController.navigate("${NavRoutes.localPlaylist.name}/$it")
-                                            },
-                                            disableScrollingText = disableScrollingText
-                                        )
-                                    }
-
-                                }
-                            }
-                        )
-                        //}
-                    }
+                            this.add( downloadAllDialog )
+                            this.add( deleteDownloadsDialog )
+                            this.add( itemSelector )
+                            this.add( playNext )
+                            this.add( enqueue )
+                            this.add( addToFavorite )
+                            this.add( addToPlaylist )
+                            if( playlistPreview?.playlist?.browseId?.isNotBlank() == true )
+                                this.add( syncComponent )
+                            if( playlistPreview?.playlist?.browseId?.isNotBlank() == true )
+                                this.add( listenOnYT )
+                            this.add( renameDialog )
+                            this.add( renumberDialog )
+                            this.add( deleteDialog )
+                            this.add( exportDialog )
+                            this.add( thumbnailPicker )
+                            this.add( resetThumbnail )
+                        }
+                    )
 
                     if (autosync && playlistPreview?.let { playlistPreview -> !playlistPreview.playlist.browseId.isNullOrBlank() } == true) {
                         sync()
@@ -1065,48 +687,12 @@ fun LocalPlaylistSongs(
                     ) {
 
                         sort.ToolBarButton()
-                        sort.SortTitle()
 
                         Row(
-                            horizontalArrangement = Arrangement.End, //Arrangement.spacedBy(10.dp),
+                            horizontalArrangement = Arrangement.End,
                             verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                        ) {
-                            HeaderIconButton(
-                                modifier = Modifier
-                                    .padding(horizontal = 5.dp)
-                                    .combinedClickable(
-                                        onClick = {
-                                            nowPlayingItem = -1
-                                            scrollToNowPlaying = false
-                                            playlistSongs
-                                                .forEachIndexed { index, song ->
-                                                    if (song.asMediaItem.mediaId == binder?.player?.currentMediaItem?.mediaId)
-                                                        nowPlayingItem = index
-                                                }
-
-                                            if (nowPlayingItem > -1)
-                                                scrollToNowPlaying = true
-                                        },
-                                        onLongClick = {
-                                            SmartMessage(
-                                                context.resources.getString(R.string.info_find_the_song_that_is_playing),
-                                                context = context
-                                            )
-                                        }
-                                    ),
-                                icon = R.drawable.locate,
-                                enabled = playlistSongs.isNotEmpty(),
-                                color = if (playlistSongs.isNotEmpty()) colorPalette().text else colorPalette().textDisabled,
-                                onClick = {}
-                            )
-                            LaunchedEffect(scrollToNowPlaying) {
-                                if (scrollToNowPlaying)
-                                    lazyListState.scrollToItem(nowPlayingItem, 1)
-                                scrollToNowPlaying = false
-                            }
-                        }
+                            modifier = Modifier.fillMaxWidth()
+                        ) { locator.ToolBarButton() }
 
                     }
 
@@ -1114,7 +700,7 @@ fun LocalPlaylistSongs(
                 }
 
                 itemsIndexed(
-                    items = playlistSongs ?: emptyList(),
+                    items = itemsOnDisplay,
                     key = { _, song -> song.song.id },
                     contentType = { _, song -> song },
                 ) { index, song ->
@@ -1155,13 +741,12 @@ fun LocalPlaylistSongs(
 
 
                         val isLocal by remember { derivedStateOf { song.asMediaItem.isLocal } }
-                        downloadState.intValue = getDownloadState(song.asMediaItem.mediaId)
+                        downloadAllDialog.state = getDownloadState( song.asMediaItem.mediaId )
                         val isDownloaded =
                             if (!isLocal) isDownloadedSong(song.asMediaItem.mediaId) else true
-                        val checkedState = rememberSaveable { mutableStateOf(false) }
                         val positionInPlaylist: Int = index
 
-                        if (!isReorderDisabled && sortBy == PlaylistSongSortBy.Position && sortOrder == SortOrder.Ascending) {
+                        if ( !positionLock.isLocked() ) {
                             Box(
                                 modifier = Modifier
                                     .size(24.dp)
@@ -1229,9 +814,6 @@ fun LocalPlaylistSongs(
                                 onDownloadClick = {
                                     binder?.cache?.removeResource(song.asMediaItem.mediaId)
 
-                                    //query {
-                                    //    Database.resetFormatContentLength(song.asMediaItem.mediaId)
-                                    //}
                                     resetFormatContentLength(song.asMediaItem.mediaId)
 
                                     if (!isLocal) {
@@ -1241,32 +823,37 @@ fun LocalPlaylistSongs(
                                             downloadState = isDownloaded
                                         )
                                     }
-                                    //if (isDownloaded) listDownloadedMedia.dropWhile { it.asMediaItem.mediaId == song.asMediaItem.mediaId } else listDownloadedMedia.add(song)
-                                    //Log.d("mediaItem", "manageDownload click isDownloaded ${isDownloaded} listDownloadedMedia ${listDownloadedMedia.distinct().size}")
                                 },
-                                downloadState = downloadState.intValue,
+                                downloadState = downloadAllDialog.state,
                                 thumbnailSizePx = thumbnailSizePx,
                                 thumbnailSizeDp = thumbnailSizeDp,
                                 trailingContent = {
-                                    if (selectItems)
+                                    // It must watch for [selectedItems.size] for changes
+                                    // Otherwise, state will stay the same
+                                    val checkedState = remember( selectedItems.size ) {
+                                        mutableStateOf( song in selectedItems )
+                                    }
+
+                                    if ( itemSelector.isActive )
                                         Checkbox(
                                             checked = checkedState.value,
                                             onCheckedChange = {
                                                 checkedState.value = it
-                                                if (it) listMediaItems.add(song.asMediaItem) else
-                                                    listMediaItems.remove(song.asMediaItem)
+                                                if ( it )
+                                                    selectedItems.add( song )
+                                                else
+                                                    selectedItems.remove( song )
                                             },
                                             colors = CheckboxDefaults.colors(
                                                 checkedColor = colorPalette().accent,
                                                 uncheckedColor = colorPalette().text
                                             ),
-                                            modifier = Modifier
-                                                .scale(0.7f)
+                                            modifier = Modifier.scale(0.7f)
                                         )
                                     else checkedState.value = false
                                 },
                                 onThumbnailContent = {
-                                    if (sortBy == PlaylistSongSortBy.PlayTime) {
+                                    if (sort.sortBy == PlaylistSongSortBy.PlayTime) {
                                         BasicText(
                                             text = song.song.formattedTotalPlayTime,
                                             style = typography().xxs.semiBold.center.color(
@@ -1290,29 +877,6 @@ fun LocalPlaylistSongs(
                                         )
                                     }
 
-                                    /*
-                                if (sortBy == PlaylistSongSortBy.Position)
-                                    BasicText(
-                                        text = (index + 1).toString(),
-                                        style = typography().m.semiBold.center.color(colorPalette().onOverlay),
-                                        maxLines = 1,
-                                        overflow = TextOverflow.Ellipsis,
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .background(
-                                                brush = Brush.verticalGradient(
-                                                    colors = listOf(
-                                                        Color.Transparent,
-                                                        colorPalette().overlay
-                                                    )
-                                                ),
-                                                shape = thumbnailShape
-                                            )
-                                            .padding(horizontal = 8.dp, vertical = 4.dp)
-                                            .align(Alignment.Center)
-                                    )
-                                 */
-
                                     if (nowPlayingItem > -1)
                                         NowPlayingShow(song.asMediaItem.mediaId)
                                 },
@@ -1333,34 +897,21 @@ fun LocalPlaylistSongs(
                                             hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
                                         },
                                         onClick = {
-                                            if (!selectItems) {
+                                            binder?.stopRadio()
+                                            binder?.player?.forcePlayAtIndex(
+                                                itemsOnDisplay.map( SongEntity::asMediaItem ),
+                                                index
+                                            )
 
-                                                if (isSearchBarVisible)
-                                                    if (searchInput.isBlank())
-                                                        isSearchBarVisible = false
-                                                    else
-                                                        isSearchBarFocused = false
+                                            /*
+                                                Due to the small size of checkboxes,
+                                                we shouldn't disable [itemSelector]
+                                             */
 
-                                                playlistSongs
-                                                    .map(SongEntity::asMediaItem)
-                                                    .let { mediaItems ->
-                                                        binder?.stopRadio()
-                                                        binder?.player?.forcePlayAtIndex(
-                                                            mediaItems,
-                                                            index
-                                                        )
-                                                    }
-                                            } else checkedState.value = !checkedState.value
+                                            search.onItemSelected()
                                         }
                                     )
                                     .animateItemPlacement(reorderingState)
-                                    /*
-                                    .draggedItem(
-                                        reorderingState = reorderingState,
-                                        index = index
-                                    )
-
- */
                                     .background(color = colorPalette().background0)
                                     .zIndex(2f),
                                 disableScrollingText = disableScrollingText
@@ -1387,12 +938,11 @@ fun LocalPlaylistSongs(
                     iconId = R.drawable.shuffle,
                     visible = !reorderingState.isDragging,
                     onClick = {
-                        playlistSongs.let { songs ->
+                        getMediaItems().let { songs ->
                             if (songs.isNotEmpty()) {
                                 binder?.stopRadio()
-                                binder?.player?.forcePlayFromBeginning(
-                                    songs.shuffled().map(SongEntity::asMediaItem)
-                                )
+                                binder?.player
+                                      ?.forcePlayFromBeginning( songs.shuffled() )
                             }
                         }
                     }

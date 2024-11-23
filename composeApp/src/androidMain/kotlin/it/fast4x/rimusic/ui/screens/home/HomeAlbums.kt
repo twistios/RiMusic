@@ -2,20 +2,15 @@ package it.fast4x.rimusic.ui.screens.home
 
 import android.annotation.SuppressLint
 import androidx.compose.animation.ExperimentalAnimationApi
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
@@ -27,15 +22,12 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.ExperimentalTextApi
-import androidx.compose.ui.unit.dp
 import androidx.media3.common.util.UnstableApi
 import it.fast4x.compose.persist.persistList
 import it.fast4x.rimusic.Database
@@ -44,7 +36,6 @@ import it.fast4x.rimusic.MODIFIED_PREFIX
 import it.fast4x.rimusic.R
 import it.fast4x.rimusic.enums.AlbumSortBy
 import it.fast4x.rimusic.enums.NavigationBarPosition
-import it.fast4x.rimusic.enums.SortOrder
 import it.fast4x.rimusic.enums.UiType
 import it.fast4x.rimusic.models.Album
 import it.fast4x.rimusic.models.Song
@@ -67,15 +58,15 @@ import it.fast4x.rimusic.utils.disableScrollingTextKey
 import it.fast4x.rimusic.utils.enqueue
 import it.fast4x.rimusic.utils.rememberPreference
 import it.fast4x.rimusic.utils.showFloatingIconKey
-import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
 import me.knighthat.colorPalette
+import me.knighthat.component.Search
+import me.knighthat.component.header.TabToolBar
+import me.knighthat.component.tab.ItemSize
+import me.knighthat.component.tab.Sort
 import me.knighthat.component.tab.TabHeader
-import me.knighthat.component.tab.toolbar.ItemSize
 import me.knighthat.component.tab.toolbar.Randomizer
-import me.knighthat.component.tab.toolbar.Search
 import me.knighthat.component.tab.toolbar.SongsShuffle
-import me.knighthat.component.tab.toolbar.Sort
-import me.knighthat.preference.Preference
 import me.knighthat.preference.Preference.HOME_ALBUM_ITEM_SIZE
 import me.knighthat.thumbnailShape
 
@@ -99,79 +90,43 @@ fun HomeAlbums(
 
     val disableScrollingText by rememberPreference(disableScrollingTextKey, false)
 
-    // Search states
-    val visibleState = rememberSaveable { mutableStateOf(false) }
-    val focusState = rememberSaveable { mutableStateOf( false ) }
-    val inputState = rememberSaveable { mutableStateOf( "" ) }
-    // Sort states
-    val sortBy = rememberPreference(albumSortByKey, AlbumSortBy.DateAdded)
-    val sortOrder = rememberPreference(albumSortOrderKey, SortOrder.Descending)
-    // Size state
-    val sizeState = Preference.remember( HOME_ALBUM_ITEM_SIZE )
-    // Randomizer states
-    val itemsState = persistList<Album>( "home/albums" )
-    val rotationState = rememberSaveable { mutableStateOf( false ) }
-    val angleState = animateFloatAsState(
-        targetValue = if (rotationState.value) 360F else 0f,
-        animationSpec = tween(durationMillis = 300), label = ""
+    var items by persistList<Album>( "home/albums" )
+
+    var itemsOnDisplay by persistList<Album>( "home/albums/on_display" )
+
+    val search = Search.init()
+
+    val sort = Sort.init(
+        albumSortOrderKey,
+        AlbumSortBy.entries,
+        rememberPreference(albumSortByKey, AlbumSortBy.DateAdded)
     )
 
-    val search = remember {
-        object: Search {
-            override val visibleState = visibleState
-            override val focusState = focusState
-            override val inputState = inputState
-        }
-    }
-    val sort = remember {
-        object: Sort<AlbumSortBy> {
-            override val menuState = menuState
-            override val sortOrderState = sortOrder
-            override val sortByEnum = AlbumSortBy.entries
-            override val sortByState = sortBy
-        }
-    }
-    val itemSize = remember {
-        object: ItemSize{
-            override val menuState = menuState
-            override val sizeState = sizeState
-        }
-    }
-    val randomizer = remember {
-        object: Randomizer<Album> {
-            override val itemsState = itemsState
-            override val rotationState = rotationState
-            override val angleState = angleState
+    val itemSize = ItemSize.init( HOME_ALBUM_ITEM_SIZE )
 
-            override fun onClick(item: Album) = onAlbumClick(item)
-        }
+    val randomizer = object: Randomizer<Album> {
+        override fun getItems(): List<Album> = itemsOnDisplay
+        override fun onClick(index: Int) = onAlbumClick( itemsOnDisplay[index] )
     }
-    val shuffle = remember(binder) {
-        object: SongsShuffle{
-            override val binder = binder
-            override val context = context
-
-            override fun query(): Flow<List<Song>?> = Database.songsInAllBookmarkedAlbums()
-        }
+    val shuffle = SongsShuffle.init {
+        Database.songsInAllBookmarkedAlbums().map { it.map( Song::asMediaItem ) }
     }
 
-    // Search mutable
-    var isSearchBarVisible by search.visibleState
-    var isSearchBarFocused by search.focusState
-    val searchInput by search.inputState
-    // Items mutable
-    var items by randomizer.itemsState
-
-    LaunchedEffect(sort.sortByState.value, sort.sortOrderState.value, searchInput) {
-        Database.albums(sort.sortByState.value, sort.sortOrderState.value).collect { items = it }
+    LaunchedEffect( sort.sortBy, sort.sortOrder ) {
+        Database.albums( sort.sortBy, sort.sortOrder ).collect { items = it }
     }
+    LaunchedEffect( items, search.input ) {
+        val scrollIndex = lazyGridState.firstVisibleItemIndex
+        val scrollOffset = lazyGridState.firstVisibleItemScrollOffset
 
-    if ( searchInput.isNotBlank() )
-        items = items.filter {
-            it.title?.contains( searchInput, true) ?: false
-                    || it.year?.contains( searchInput, true) ?: false
-                    || it.authorsText?.contains( searchInput, true) ?: false
+        itemsOnDisplay = items.filter {
+            it.title?.contains( search.input, true) ?: false
+                    || it.year?.contains( search.input, true) ?: false
+                    || it.authorsText?.contains( search.input, true) ?: false
         }
+
+        lazyGridState.scrollToItem( scrollIndex, scrollOffset )
+    }
 
     Box(
         modifier = Modifier
@@ -191,38 +146,21 @@ fun HomeAlbums(
             }
 
             // Sticky tab's tool bar
-            Row(
-                horizontalArrangement = Arrangement.SpaceAround,
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier
-                    .padding(horizontal = 12.dp)
-                    .padding(vertical = 4.dp)
-                    .fillMaxWidth()
-            ) {
-                sort.ToolBarButton()
-
-                search.ToolBarButton()
-
-                randomizer.ToolBarButton()
-
-                shuffle.ToolBarButton()
-
-                itemSize.ToolBarButton()
-            }
+            TabToolBar.Buttons( sort, search, randomizer, shuffle, itemSize )
 
             // Sticky search bar
             search.SearchBar( this )
 
             LazyVerticalGrid(
                 state = lazyGridState,
-                columns = GridCells.Adaptive( itemSize.sizeState.value.dp ),
+                columns = GridCells.Adaptive( itemSize.size.dp ),
                 //contentPadding = LocalPlayerAwareWindowInsets.current.asPaddingValues(),
                 modifier = Modifier.background( colorPalette().background0 )
                                    .fillMaxSize(),
                 contentPadding = PaddingValues( bottom = Dimensions.bottomSpacer )
             ) {
                 items(
-                    items = items,
+                    items = itemsOnDisplay,
                     key = Album::id
                 ) { album ->
                     var songs = remember { listOf<Song>() }
@@ -288,8 +226,8 @@ fun HomeAlbums(
                         alternative = true,
                         showAuthors = true,
                         album = album,
-                        thumbnailSizeDp = itemSize.sizeState.value.dp,
-                        thumbnailSizePx = itemSize.sizeState.value.px,
+                        thumbnailSizeDp = itemSize.size.dp,
+                        thumbnailSizePx = itemSize.size.px,
                         modifier = Modifier
                             .combinedClickable(
 
@@ -349,12 +287,7 @@ fun HomeAlbums(
                                     }
                                 },
                                 onClick = {
-                                    if ( isSearchBarVisible )
-                                        if ( searchInput.isBlank() )
-                                            isSearchBarVisible = false
-                                        else
-                                            isSearchBarFocused = false
-
+                                    search.onItemSelected()
                                     onAlbumClick( album )
                                 }
                             )

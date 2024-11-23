@@ -1,12 +1,10 @@
 package it.fast4x.rimusic
 
 import android.content.ContentValues
-import android.content.Context
 import android.database.SQLException
 import android.database.sqlite.SQLiteDatabase.CONFLICT_IGNORE
 import android.os.Parcel
 import androidx.core.database.getFloatOrNull
-import androidx.lifecycle.ViewModelProvider.NewInstanceFactory.Companion.instance
 import androidx.media3.common.MediaItem
 import androidx.media3.common.util.UnstableApi
 import androidx.room.AutoMigration
@@ -42,8 +40,8 @@ import it.fast4x.rimusic.enums.SongSortBy
 import it.fast4x.rimusic.enums.SortOrder
 import it.fast4x.rimusic.models.Album
 import it.fast4x.rimusic.models.Artist
-import it.fast4x.rimusic.models.SongWithContentLength
 import it.fast4x.rimusic.models.Event
+import it.fast4x.rimusic.models.EventWithSong
 import it.fast4x.rimusic.models.Format
 import it.fast4x.rimusic.models.Info
 import it.fast4x.rimusic.models.Lyrics
@@ -55,12 +53,11 @@ import it.fast4x.rimusic.models.SearchQuery
 import it.fast4x.rimusic.models.Song
 import it.fast4x.rimusic.models.SongAlbumMap
 import it.fast4x.rimusic.models.SongArtistMap
-import it.fast4x.rimusic.models.SongPlaylistMap
-import it.fast4x.rimusic.models.SortedSongPlaylistMap
-import it.fast4x.rimusic.models.EventWithSong
 import it.fast4x.rimusic.models.SongEntity
+import it.fast4x.rimusic.models.SongPlaylistMap
+import it.fast4x.rimusic.models.SongWithContentLength
+import it.fast4x.rimusic.models.SortedSongPlaylistMap
 import it.fast4x.rimusic.service.LOCAL_KEY_PREFIX
-import kotlin.jvm.Throws
 import kotlinx.coroutines.flow.Flow
 import me.knighthat.appContext
 
@@ -910,31 +907,31 @@ interface Database {
     @Transaction
     @Query("SELECT DISTINCT S.* FROM Song S INNER JOIN SongAlbumMap SM ON S.id=SM.songId " +
             "INNER JOIN Album A ON A.id=SM.albumId WHERE A.bookmarkedAt IS NOT NULL")
-    fun songsInAllBookmarkedAlbums(): Flow<List<Song>?>
+    fun songsInAllBookmarkedAlbums(): Flow<List<Song>>
 
     @Transaction
     @Query("SELECT DISTINCT S.* FROM Song S INNER JOIN SongArtistMap SM ON S.id=SM.songId " +
             "INNER JOIN Artist A ON A.id=SM.artistId WHERE A.bookmarkedAt IS NOT NULL")
-    fun songsInAllFollowedArtists(): Flow<List<Song>?>
+    fun songsInAllFollowedArtists(): Flow<List<Song>>
 
     @Transaction
     @Query("SELECT DISTINCT S.* FROM Song S INNER JOIN songplaylistmap SM ON S.id=SM.songId")
-    fun songsInAllPlaylists(): Flow<List<Song>?>
+    fun songsInAllPlaylists(): Flow<List<Song>>
 
     @Transaction
     @Query("SELECT DISTINCT S.* FROM Song S INNER JOIN songplaylistmap SM ON S.id=SM.songId " +
             "INNER JOIN Playlist P ON P.id=SM.playlistId WHERE P.name LIKE '${PIPED_PREFIX}' || '%'")
-    fun songsInAllPipedPlaylists(): Flow<List<Song>?>
+    fun songsInAllPipedPlaylists(): Flow<List<Song>>
 
     @Transaction
     @Query("SELECT DISTINCT S.* FROM Song S INNER JOIN songplaylistmap SM ON S.id=SM.songId " +
             "INNER JOIN Playlist P ON P.id=SM.playlistId WHERE P.name LIKE '${PINNED_PREFIX}' || '%'")
-    fun songsInAllPinnedPlaylists(): Flow<List<Song>?>
+    fun songsInAllPinnedPlaylists(): Flow<List<Song>>
 
     @Transaction
     @Query("SELECT DISTINCT S.* FROM Song S INNER JOIN songplaylistmap SM ON S.id=SM.songId " +
             "INNER JOIN Playlist P ON P.id=SM.playlistId WHERE P.name LIKE '${MONTHLY_PREFIX}' || '%'")
-    fun songsInAllMonthlyPlaylists(): Flow<List<Song>?>
+    fun songsInAllMonthlyPlaylists(): Flow<List<Song>>
 
     @SuppressWarnings(RoomWarnings.QUERY_MISMATCH)
     @Transaction

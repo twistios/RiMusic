@@ -793,4 +793,5 @@
     <string name="original_lyrics">Originaler Songtext</string>
     <string name="translated_lyrics">Übersetzter Songtext</string>
     <string name="press_once_again_to_exit">Press once again to exit</string>
+    <string name="random_sorting">Random sorting</string>
 </resources>

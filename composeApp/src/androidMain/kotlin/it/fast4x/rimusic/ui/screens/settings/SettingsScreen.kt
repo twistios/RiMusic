@@ -21,6 +21,7 @@ import androidx.compose.foundation.text.BasicText
 import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -55,7 +56,7 @@ import it.fast4x.rimusic.utils.secondary
 import it.fast4x.rimusic.utils.semiBold
 import me.knighthat.Skeleton
 import me.knighthat.colorPalette
-import me.knighthat.component.tab.toolbar.InputDialog
+import me.knighthat.component.IDialog
 import me.knighthat.typography
 
 @ExperimentalMaterialApi
@@ -477,28 +478,26 @@ fun SliderSettingsEntry(
     isEnabled: Boolean = true,
     usePadding: Boolean = true
 ) = Column(modifier = modifier) {
-    val context = LocalContext.current
-    val manualEnterToggleState = rememberSaveable { mutableStateOf(false) }
-    val manualEnterInput = remember { mutableStateOf("%.1f".format(state).replace(",", ".")) }
 
-    val manualEnterDialog = remember {
-        object: InputDialog {
-            override val context = context
-            override val toggleState = manualEnterToggleState
-            override val iconId = -1            // Unused
-            override val titleId = R.string.enter_the_value
-            override val messageId = -1         // Unused
-            override val valueState = manualEnterInput
+    val manualEnterDialog = object: IDialog {
 
-            override fun onSet(newValue: String) {
-                val value: Float? = newValue.toFloatOrNull()
-                if (value != null) {
-                    manualEnterInput.value = "%.1f".format(value).replace(",", ".")
-                    onSlide(value)
-                    onSlideComplete()
-                }
-                onDismiss()
-            }
+        var valueFloat: Float by remember( state ) { mutableFloatStateOf( state ) }
+
+        override val dialogTitle: String
+            @Composable
+            get() = stringResource( R.string.enter_the_value )
+
+        override var isActive: Boolean by rememberSaveable { mutableStateOf(false) }
+        override var value: String by remember( valueFloat ) {
+            mutableStateOf( "%.1f".format( valueFloat ).replace(",", ".") )
+        }
+
+        override fun onSet( newValue: String ) {
+            this.valueFloat = newValue.toFloatOrNull() ?: return
+            onSlide( this.valueFloat )
+            onSlideComplete()
+
+            onDismiss()
         }
     }
     manualEnterDialog.Render()
@@ -506,9 +505,7 @@ fun SliderSettingsEntry(
     SettingsEntry(
         title = title,
         text = "$text (${toDisplay(state)})",
-        onClick = {
-            manualEnterDialog.toggleState.value = true
-        },
+        onClick = manualEnterDialog::onShortClick,
         isEnabled = isEnabled,
         //usePadding = usePadding
     )
@@ -516,7 +513,7 @@ fun SliderSettingsEntry(
     Slider(
         state = state,
         setState = { value: Float ->
-            manualEnterInput.value = "%.1f".format(value).replace(",", ".")
+            manualEnterDialog.valueFloat = value
             onSlide(value)
         },
         onSlideComplete = onSlideComplete,

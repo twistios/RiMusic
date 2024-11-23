@@ -792,5 +792,6 @@
     <string name="repeat">Ripeti</string>
     <string name="original_lyrics">Lyrics originali</string>
     <string name="translated_lyrics">Lyrics tradotte</string>
-    <string name="press_once_again_to_exit">Press once again to exit</string>
+    <string name="press_once_again_to_exit">Premete nuovamente per uscire</string>
+    <string name="random_sorting">Random sorting</string>
 </resources>
