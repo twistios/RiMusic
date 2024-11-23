@@ -1,3 +1,10 @@
+## TwMusic
+
+This branch is used for the custom twistios build. It will mainly follow upstream RiMusic.
+It will potentially contain custom changes or fixes (maybe also upcoming changes to upstream RiMusic).
+
+------------------------------------------------------------------------------------------
+
 <div align="center">
   <img src="./assets/design/latest/app_logo.svg" width="300" height="100" />    
   <p><b>RiMusic</b> is a <b>multilingual</b> Android application for streaming music from YouTube Music.</p>
