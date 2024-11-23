@@ -794,4 +794,5 @@
     <string name="repeat">Répéter</string>
     <string name="original_lyrics">Paroles originales</string>
     <string name="translated_lyrics">Paroles traduites</string>
+    <string name="press_once_again_to_exit">Press once again to exit</string>
 </resources>

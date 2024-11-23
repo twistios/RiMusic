@@ -123,8 +123,8 @@ android {
         applicationId = "it.fast4x.rimusic"
         minSdk = 21
         targetSdk = 35
-        versionCode = 68
-        versionName = "0.6.60"
+        versionCode = 69
+        versionName = "0.6.61"
     }
 
     splits {
@@ -305,14 +305,14 @@ dependencies {
     implementation(libs.media3.datasource.okhttp)
     implementation(libs.appcompat)
     implementation(libs.appcompat.resources)
-    implementation(libs.core.splashscreen)
+    //implementation(libs.core.splashscreen)
+    //implementation(libs.core.ktx)
     implementation(libs.media)
     implementation(libs.material)
     implementation(libs.material3)
     implementation(libs.compose.ui.graphics.android)
     implementation(libs.constraintlayout)
     implementation(libs.compose.runtime.livedata)
-    implementation(libs.core.ktx)
     implementation(libs.compose.animation)
     implementation(libs.kotlin.csv)
     implementation(libs.monetcompat)

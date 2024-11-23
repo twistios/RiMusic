@@ -111,7 +111,7 @@ import it.fast4x.rimusic.ui.styling.Dimensions
 import it.fast4x.rimusic.ui.styling.PureBlackColorPalette
 import it.fast4x.rimusic.ui.styling.onOverlayShimmer
 import it.fast4x.rimusic.utils.SynchronizedLyrics
-import it.fast4x.rimusic.utils.TextCopyToClipboard
+import it.fast4x.rimusic.utils.textCopyToClipboard
 import it.fast4x.rimusic.utils.center
 import it.fast4x.rimusic.cleanPrefix
 import it.fast4x.rimusic.enums.LyricsAlignment
@@ -150,12 +150,10 @@ import timber.log.Timber
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 import it.fast4x.rimusic.enums.LyricsBackground
-import it.fast4x.rimusic.extensions.pip.isInPip
 import it.fast4x.rimusic.enums.Romanization
 import it.fast4x.rimusic.utils.lyricsAlignmentKey
 import it.fast4x.rimusic.utils.romanizationKey
 import it.fast4x.rimusic.utils.showSecondLineKey
-import me.bush.translator.Translation
 
 
 @UnstableApi
@@ -184,9 +182,7 @@ fun Lyrics(
         val menuState = LocalMenuState.current
         val currentView = LocalView.current
         val binder = LocalPlayerServiceBinder.current
-        val player = binder?.player
 
-        var showthumbnail by rememberPreference(showthumbnailKey, true)
         var showlyricsthumbnail by rememberPreference(showlyricsthumbnailKey, false)
         var isShowingSynchronizedLyrics by rememberPreference(isShowingSynchronizedLyricsKey, false)
         var invalidLrc by remember(mediaId, isShowingSynchronizedLyrics) { mutableStateOf(false) }
@@ -242,8 +238,6 @@ fun Lyrics(
 
         var otherLanguageApp by rememberPreference(otherLanguageAppKey, Languages.English)
         var lyricsBackground by rememberPreference(lyricsBackgroundKey, LyricsBackground.Black)
-
-        val pip = isInPip()
 
         if (showLanguagesList) {
             translateEnabled = false
@@ -309,7 +303,7 @@ fun Lyrics(
         }
 
         if (copyToClipboard) text?.let {
-            TextCopyToClipboard(it)
+            textCopyToClipboard(it, context)
         }
 
         var fontSize by rememberPreference(lyricsFontSizeKey, LyricsFontSize.Medium)

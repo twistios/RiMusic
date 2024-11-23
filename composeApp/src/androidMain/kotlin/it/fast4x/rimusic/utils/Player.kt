@@ -104,13 +104,15 @@ fun Player.forceSeekToNext() =
     if (hasNextMediaItem()) seekToNext() else seekTo(0, C.TIME_UNSET)
 
 fun Player.playNext() {
-    seekToNext()
+    seekToNextMediaItem()
+    //seekToNext()
     prepare()
     playWhenReady = true
 }
 
 fun Player.playPrevious() {
-    seekToPrevious()
+    seekToPreviousMediaItem()
+    //seekToPrevious()
     prepare()
     playWhenReady = true
 }

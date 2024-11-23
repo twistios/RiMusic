@@ -792,4 +792,5 @@
     <string name="repeat">Повторити</string>
     <string name="original_lyrics">Оригінальний текст</string>
     <string name="translated_lyrics">Переклад тексту</string>
+    <string name="press_once_again_to_exit">Press once again to exit</string>
 </resources>

@@ -507,10 +507,19 @@ fun ArtistScreen(
                                                                 ?.map { it.asMediaItem }
                                                                 ?.let {
                                                                     withContext(Dispatchers.Main) {
+                                                                        binder?.stopRadio()
+                                                                        binder?.player?.forcePlay(song.asMediaItem)
+                                                                        binder?.player?.addMediaItems(
+                                                                            it.filterNot { it.mediaId == song.key }
+                                                                        )
+                                                                    }
+                                                                    /*
+                                                                    withContext(Dispatchers.Main) {
                                                                         binder?.player?.forcePlayFromBeginning(
                                                                             it
                                                                         )
                                                                     }
+                                                                     */
                                                                 }
                                                         }
                                                     /*

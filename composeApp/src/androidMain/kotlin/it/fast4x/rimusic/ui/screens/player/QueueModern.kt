@@ -1023,7 +1023,7 @@ fun QueueModern(
 
         FloatingActionsContainerWithScrollToTop(
             lazyListState = reorderingState.lazyListState,
-            modifier = Modifier.padding(bottom = Dimensions.collapsedPlayer)
+            modifier = Modifier.padding(bottom = Dimensions.miniPlayerHeight)
         )
     }
 }

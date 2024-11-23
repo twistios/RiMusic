@@ -15,12 +15,12 @@ import android.hardware.SensorManager
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
-import android.os.Handler
 import android.os.IBinder
-import android.os.Looper
 import android.view.WindowManager
 import android.window.OnBackInvokedDispatcher
+import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.compose.animation.ExperimentalAnimationApi
@@ -29,10 +29,8 @@ import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -43,12 +41,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.requiredSize
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBars
-import androidx.compose.foundation.text.BasicText
 import androidx.compose.material.ExperimentalMaterialApi
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.LocalRippleConfiguration
 import androidx.compose.material3.RippleConfiguration
@@ -70,30 +64,20 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.runtime.staticCompositionLocalOf
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.toArgb
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.ExperimentalTextApi
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.coerceIn
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.times
-import androidx.core.content.ContextCompat
 import androidx.core.content.edit
 import androidx.core.net.toUri
 import androidx.core.os.LocaleListCompat
-import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.core.view.WindowCompat
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.lifecycleScope
 import androidx.media3.common.MediaItem
@@ -102,7 +86,6 @@ import androidx.media3.common.util.Log
 import androidx.media3.common.util.UnstableApi
 import androidx.navigation.compose.rememberNavController
 import androidx.palette.graphics.Palette
-import coil.compose.AsyncImage
 import coil.imageLoader
 import coil.request.ImageRequest
 import com.kieronquinn.monetcompat.core.MonetActivityAccessException
@@ -128,6 +111,7 @@ import it.fast4x.rimusic.enums.ColorPaletteName
 import it.fast4x.rimusic.enums.FontType
 import it.fast4x.rimusic.enums.HomeScreenTabs
 import it.fast4x.rimusic.enums.Languages
+import it.fast4x.rimusic.enums.LogType
 import it.fast4x.rimusic.enums.NavRoutes
 import it.fast4x.rimusic.enums.PipModule
 import it.fast4x.rimusic.enums.PlayerBackgroundColors
@@ -158,6 +142,7 @@ import it.fast4x.rimusic.ui.styling.typographyOf
 import it.fast4x.rimusic.utils.InitDownloader
 import it.fast4x.rimusic.utils.LocalMonetCompat
 import it.fast4x.rimusic.utils.OkHttpRequest
+import it.fast4x.rimusic.utils.textCopyToClipboard
 import it.fast4x.rimusic.utils.UiTypeKey
 import it.fast4x.rimusic.utils.applyFontPaddingKey
 import it.fast4x.rimusic.utils.asMediaItem
@@ -205,7 +190,9 @@ import it.fast4x.rimusic.utils.isValidIP
 import it.fast4x.rimusic.utils.isVideo
 import it.fast4x.rimusic.utils.keepPlayerMinimizedKey
 import it.fast4x.rimusic.utils.languageAppKey
+import it.fast4x.rimusic.utils.loadAppLog
 import it.fast4x.rimusic.utils.loadedDataKey
+import it.fast4x.rimusic.utils.logDebugEnabledKey
 import it.fast4x.rimusic.utils.miniPlayerTypeKey
 import it.fast4x.rimusic.utils.navigationBarPositionKey
 import it.fast4x.rimusic.utils.navigationBarTypeKey
@@ -234,6 +221,7 @@ import it.fast4x.rimusic.utils.useSystemFontKey
 import it.fast4x.rimusic.utils.ytCookieKey
 import it.fast4x.rimusic.utils.ytVisitorDataKey
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
@@ -253,6 +241,7 @@ import java.net.Proxy
 import java.util.Locale
 import java.util.Objects
 import kotlin.math.sqrt
+import kotlin.system.exitProcess
 
 @UnstableApi
 class MainActivity :
@@ -314,13 +303,16 @@ class MainActivity :
         super.onCreate(savedInstanceState)
         MonetCompat.enablePaletteCompat()
 
+        //enableEdgeToEdge(statusBarStyle = SystemBarStyle.dark(Color.Black.toArgb()))
+        //enableEdgeToEdge()
+
         WindowCompat.setDecorFitsSystemWindows(window, false)
 
-        var splashScreenStays = true
-        val delayTime = 800L
-
-        installSplashScreen().setKeepOnScreenCondition { splashScreenStays }
-        Handler(Looper.getMainLooper()).postDelayed({ splashScreenStays = false }, delayTime)
+//        var splashScreenStays = true
+//        val delayTime = 800L
+//
+//        installSplashScreen().setKeepOnScreenCondition { splashScreenStays }
+//        Handler(Looper.getMainLooper()).postDelayed({ splashScreenStays = false }, delayTime)
 
         MonetCompat.setup(this)
         _monet = MonetCompat.getInstance()
@@ -440,8 +432,20 @@ class MainActivity :
             //if (getBoolean(isEnabledDiscoveryLangCodeKey, true))
         }
 
-
         setContent {
+            // Valid to get log when app crash
+            if(intent.action == action_copy_crash_log) {
+                preferences.edit(commit = true) {
+                    putBoolean(logDebugEnabledKey, true)
+                }
+                loadAppLog(this@MainActivity, type = LogType.Crash).let {
+                    if (it != null) textCopyToClipboard(it, this@MainActivity)
+                }
+                LaunchedEffect(Unit) {
+                    delay(5000)
+                    exitProcess(0)
+                }
+            }
 
             if (preferences.getEnum(
                     checkUpdateStateKey,
@@ -870,8 +874,7 @@ class MainActivity :
             }
 
 
-            val colorPaletteMode =
-                preferences.getEnum(colorPaletteModeKey, ColorPaletteMode.PitchBlack)
+            val colorPaletteMode = preferences.getEnum(colorPaletteModeKey, ColorPaletteMode.Dark)
             if (colorPaletteMode == ColorPaletteMode.PitchBlack)
                 appearance = appearance.copy(
                     colorPalette = appearance.colorPalette.applyPitchBlack,
@@ -929,6 +932,7 @@ class MainActivity :
                         }
                     intent.action = null
                 }
+
 
 
                 /*
@@ -1360,6 +1364,7 @@ class MainActivity :
         const val action_songs = "it.fast4x.rimusic.action.songs"
         const val action_albums = "it.fast4x.rimusic.action.albums"
         const val action_library = "it.fast4x.rimusic.action.library"
+        const val action_copy_crash_log = "it.fast4x.rimusic.action.copy_crash_log"
     }
 
 

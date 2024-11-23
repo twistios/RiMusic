@@ -14,6 +14,7 @@ import android.graphics.Color
 import android.media.AudioDeviceCallback
 import android.media.AudioDeviceInfo
 import android.media.AudioManager
+import android.media.MediaDescription
 import android.media.audiofx.AudioEffect
 import android.media.audiofx.LoudnessEnhancer
 import android.os.Bundle
@@ -168,12 +169,10 @@ import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
-import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.plus
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
-import me.knighthat.appContext
 import timber.log.Timber
 import java.io.IOException
 import java.io.ObjectInputStream
@@ -259,35 +258,10 @@ class PlayerServiceModern : MediaLibraryService(),
                 NotificationChannelId,
                 R.string.player
             )
-                .apply {
-                    setSmallIcon(R.drawable.app_icon)
-                }
+            .apply {
+                setSmallIcon(R.drawable.app_icon)
+            }
         )
-
-        /*
-        setMediaNotificationProvider(object : MediaNotification.Provider{
-            override fun createNotification(
-                mediaSession: MediaSession,// this is the session we pass to style
-                customLayout: ImmutableList<CommandButton>,
-                actionFactory: MediaNotification.ActionFactory,
-                onNotificationChangedCallback: MediaNotification.Provider.Callback
-            ): MediaNotification {
-                createCustomNotification(mediaSession)
-                // notification should be created before you return here
-                return MediaNotification(NotificationId,nBuilder.build())
-            }
-
-            override fun handleCustomCommand(
-                session: MediaSession,
-                action: String,
-                extras: Bundle
-            ): Boolean {
-                return false
-            }
-        })
-        */
-
-
 
         runCatching {
             bitmapProvider = BitmapProvider(
@@ -474,18 +448,6 @@ class PlayerServiceModern : MediaLibraryService(),
                 maybeSavePlayerQueue()
             }, 0, 30, TimeUnit.SECONDS)
 
-            /*
-            coroutineScope.launch(Dispatchers.Main) {
-                while (isActive) {
-                    delay(30.seconds)
-                    //withContext(Dispatchers.Main) {
-                    println("PlayerServiceModern onCreate savePersistentQueue")
-                        maybeSavePlayerQueue()
-                    //}
-                }
-            }
-
-             */
         }
 
 
@@ -506,6 +468,524 @@ class PlayerServiceModern : MediaLibraryService(),
             putEnum(queueLoopTypeKey, QueueLoopType.from(repeatMode))
         }
     }
+
+
+
+    override fun onPlaybackStatsReady(
+        eventTime: AnalyticsListener.EventTime,
+        playbackStats: PlaybackStats
+    ) {
+        // if pause listen history is enabled, don't register statistic event
+        if (preferences.getBoolean(pauseListenHistoryKey, false)) return
+
+        val mediaItem =
+            eventTime.timeline.getWindow(eventTime.windowIndex, Timeline.Window()).mediaItem
+
+        val totalPlayTimeMs = playbackStats.totalPlayTimeMs
+
+        if (totalPlayTimeMs > 5000) {
+            query {
+                Database.incrementTotalPlayTimeMs(mediaItem.mediaId, totalPlayTimeMs)
+            }
+        }
+
+
+        val minTimeForEvent =
+            preferences.getEnum(exoPlayerMinTimeForEventKey, ExoPlayerMinTimeForEvent.`20s`)
+
+        if (totalPlayTimeMs > minTimeForEvent.ms) {
+            query {
+                try {
+                    Database.insert(
+                        Event(
+                            songId = mediaItem.mediaId,
+                            timestamp = System.currentTimeMillis(),
+                            playTime = totalPlayTimeMs
+                        )
+                    )
+                } catch (e: SQLException) {
+                    Timber.e("PlayerService onPlaybackStatsReady SQLException ${e.stackTraceToString()}")
+                }
+            }
+
+        }
+    }
+
+    override fun onTaskRemoved(rootIntent: Intent?) {
+        isclosebackgroundPlayerEnabled = preferences.getBoolean(closebackgroundPlayerKey, false)
+        if (isclosebackgroundPlayerEnabled) {
+            //if (!player.shouldBePlaying) {
+            broadCastPendingIntent<NotificationDismissReceiver>().send()
+            //}
+            this.stopService(this.intent<MyDownloadService>())
+            this.stopService(this.intent<PlayerServiceModern>())
+            //stopSelf()
+            onDestroy()
+        }
+        super.onTaskRemoved(rootIntent)
+    }
+
+    @UnstableApi
+    override fun onDestroy() {
+        runCatching {
+            maybeSavePlayerQueue()
+
+            preferences.unregisterOnSharedPreferenceChangeListener(this)
+
+            player.removeListener(this)
+            player.stop()
+            player.release()
+
+            mediaSession.release()
+            cache.release()
+            //downloadCache.release()
+            loudnessEnhancer?.release()
+            audioVolumeObserver.unregister()
+            MyDownloadHelper.getDownloadManager(this).removeListener(downloadListener)
+
+            coroutineScope.cancel()
+        }.onFailure {
+            Timber.e("Failed onDestroy in PlayerService ${it.stackTraceToString()}")
+        }
+        super.onDestroy()
+    }
+
+
+    override fun onSharedPreferenceChanged(sharedPreferences: SharedPreferences?, key: String?) {
+        when (key) {
+            persistentQueueKey -> if (sharedPreferences != null) {
+                isPersistentQueueEnabled =
+                    sharedPreferences.getBoolean(key, isPersistentQueueEnabled)
+            }
+
+            volumeNormalizationKey, loudnessBaseGainKey -> maybeNormalizeVolume()
+
+            resumePlaybackWhenDeviceConnectedKey -> maybeResumePlaybackWhenDeviceConnected()
+
+            skipSilenceKey -> if (sharedPreferences != null) {
+                player.skipSilenceEnabled = sharedPreferences.getBoolean(key, false)
+            }
+
+            queueLoopTypeKey -> {
+                player.repeatMode =
+                    sharedPreferences?.getEnum(queueLoopTypeKey, QueueLoopType.Default)?.type
+                        ?: QueueLoopType.Default.type
+            }
+        }
+    }
+
+    private var pausedByZeroVolume = false
+    override fun onAudioVolumeChanged(currentVolume: Int, maxVolume: Int) {
+        if (preferences.getBoolean(isPauseOnVolumeZeroEnabledKey, false)) {
+            if (player.isPlaying && currentVolume < 1) {
+                binder.callPause {}
+                pausedByZeroVolume = true
+            } else if (pausedByZeroVolume && currentVolume >= 1) {
+                binder.player.play()
+                pausedByZeroVolume = false
+            }
+        }
+    }
+
+    override fun onAudioVolumeDirectionChanged(direction: Int) {
+        /*
+        if (direction == 0) {
+            binder.player.seekToPreviousMediaItem()
+        } else {
+            binder.player.seekToNextMediaItem()
+        }
+
+         */
+    }
+
+    override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
+
+        println("PlayerServiceModern onMediaItemTransition mediaItem $mediaItem reason $reason")
+
+        currentMediaItem.update { mediaItem }
+        maybeRecoverPlaybackError()
+        maybeNormalizeVolume()
+
+        loadFromRadio(reason)
+
+        updateNotification()
+
+    }
+
+    override fun onTimelineChanged(timeline: Timeline, reason: Int) {
+        if (reason == Player.TIMELINE_CHANGE_REASON_PLAYLIST_CHANGED) {
+            maybeSavePlayerQueue()
+        }
+    }
+
+    override fun onShuffleModeEnabledChanged(shuffleModeEnabled: Boolean) {
+        updateNotification()
+        if (shuffleModeEnabled) {
+            val shuffledIndices = IntArray(player.mediaItemCount) { it }
+            shuffledIndices.shuffle()
+            shuffledIndices[shuffledIndices.indexOf(player.currentMediaItemIndex)] = shuffledIndices[0]
+            shuffledIndices[0] = player.currentMediaItemIndex
+            player.setShuffleOrder(DefaultShuffleOrder(shuffledIndices, System.currentTimeMillis()))
+        }
+    }
+
+    @UnstableApi
+    override fun onIsPlayingChanged(isPlaying: Boolean) {
+        val fadeDisabled = preferences.getEnum(
+            playbackFadeAudioDurationKey,
+            DurationInMilliseconds.Disabled
+        ) == DurationInMilliseconds.Disabled
+        val duration = preferences.getEnum(
+            playbackFadeAudioDurationKey,
+            DurationInMilliseconds.Disabled
+        ).milliSeconds
+        if (isPlaying && !fadeDisabled)
+            startFadeAnimator(
+                player = binder.player,
+                duration = duration,
+                fadeIn = true
+            )
+
+        //val totalPlayTimeMs = player.totalBufferedDuration.toString()
+        //Log.d("mediaEvent","isPlaying "+isPlaying.toString() + " buffered duration "+totalPlayTimeMs)
+        //Log.d("mediaItem","onIsPlayingChanged isPlaying $isPlaying audioSession ${player.audioSessionId}")
+
+        updateWidgets()
+
+
+        super.onIsPlayingChanged(isPlaying)
+    }
+
+    override fun onPlayerError(error: PlaybackException) {
+        super.onPlayerError(error)
+        Timber.e("PlayerService onPlayerError ${error.stackTraceToString()}")
+        println("mediaItem onPlayerError errorCode ${error.errorCode} errorCodeName ${error.errorCodeName}")
+        if (error.errorCode in PlayerErrorsToReload) {
+            //println("mediaItem onPlayerError recovered occurred errorCodeName ${error.errorCodeName}")
+            player.pause()
+            player.prepare()
+            player.play()
+            return
+        }
+
+        /*
+        if (error.errorCode in PlayerErrorsToSkip) {
+            //println("mediaItem onPlayerError recovered occurred 2000 errorCodeName ${error.errorCodeName}")
+            player.pause()
+            player.prepare()
+            player.forceSeekToNext()
+            player.play()
+
+            showSmartMessage(
+                message = getString(
+                    R.string.skip_media_on_notavailable_message,
+                ))
+
+            return
+        }
+         */
+
+
+        if (!preferences.getBoolean(skipMediaOnErrorKey, false) || !player.hasNextMediaItem())
+            return
+
+        val prev = player.currentMediaItem ?: return
+        //player.seekToNextMediaItem()
+        player.playNext()
+
+        showSmartMessage(
+            message = getString(
+                R.string.skip_media_on_error_message,
+                prev.mediaMetadata.title
+            )
+        )
+
+    }
+
+    override fun onPlaybackStateChanged(playbackState: Int) {
+        if (playbackState == STATE_IDLE) {
+            player.shuffleModeEnabled = false
+            player.clearMediaItems()
+        }
+    }
+
+    override fun onEvents(player: Player, events: Player.Events) {
+        if (events.containsAny(Player.EVENT_PLAYBACK_STATE_CHANGED, Player.EVENT_PLAY_WHEN_READY_CHANGED)) {
+            val isBufferingOrReady = player.playbackState == Player.STATE_BUFFERING || player.playbackState == Player.STATE_READY
+            if (isBufferingOrReady && player.playWhenReady) {
+                sendOpenEqualizerIntent()
+            } else {
+                sendCloseEqualizerIntent()
+            }
+        }
+        if (events.containsAny(EVENT_TIMELINE_CHANGED, EVENT_POSITION_DISCONTINUITY)) {
+            currentMediaItem.value = player.currentMediaItem
+        }
+    }
+
+    private fun maybeRecoverPlaybackError() {
+        if (player.playerError != null) {
+            player.prepare()
+        }
+    }
+
+    private fun loadFromRadio(reason: Int) {
+        if (!preferences.getBoolean(autoLoadSongsInQueueKey, true)) return
+        /*
+        // Old feature add songs only if radio is started by user and when last song in player is played
+        radio?.let { radio ->
+            if (player.mediaItemCount - player.currentMediaItemIndex == 1) {
+                coroutineScope.launch(Dispatchers.Main) {
+                    player.addMediaItems(radio.process())
+                }
+            }
+        }
+
+         */
+
+        if (reason != Player.MEDIA_ITEM_TRANSITION_REASON_REPEAT &&
+            player.mediaItemCount - player.currentMediaItemIndex <= 3
+        ) {
+            if (radio == null) {
+                binder.setupRadio(
+                    NavigationEndpoint.Endpoint.Watch(
+                        videoId = player.currentMediaItem?.mediaId
+                    )
+                )
+            } else {
+                radio?.let { radio ->
+                    //if (player.mediaItemCount - player.currentMediaItemIndex <= 3) {
+                    coroutineScope.launch(Dispatchers.Main) {
+                        if (player.playbackState != STATE_IDLE)
+                            player.addMediaItems(radio.process())
+                    }
+                    //}
+                }
+            }
+        }
+    }
+
+    @UnstableApi
+    private fun maybeNormalizeVolume() {
+        if (!preferences.getBoolean(volumeNormalizationKey, false)) {
+            loudnessEnhancer?.enabled = false
+            loudnessEnhancer?.release()
+            loudnessEnhancer = null
+            volumeNormalizationJob?.cancel()
+            player.volume = 1f
+            return
+        }
+
+        runCatching {
+            if (loudnessEnhancer == null) {
+                loudnessEnhancer = LoudnessEnhancer(player.audioSessionId)
+            }
+        }.onFailure {
+            Timber.e("PlayerService maybeNormalizeVolume load loudnessEnhancer ${it.stackTraceToString()}")
+            println("PlayerService maybeNormalizeVolume load loudnessEnhancer ${it.stackTraceToString()}")
+            return
+        }
+
+        val baseGain = preferences.getFloat(loudnessBaseGainKey, 5.00f)
+        player.currentMediaItem?.mediaId?.let { songId ->
+            volumeNormalizationJob?.cancel()
+            volumeNormalizationJob = coroutineScope.launch(Dispatchers.Main) {
+                fun Float?.toMb() = ((this ?: 0f) * 100).toInt()
+                Database.loudnessDb(songId).cancellable().collectLatest { loudnessDb ->
+                    val loudnessMb = loudnessDb.toMb().let {
+                        if (it !in -2000..2000) {
+                            withContext(Dispatchers.Main) {
+                                SmartMessage(
+                                    "Extreme loudness detected",
+                                    context = this@PlayerServiceModern
+                                )
+                                /*
+                                SmartMessage(
+                                    getString(
+                                        R.string.loudness_normalization_extreme,
+                                        getString(R.string.format_db, (it / 100f).toString())
+                                    )
+                                )
+                                 */
+                            }
+
+                            0
+                        } else it
+                    }
+                    try {
+                        //default
+                        //loudnessEnhancer?.setTargetGain(-((loudnessDb ?: 0f) * 100).toInt() + 500)
+                        loudnessEnhancer?.setTargetGain(baseGain.toMb() - loudnessMb)
+                        loudnessEnhancer?.enabled = true
+                    } catch (e: Exception) {
+                        Timber.e("PlayerService maybeNormalizeVolume apply targetGain ${e.stackTraceToString()}")
+                        println("PlayerService maybeNormalizeVolume apply targetGain ${e.stackTraceToString()}")
+                    }
+                }
+            }
+        }
+    }
+
+
+    @SuppressLint("NewApi")
+    private fun maybeResumePlaybackWhenDeviceConnected() {
+        if (!isAtLeastAndroid6) return
+
+        if (preferences.getBoolean(resumePlaybackWhenDeviceConnectedKey, false)) {
+            if (audioManager == null) {
+                audioManager = getSystemService(AUDIO_SERVICE) as AudioManager?
+            }
+
+            audioDeviceCallback = object : AudioDeviceCallback() {
+                private fun canPlayMusic(audioDeviceInfo: AudioDeviceInfo): Boolean {
+                    if (!audioDeviceInfo.isSink) return false
+
+                    return audioDeviceInfo.type == AudioDeviceInfo.TYPE_BLUETOOTH_A2DP ||
+                            audioDeviceInfo.type == AudioDeviceInfo.TYPE_WIRED_HEADSET ||
+                            audioDeviceInfo.type == AudioDeviceInfo.TYPE_WIRED_HEADPHONES ||
+                            audioDeviceInfo.type == AudioDeviceInfo.TYPE_USB_HEADSET
+                }
+
+                override fun onAudioDevicesAdded(addedDevices: Array<AudioDeviceInfo>) {
+                    if (!player.isPlaying && addedDevices.any(::canPlayMusic)) {
+                        player.play()
+                    }
+                }
+
+                override fun onAudioDevicesRemoved(removedDevices: Array<AudioDeviceInfo>) = Unit
+            }
+
+            audioManager?.registerAudioDeviceCallback(audioDeviceCallback, handler)
+
+        } else {
+            audioManager?.unregisterAudioDeviceCallback(audioDeviceCallback)
+            audioDeviceCallback = null
+        }
+    }
+
+    private fun createRendersFactory() = object : DefaultRenderersFactory(this) {
+        override fun buildAudioSink(
+            context: Context,
+            enableFloatOutput: Boolean,
+            enableAudioTrackPlaybackParams: Boolean
+        ): AudioSink {
+            val minimumSilenceDuration = preferences.getLong(
+                minimumSilenceDurationKey, 2_000_000L
+            ).coerceIn(1000L..2_000_000L)
+
+            return DefaultAudioSink.Builder(applicationContext)
+                .setEnableFloatOutput(enableFloatOutput)
+                .setEnableAudioTrackPlaybackParams(enableAudioTrackPlaybackParams)
+                .setAudioOffloadSupportProvider(
+                    DefaultAudioOffloadSupportProvider(applicationContext)
+                )
+                .setAudioProcessorChain(
+                    DefaultAudioProcessorChain(
+                        arrayOf(),
+                        SilenceSkippingAudioProcessor(
+                            /* minimumSilenceDurationUs = */ minimumSilenceDuration,
+                            /* silenceRetentionRatio = */ 0.01f,
+                            /* maxSilenceToKeepDurationUs = */ minimumSilenceDuration,
+                            /* minVolumeToKeepPercentageWhenMuting = */ 0,
+                            /* silenceThresholdLevel = */ 256
+                        ),
+                        SonicAudioProcessor()
+                    )
+                )
+                .build()
+                .apply {
+                    if (isAtLeastAndroid10) setOffloadMode(AudioSink.OFFLOAD_MODE_DISABLED)
+                }
+        }
+    }
+
+    private fun createMediaSourceFactory() = DefaultMediaSourceFactory(
+        createDataSourceFactory(),
+        DefaultExtractorsFactory()
+    ).setLoadErrorHandlingPolicy(
+        object : DefaultLoadErrorHandlingPolicy() {
+            override fun isEligibleForFallback(exception: IOException) = true
+        }
+    )
+
+
+    private fun buildCommandButtons(): MutableList<CommandButton> {
+        val notificationPlayerFirstIcon = preferences.getEnum(notificationPlayerFirstIconKey, NotificationButtons.Download)
+        val notificationPlayerSecondIcon = preferences.getEnum(notificationPlayerSecondIconKey, NotificationButtons.Favorites)
+
+        val commandButtonsList = mutableListOf<CommandButton>()
+        val firstCommandButton = NotificationButtons.entries.let { buttons ->
+            buttons
+                .filter { it == notificationPlayerFirstIcon }
+                .map {
+                    CommandButton.Builder()
+                        .setDisplayName(it.displayName)
+                        .setIconResId(
+                            it.getStateIcon(
+                                it,
+                                currentSong.value?.likedAt,
+                                currentSongStateDownload.value,
+                                player.repeatMode,
+                                player.shuffleModeEnabled
+                            )
+                        )
+                        .setSessionCommand(it.sessionCommand)
+                        .build()
+                }
+        }
+
+        val secondCommandButton =  NotificationButtons.entries.let { buttons ->
+            buttons
+                .filter { it == notificationPlayerSecondIcon }
+                .map {
+                    CommandButton.Builder()
+                        .setDisplayName(it.displayName)
+                        .setIconResId(
+                            it.getStateIcon(
+                                it,
+                                currentSong.value?.likedAt,
+                                currentSongStateDownload.value,
+                                player.repeatMode,
+                                player.shuffleModeEnabled
+                            )
+                        )
+                        .setSessionCommand(it.sessionCommand)
+                        .build()
+                }
+        }
+
+        val otherCommandButtons = NotificationButtons.entries.let { buttons ->
+            buttons
+                .filterNot { it == notificationPlayerFirstIcon || it == notificationPlayerSecondIcon }
+                .map {
+                    CommandButton.Builder()
+                        .setDisplayName(it.displayName)
+                        .setIconResId(
+                            it.getStateIcon(
+                                it,
+                                currentSong.value?.likedAt,
+                                currentSongStateDownload.value,
+                                player.repeatMode,
+                                player.shuffleModeEnabled
+                            )
+                        )
+                        .setSessionCommand(it.sessionCommand)
+                        .build()
+                }
+        }
+
+        commandButtonsList += firstCommandButton + secondCommandButton + otherCommandButtons
+
+        return commandButtonsList
+    }
+
+    private fun updateNotification() {
+        coroutineScope.launch(Dispatchers.Main) {
+            mediaSession.setCustomLayout( buildCommandButtons() )
+        }
+
+    }
+
 
     private fun updateDiscordPresence() {
         val isDiscordPresenceEnabled = preferences.getBoolean(isDiscordPresenceEnabledKey, false)
@@ -747,615 +1227,6 @@ class PlayerServiceModern : MediaLibraryService(),
 
     }
 
-    override fun onPlaybackStatsReady(
-        eventTime: AnalyticsListener.EventTime,
-        playbackStats: PlaybackStats
-    ) {
-        // if pause listen history is enabled, don't register statistic event
-        if (preferences.getBoolean(pauseListenHistoryKey, false)) return
-
-        val mediaItem =
-            eventTime.timeline.getWindow(eventTime.windowIndex, Timeline.Window()).mediaItem
-
-        val totalPlayTimeMs = playbackStats.totalPlayTimeMs
-
-        if (totalPlayTimeMs > 5000) {
-            query {
-                Database.incrementTotalPlayTimeMs(mediaItem.mediaId, totalPlayTimeMs)
-            }
-        }
-
-
-        val minTimeForEvent =
-            preferences.getEnum(exoPlayerMinTimeForEventKey, ExoPlayerMinTimeForEvent.`20s`)
-
-        if (totalPlayTimeMs > minTimeForEvent.ms) {
-            query {
-                try {
-                    Database.insert(
-                        Event(
-                            songId = mediaItem.mediaId,
-                            timestamp = System.currentTimeMillis(),
-                            playTime = totalPlayTimeMs
-                        )
-                    )
-                } catch (e: SQLException) {
-                    Timber.e("PlayerService onPlaybackStatsReady SQLException ${e.stackTraceToString()}")
-                }
-            }
-
-        }
-    }
-
-    override fun onTaskRemoved(rootIntent: Intent?) {
-        isclosebackgroundPlayerEnabled = preferences.getBoolean(closebackgroundPlayerKey, false)
-        if (isclosebackgroundPlayerEnabled) {
-            //if (!player.shouldBePlaying) {
-            broadCastPendingIntent<NotificationDismissReceiver>().send()
-            //}
-            this.stopService(this.intent<MyDownloadService>())
-            this.stopService(this.intent<PlayerServiceModern>())
-            //stopSelf()
-            onDestroy()
-        }
-        super.onTaskRemoved(rootIntent)
-    }
-
-    @UnstableApi
-    override fun onDestroy() {
-        runCatching {
-            maybeSavePlayerQueue()
-
-            preferences.unregisterOnSharedPreferenceChangeListener(this)
-
-            player.removeListener(this)
-            player.stop()
-            player.release()
-
-            mediaSession.release()
-            cache.release()
-            //downloadCache.release()
-            loudnessEnhancer?.release()
-            audioVolumeObserver.unregister()
-            MyDownloadHelper.getDownloadManager(this).removeListener(downloadListener)
-
-            coroutineScope.cancel()
-        }.onFailure {
-            Timber.e("Failed onDestroy in PlayerService ${it.stackTraceToString()}")
-        }
-        super.onDestroy()
-    }
-
-
-    override fun onSharedPreferenceChanged(sharedPreferences: SharedPreferences?, key: String?) {
-        when (key) {
-            persistentQueueKey -> if (sharedPreferences != null) {
-                isPersistentQueueEnabled =
-                    sharedPreferences.getBoolean(key, isPersistentQueueEnabled)
-            }
-
-            volumeNormalizationKey, loudnessBaseGainKey -> maybeNormalizeVolume()
-
-            resumePlaybackWhenDeviceConnectedKey -> maybeResumePlaybackWhenDeviceConnected()
-
-            skipSilenceKey -> if (sharedPreferences != null) {
-                player.skipSilenceEnabled = sharedPreferences.getBoolean(key, false)
-            }
-
-            queueLoopTypeKey -> {
-                player.repeatMode =
-                    sharedPreferences?.getEnum(queueLoopTypeKey, QueueLoopType.Default)?.type
-                        ?: QueueLoopType.Default.type
-            }
-        }
-    }
-
-    private var pausedByZeroVolume = false
-    override fun onAudioVolumeChanged(currentVolume: Int, maxVolume: Int) {
-        if (preferences.getBoolean(isPauseOnVolumeZeroEnabledKey, false)) {
-            if (player.isPlaying && currentVolume < 1) {
-                binder.callPause {}
-                pausedByZeroVolume = true
-            } else if (pausedByZeroVolume && currentVolume >= 1) {
-                binder.player.play()
-                pausedByZeroVolume = false
-            }
-        }
-    }
-
-    override fun onAudioVolumeDirectionChanged(direction: Int) {
-        /*
-        if (direction == 0) {
-            binder.player.seekToPreviousMediaItem()
-        } else {
-            binder.player.seekToNextMediaItem()
-        }
-
-         */
-    }
-
-    override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
-        //super.onMediaItemTransition(mediaItem, reason)
-        println("PlayerServiceModern onMediaItemTransition mediaItem $mediaItem reason $reason")
-
-        currentMediaItem.update { mediaItem }
-        maybeRecoverPlaybackError()
-        maybeNormalizeVolume()
-
-        loadFromRadio(reason)
-
-        updateNotification()
-    }
-
-    override fun onTimelineChanged(timeline: Timeline, reason: Int) {
-        if (reason == Player.TIMELINE_CHANGE_REASON_PLAYLIST_CHANGED) {
-            maybeSavePlayerQueue()
-        }
-    }
-
-    override fun onShuffleModeEnabledChanged(shuffleModeEnabled: Boolean) {
-        updateNotification()
-        if (shuffleModeEnabled) {
-            val shuffledIndices = IntArray(player.mediaItemCount) { it }
-            shuffledIndices.shuffle()
-            shuffledIndices[shuffledIndices.indexOf(player.currentMediaItemIndex)] = shuffledIndices[0]
-            shuffledIndices[0] = player.currentMediaItemIndex
-            player.setShuffleOrder(DefaultShuffleOrder(shuffledIndices, System.currentTimeMillis()))
-        }
-    }
-
-    private fun maybeRecoverPlaybackError() {
-        if (player.playerError != null) {
-            player.prepare()
-        }
-    }
-
-    private fun loadFromRadio(reason: Int) {
-        if (!preferences.getBoolean(autoLoadSongsInQueueKey, true)) return
-        /*
-        // Old feature add songs only if radio is started by user and when last song in player is played
-        radio?.let { radio ->
-            if (player.mediaItemCount - player.currentMediaItemIndex == 1) {
-                coroutineScope.launch(Dispatchers.Main) {
-                    player.addMediaItems(radio.process())
-                }
-            }
-        }
-
-         */
-
-        if (reason != Player.MEDIA_ITEM_TRANSITION_REASON_REPEAT &&
-            player.mediaItemCount - player.currentMediaItemIndex <= 3
-        ) {
-            if (radio == null) {
-                binder.setupRadio(
-                    NavigationEndpoint.Endpoint.Watch(
-                        videoId = player.currentMediaItem?.mediaId
-                    )
-                )
-            } else {
-                radio?.let { radio ->
-                    //if (player.mediaItemCount - player.currentMediaItemIndex <= 3) {
-                    coroutineScope.launch(Dispatchers.Main) {
-                        if (player.playbackState != STATE_IDLE)
-                            player.addMediaItems(radio.process())
-                    }
-                    //}
-                }
-            }
-        }
-    }
-
-    @UnstableApi
-    private fun maybeNormalizeVolume() {
-        if (!preferences.getBoolean(volumeNormalizationKey, false)) {
-            loudnessEnhancer?.enabled = false
-            loudnessEnhancer?.release()
-            loudnessEnhancer = null
-            volumeNormalizationJob?.cancel()
-            player.volume = 1f
-            return
-        }
-
-        runCatching {
-            if (loudnessEnhancer == null) {
-                loudnessEnhancer = LoudnessEnhancer(player.audioSessionId)
-            }
-        }.onFailure {
-            Timber.e("PlayerService maybeNormalizeVolume load loudnessEnhancer ${it.stackTraceToString()}")
-            println("PlayerService maybeNormalizeVolume load loudnessEnhancer ${it.stackTraceToString()}")
-            return
-        }
-
-        val baseGain = preferences.getFloat(loudnessBaseGainKey, 5.00f)
-        player.currentMediaItem?.mediaId?.let { songId ->
-            volumeNormalizationJob?.cancel()
-            volumeNormalizationJob = coroutineScope.launch(Dispatchers.Main) {
-                fun Float?.toMb() = ((this ?: 0f) * 100).toInt()
-                Database.loudnessDb(songId).cancellable().collectLatest { loudnessDb ->
-                    val loudnessMb = loudnessDb.toMb().let {
-                        if (it !in -2000..2000) {
-                            withContext(Dispatchers.Main) {
-                                SmartMessage(
-                                    "Extreme loudness detected",
-                                    context = this@PlayerServiceModern
-                                )
-                                /*
-                                SmartMessage(
-                                    getString(
-                                        R.string.loudness_normalization_extreme,
-                                        getString(R.string.format_db, (it / 100f).toString())
-                                    )
-                                )
-                                 */
-                            }
-
-                            0
-                        } else it
-                    }
-                    try {
-                        //default
-                        //loudnessEnhancer?.setTargetGain(-((loudnessDb ?: 0f) * 100).toInt() + 500)
-                        loudnessEnhancer?.setTargetGain(baseGain.toMb() - loudnessMb)
-                        loudnessEnhancer?.enabled = true
-                    } catch (e: Exception) {
-                        Timber.e("PlayerService maybeNormalizeVolume apply targetGain ${e.stackTraceToString()}")
-                        println("PlayerService maybeNormalizeVolume apply targetGain ${e.stackTraceToString()}")
-                    }
-                }
-            }
-        }
-    }
-
-
-    @SuppressLint("NewApi")
-    private fun maybeResumePlaybackWhenDeviceConnected() {
-        if (!isAtLeastAndroid6) return
-
-        if (preferences.getBoolean(resumePlaybackWhenDeviceConnectedKey, false)) {
-            if (audioManager == null) {
-                audioManager = getSystemService(AUDIO_SERVICE) as AudioManager?
-            }
-
-            audioDeviceCallback = object : AudioDeviceCallback() {
-                private fun canPlayMusic(audioDeviceInfo: AudioDeviceInfo): Boolean {
-                    if (!audioDeviceInfo.isSink) return false
-
-                    return audioDeviceInfo.type == AudioDeviceInfo.TYPE_BLUETOOTH_A2DP ||
-                            audioDeviceInfo.type == AudioDeviceInfo.TYPE_WIRED_HEADSET ||
-                            audioDeviceInfo.type == AudioDeviceInfo.TYPE_WIRED_HEADPHONES ||
-                            audioDeviceInfo.type == AudioDeviceInfo.TYPE_USB_HEADSET
-                }
-
-                override fun onAudioDevicesAdded(addedDevices: Array<AudioDeviceInfo>) {
-                    if (!player.isPlaying && addedDevices.any(::canPlayMusic)) {
-                        player.play()
-                    }
-                }
-
-                override fun onAudioDevicesRemoved(removedDevices: Array<AudioDeviceInfo>) = Unit
-            }
-
-            audioManager?.registerAudioDeviceCallback(audioDeviceCallback, handler)
-
-        } else {
-            audioManager?.unregisterAudioDeviceCallback(audioDeviceCallback)
-            audioDeviceCallback = null
-        }
-    }
-
-    private fun createRendersFactory() = object : DefaultRenderersFactory(this) {
-        override fun buildAudioSink(
-            context: Context,
-            enableFloatOutput: Boolean,
-            enableAudioTrackPlaybackParams: Boolean
-        ): AudioSink {
-            val minimumSilenceDuration = preferences.getLong(
-                minimumSilenceDurationKey, 2_000_000L
-            ).coerceIn(1000L..2_000_000L)
-
-            return DefaultAudioSink.Builder(applicationContext)
-                .setEnableFloatOutput(enableFloatOutput)
-                .setEnableAudioTrackPlaybackParams(enableAudioTrackPlaybackParams)
-                .setAudioOffloadSupportProvider(
-                    DefaultAudioOffloadSupportProvider(applicationContext)
-                )
-                .setAudioProcessorChain(
-                    DefaultAudioProcessorChain(
-                        arrayOf(),
-                        SilenceSkippingAudioProcessor(
-                            /* minimumSilenceDurationUs = */ minimumSilenceDuration,
-                            /* silenceRetentionRatio = */ 0.01f,
-                            /* maxSilenceToKeepDurationUs = */ minimumSilenceDuration,
-                            /* minVolumeToKeepPercentageWhenMuting = */ 0,
-                            /* silenceThresholdLevel = */ 256
-                        ),
-                        SonicAudioProcessor()
-                    )
-                )
-                .build()
-                .apply {
-                    if (isAtLeastAndroid10) setOffloadMode(AudioSink.OFFLOAD_MODE_DISABLED)
-                }
-        }
-    }
-
-    private fun createMediaSourceFactory() = DefaultMediaSourceFactory(
-        createDataSourceFactory(),
-        DefaultExtractorsFactory()
-    ).setLoadErrorHandlingPolicy(
-        object : DefaultLoadErrorHandlingPolicy() {
-            override fun isEligibleForFallback(exception: IOException) = true
-        }
-    )
-
-/*
-    fun  createCustomNotification(session: MediaSession) {
-
-        nBuilder
-//            NotificationCompat.Builder(this@PlayerServiceModern, NotificationChannelId)
-            .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
-            .setSmallIcon(R.drawable.app_icon)
-            .setContentTitle("your Content title")
-            .setContentText("your content text")
-            .setLargeIcon(bitmapProvider.bitmap)
-            .addAction(R.drawable.play_skip_back, "Previous", Action.previous.pendingIntent) // #0
-            .addAction(R.drawable.pause, "Pause", Action.pause.pendingIntent) // #1
-            .addAction(R.drawable.play_skip_forward, "Next", Action.next.pendingIntent) // #2
-            .setStyle(MediaStyleNotificationHelper.MediaStyle(session)
-                .setShowActionsInCompactView(0,1,2))
-    }
-    */
-
-
-    private fun buildCommandButtons(): MutableList<CommandButton> {
-        val notificationPlayerFirstIcon = preferences.getEnum(notificationPlayerFirstIconKey, NotificationButtons.Download)
-        val notificationPlayerSecondIcon = preferences.getEnum(notificationPlayerSecondIconKey, NotificationButtons.Favorites)
-
-        val commandButtonsList = mutableListOf<CommandButton>()
-        val firstCommandButton = NotificationButtons.entries.let { buttons ->
-            buttons
-                .filter { it == notificationPlayerFirstIcon }
-                .map {
-                    CommandButton.Builder()
-                        .setDisplayName(it.displayName)
-                        .setIconResId(
-                            it.getStateIcon(
-                                it,
-                                currentSong.value?.likedAt,
-                                currentSongStateDownload.value,
-                                player.repeatMode,
-                                player.shuffleModeEnabled
-                            )
-                        )
-                        .setSessionCommand(it.sessionCommand)
-                        .build()
-                }
-        }
-
-        val secondCommandButton =  NotificationButtons.entries.let { buttons ->
-            buttons
-                .filter { it == notificationPlayerSecondIcon }
-                .map {
-                    CommandButton.Builder()
-                        .setDisplayName(it.displayName)
-                        .setIconResId(
-                            it.getStateIcon(
-                                it,
-                                currentSong.value?.likedAt,
-                                currentSongStateDownload.value,
-                                player.repeatMode,
-                                player.shuffleModeEnabled
-                            )
-                        )
-                        .setSessionCommand(it.sessionCommand)
-                        .build()
-                }
-        }
-
-        val otherCommandButtons = NotificationButtons.entries.let { buttons ->
-            buttons
-                .filterNot { it == notificationPlayerFirstIcon || it == notificationPlayerSecondIcon }
-                .map {
-                    CommandButton.Builder()
-                        .setDisplayName(it.displayName)
-                        .setIconResId(
-                            it.getStateIcon(
-                                it,
-                                currentSong.value?.likedAt,
-                                currentSongStateDownload.value,
-                                player.repeatMode,
-                                player.shuffleModeEnabled
-                            )
-                        )
-                        .setSessionCommand(it.sessionCommand)
-                        .build()
-                }
-        }
-
-        commandButtonsList += firstCommandButton + secondCommandButton + otherCommandButtons
-
-        return commandButtonsList
-    }
-
-    private fun updateNotification() {
-        coroutineScope.launch(Dispatchers.Main) {
-
-//            nBuilder.setContentTitle("text")
-//            nBuilder.setContentText("subtext")
-//            notificationManager?.notify(NotificationId,nBuilder.build())
-
-            mediaSession.setCustomLayout(
-
-                buildCommandButtons()
-
-                /*
-                listOf(
-
-                    CommandButton.Builder()
-                        .setDisplayName(getString(R.string.download))
-                        .setIconResId(
-                            when (currentSongStateDownload.value) {
-                                Download.STATE_COMPLETED -> R.drawable.downloaded
-                                Download.STATE_DOWNLOADING, Download.STATE_QUEUED -> R.drawable.download_progress
-                                else -> R.drawable.download
-                            }
-                        )
-                        .setSessionCommand(CommandToggleDownload)
-                        .build(),
-
-                    CommandButton.Builder()
-                        .setDisplayName(getString(R.string.favorites))
-                        .setIconResId(
-                            when (currentSong.value?.likedAt) {
-                                -1L -> R.drawable.heart_dislike
-                                null -> R.drawable.heart_outline
-                                else -> R.drawable.heart
-                            }
-                        )
-                        .setSessionCommand(CommandToggleLike)
-                        .build(),
-
-                    CommandButton.Builder()
-                        .setDisplayName(
-                            getString(
-                                when (player.repeatMode) {
-                                    REPEAT_MODE_OFF -> R.string.repeat
-                                    REPEAT_MODE_ONE -> R.string.repeat
-                                    REPEAT_MODE_ALL -> R.string.repeat
-                                    else -> throw IllegalStateException()
-                                }
-                            )
-                        )
-                        .setIconResId(
-                            when (player.repeatMode) {
-                                REPEAT_MODE_OFF -> R.drawable.repeat
-                                REPEAT_MODE_ONE -> R.drawable.repeatone
-                                REPEAT_MODE_ALL -> R.drawable.infinite
-                                else -> throw IllegalStateException()
-                            }
-                        )
-                        .setSessionCommand(CommandToggleRepeatMode)
-                        .setEnabled(true)
-                        .build(),
-
-
-                    CommandButton.Builder()
-                        .setDisplayName(getString(R.string.shuffle))
-                        .setIconResId(if (player.shuffleModeEnabled) R.drawable.shuffle_filled else R.drawable.shuffle)
-                        .setSessionCommand(CommandToggleShuffle)
-                        .build(),
-
-
-                    CommandButton.Builder()
-                        .setDisplayName(getString(R.string.start_radio))
-                        .setIconResId(R.drawable.radio)
-                        .setSessionCommand(CommandStartRadio)
-                        .build(),
-
-
-
-                    )
-                 */
-            )
-        }
-
-    }
-
-    @UnstableApi
-    override fun onIsPlayingChanged(isPlaying: Boolean) {
-        val fadeDisabled = preferences.getEnum(
-            playbackFadeAudioDurationKey,
-            DurationInMilliseconds.Disabled
-        ) == DurationInMilliseconds.Disabled
-        val duration = preferences.getEnum(
-            playbackFadeAudioDurationKey,
-            DurationInMilliseconds.Disabled
-        ).milliSeconds
-        if (isPlaying && !fadeDisabled)
-            startFadeAnimator(
-                player = binder.player,
-                duration = duration,
-                fadeIn = true
-            )
-
-        //val totalPlayTimeMs = player.totalBufferedDuration.toString()
-        //Log.d("mediaEvent","isPlaying "+isPlaying.toString() + " buffered duration "+totalPlayTimeMs)
-        //Log.d("mediaItem","onIsPlayingChanged isPlaying $isPlaying audioSession ${player.audioSessionId}")
-
-        updateWidgets()
-
-
-        super.onIsPlayingChanged(isPlaying)
-    }
-
-    override fun onPlayerError(error: PlaybackException) {
-        super.onPlayerError(error)
-        Timber.e("PlayerService onPlayerError ${error.stackTraceToString()}")
-        println("mediaItem onPlayerError errorCode ${error.errorCode} errorCodeName ${error.errorCodeName}")
-        if (error.errorCode in PlayerErrorsToReload) {
-            //println("mediaItem onPlayerError recovered occurred errorCodeName ${error.errorCodeName}")
-            player.pause()
-            player.prepare()
-            player.play()
-            return
-        }
-
-        /*
-        if (error.errorCode in PlayerErrorsToSkip) {
-            //println("mediaItem onPlayerError recovered occurred 2000 errorCodeName ${error.errorCodeName}")
-            player.pause()
-            player.prepare()
-            player.forceSeekToNext()
-            player.play()
-
-            showSmartMessage(
-                message = getString(
-                    R.string.skip_media_on_notavailable_message,
-                ))
-
-            return
-        }
-         */
-
-
-        if (!preferences.getBoolean(skipMediaOnErrorKey, false) || !player.hasNextMediaItem())
-            return
-
-        val prev = player.currentMediaItem ?: return
-        //player.seekToNextMediaItem()
-        player.playNext()
-
-        showSmartMessage(
-            message = getString(
-                R.string.skip_media_on_error_message,
-                prev.mediaMetadata.title
-            )
-        )
-
-    }
-
-    override fun onPlaybackStateChanged(playbackState: Int) {
-        if (playbackState == STATE_IDLE) {
-            player.shuffleModeEnabled = false
-            player.clearMediaItems()
-        }
-    }
-
-    override fun onEvents(player: Player, events: Player.Events) {
-        if (events.containsAny(Player.EVENT_PLAYBACK_STATE_CHANGED, Player.EVENT_PLAY_WHEN_READY_CHANGED)) {
-            val isBufferingOrReady = player.playbackState == Player.STATE_BUFFERING || player.playbackState == Player.STATE_READY
-            if (isBufferingOrReady && player.playWhenReady) {
-                sendOpenEqualizerIntent()
-            } else {
-                sendCloseEqualizerIntent()
-            }
-        }
-        if (events.containsAny(EVENT_TIMELINE_CHANGED, EVENT_POSITION_DISCONTINUITY)) {
-            currentMediaItem.value = player.currentMediaItem
-        }
-    }
-
     private fun showSmartMessage(message: String) {
         coroutineScope.launch(Dispatchers.Main) {
             withContext(Dispatchers.Main) {
@@ -1416,9 +1287,20 @@ class PlayerServiceModern : MediaLibraryService(),
         )
     }
 
+    override fun onPositionDiscontinuity(
+        oldPosition: Player.PositionInfo,
+        newPosition: Player.PositionInfo,
+        reason: Int
+    ) {
+        Timber.d("PlayerServiceModern onPositionDiscontinuity oldPosition ${oldPosition.mediaItemIndex} newPosition ${newPosition.mediaItemIndex} reason $reason")
+        println("PlayerServiceModern onPositionDiscontinuity oldPosition ${oldPosition.mediaItemIndex} newPosition ${newPosition.mediaItemIndex} reason $reason")
+        super.onPositionDiscontinuity(oldPosition, newPosition, reason)
+    }
+
     private fun maybeSavePlayerQueue() {
         println("PlayerServiceModern onCreate savePersistentQueue")
         if (!isPersistentQueueEnabled) return
+        println("PlayerServiceModern onCreate savePersistentQueue is enabled")
         /*
         if (player.playbackState == Player.STATE_IDLE) {
             Log.d("mediaItem", "QueuePersistentEnabled playbackstate idle return")
@@ -1433,6 +1315,7 @@ class PlayerServiceModern : MediaLibraryService(),
             val mediaItemIndex = player.currentMediaItemIndex
             val mediaItemPosition = player.currentPosition
 
+            if (mediaItems.isEmpty()) return@launch
 
 
             mediaItems.mapIndexed { index, mediaItem ->
@@ -1441,12 +1324,15 @@ class PlayerServiceModern : MediaLibraryService(),
                     position = if (index == mediaItemIndex) mediaItemPosition else null
                 )
             }.let { queuedMediaItems ->
+                if (queuedMediaItems.isEmpty()) return@let
                 withContext(Dispatchers.IO) {
                     transaction {
-                        Database.clearQueue()
-                        Database.insert(queuedMediaItems)
+                        Database.clearQueue().apply {
+                            Database.insert(queuedMediaItems)
+                        }
                     }
                 }
+                Timber.d("PlayerServiceModern QueuePersistentEnabled Saved queue")
             }
 
         }
@@ -1616,6 +1502,8 @@ class PlayerServiceModern : MediaLibraryService(),
         stopSelf()
     }
 
+
+
     class NotificationDismissReceiver : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
             kotlin.runCatching {
@@ -1628,30 +1516,6 @@ class PlayerServiceModern : MediaLibraryService(),
             }.onFailure {
                 Timber.e("Failed NotificationDismissReceiver stopService in PlayerServiceModern (PlayerServiceModern) ${it.stackTraceToString()}")
             }
-        }
-    }
-
-    @JvmInline
-    private value class Action(val value: String) {
-        //context(Context)
-        val pendingIntent: PendingIntent
-            get() = PendingIntent.getBroadcast(
-                appContext(),
-                100,
-                Intent(value).setPackage(appContext().packageName),
-                PendingIntent.FLAG_UPDATE_CURRENT.or(if (isAtLeastAndroid6) PendingIntent.FLAG_IMMUTABLE else 0)
-            )
-
-        companion object {
-
-            val pause = Action("it.fast4x.rimusic.pause")
-            val play = Action("it.fast4x.rimusic.play")
-            val next = Action("it.fast4x.rimusic.next")
-            val previous = Action("it.fast4x.rimusic.previous")
-            val like = Action("it.fast4x.rimusic.like")
-            val download = Action("it.fast4x.rimusic.download")
-            val playradio = Action("it.fast4x.rimusic.playradio")
-            val shuffle = Action("it.fast4x.rimusic.shuffle")
         }
     }
 

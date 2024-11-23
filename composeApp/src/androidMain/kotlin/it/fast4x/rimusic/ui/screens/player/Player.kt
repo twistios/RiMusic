@@ -466,6 +466,8 @@ fun Player(
     val actionspacedevenly by rememberPreference(actionspacedevenlyKey, false)
     var expandedplayer by rememberPreference(expandedplayerKey, false)
 
+    var updateBrush by remember { mutableStateOf(false) }
+
     if (expandedlyrics && !isLandscape) {
         if ((isShowingLyrics && !showlyricsthumbnail) || (isShowingVisualizer && !showvisthumbnail)) expandedplayer = true
         else expandedplayer = false
@@ -477,6 +479,7 @@ fun Player(
             albumInfo = Database.songAlbumInfo(mediaItem.mediaId)
             artistsInfo = Database.songArtistInfo(mediaItem.mediaId)
         }
+        updateBrush = true
     }
 
 
@@ -518,6 +521,7 @@ fun Player(
     }
     LaunchedEffect(mediaItem.mediaId) {
         Database.likedAt(mediaItem.mediaId).distinctUntilChanged().collect { likedAt = it }
+        updateBrush = true
     }
 
 
@@ -723,16 +727,17 @@ fun Player(
                 playerBackgroundColors == PlayerBackgroundColors.FluidCoverColorGradient
 
 
-    if (playerBackgroundColors == PlayerBackgroundColors.CoverColorGradient ||
-        playerBackgroundColors == PlayerBackgroundColors.CoverColor ||
-        playerBackgroundColors == PlayerBackgroundColors.FluidCoverColorGradient
-    ) {
+
         //val context = LocalContext.current
         //println("Player before getting dynamic color ${dynamicColorPalette}")
         println("Player url mediaitem ${mediaItem.mediaMetadata.artworkUri}")
         println("Player url binder ${binder.player.currentWindow?.mediaItem?.mediaMetadata?.artworkUri}")
         val isSystemDarkMode = isSystemInDarkTheme()
-        LaunchedEffect(mediaItem.mediaId) {
+        LaunchedEffect(mediaItem.mediaId, updateBrush) {
+            if (playerBackgroundColors == PlayerBackgroundColors.CoverColorGradient ||
+                playerBackgroundColors == PlayerBackgroundColors.CoverColor ||
+                playerBackgroundColors == PlayerBackgroundColors.FluidCoverColorGradient || updateBrush
+            ) {
             try {
                 val bitmap = getBitmapFromUrl(
                     context,
@@ -1664,30 +1669,11 @@ fun Player(
                 }
             }
         }
-        //val binder = LocalPlayerServiceBinder.current
+
         val player = binder.player ?: return
         val clickLyricsText by rememberPreference(clickOnLyricsTextKey, true)
         var extraspace by rememberPreference(extraspaceKey, false)
-        //val nextMediaItemIndex = binder.player.nextMediaItemIndex
-        //val prevMediaItemIndex = binder.player.previousMediaItemIndex
-        /*
-        val nextMediaItem = if (binder.player.hasNextMediaItem())
-            binder.player.getMediaItemAt(binder.player.nextMediaItemIndex)
-        else MediaItem.EMPTY
-        val nextNextMediaItem = try {
-            binder.player.getMediaItemAt(nextMediaItemIndex + 1)
-        } catch (e: Exception) {
-            MediaItem.EMPTY
-        }
-        val prevMediaItem = if (binder.player.hasPreviousMediaItem())
-            binder.player.getMediaItemAt(binder.player.previousMediaItemIndex)
-        else MediaItem.EMPTY
-        val prevPrevMediaItem = try {
-            binder.player.getMediaItemAt(prevMediaItemIndex - 1)
-        } catch (e: Exception) {
-            MediaItem.EMPTY
-        }
-        */
+
         val nextmedia = if(binder.player.mediaItemCount > 1
             && binder.player.currentMediaItemIndex + 1 < binder.player.mediaItemCount )
             binder.player.getMediaItemAt(binder.player.currentMediaItemIndex + 1) else MediaItem.EMPTY
@@ -1714,10 +1700,6 @@ fun Player(
         val thumbnailRoundness by rememberPreference(thumbnailRoundnessKey, ThumbnailRoundness.Heavy)
         val thumbnailType by rememberPreference(thumbnailTypeKey, ThumbnailType.Modern)
         val statsfornerds by rememberPreference(statsfornerdsKey, false)
-
-
-        //if (discoverIsEnabled) ApplyDiscoverToQueue()
-
 
         if (isLandscape) {
          Box(
@@ -1812,53 +1794,6 @@ fun Player(
                              modifier = coverModifier
                          )
 
-                     /*
-                     AsyncImage(
-                         model = ImageRequest.Builder(LocalContext.current)
-                             .data(binder.player.getMediaItemAt(it).mediaMetadata.artworkUri.toString().resize(1200, 1200))
-                             .transformations(
-                                 listOf(
-                                     if (showthumbnail) {
-                                         BlurTransformation(
-                                             scale = 0.5f,
-                                             radius = blurStrength.toInt(),
-                                             //darkenFactor = blurDarkenFactor
-                                         )
-
-                                     } else
-                                         BlurTransformation(
-                                             scale = 0.5f,
-                                             //radius = blurStrength2.toInt(),
-                                             radius = if ((isShowingLyrics && !isShowingVisualizer) || !noblur) blurStrength.toInt() else 0,
-                                             //darkenFactor = blurDarkenFactor
-                                         )
-                                 )
-                             )
-                             .build(),
-                         contentDescription = "",
-                         contentScale = ContentScale.Crop,
-                         modifier = Modifier
-                             .fillMaxHeight()
-                             .combinedClickable(
-                                 interactionSource = remember { MutableInteractionSource() },
-                                 indication = null,
-                                 onClick = {
-                                     if (thumbnailTapEnabled) {
-                                         if (isShowingVisualizer) isShowingVisualizer = false
-                                         isShowingLyrics = !isShowingLyrics
-                                     }
-                                 },
-                                 onDoubleClick = {
-                                     if (!showlyricsthumbnail && !showvisthumbnail)
-                                         showthumbnail = !showthumbnail
-                                 },
-                                 onLongClick = {
-                                     if (showthumbnail || (isShowingLyrics && !isShowingVisualizer) || !noblur)
-                                         showBlurPlayerDialog = true
-                                 }
-                             )
-                     )
-                     */
                  }
 
                  Column(modifier = Modifier
@@ -2039,106 +1974,6 @@ fun Player(
                                              )
                                              .conditional(fadingedge) {horizontalFadingEdge()}
                                          ) { it ->
-
-                                        /*
-                                         // TODO crash vinyl in modern player horizontal pager
-                                         val coverPainter = rememberAsyncImagePainter(
-                                             model = ImageRequest.Builder(LocalContext.current)
-                                                 .data(binder.player.getMediaItemAt(it).mediaMetadata.artworkUri.toString().resize(1200, 1200))
-                                                 .build(),
-                                         )
-
-                                         val coverModifier = Modifier
-                                             .padding(all = playerThumbnailSize.size.dp)
-                                             .zIndex(
-                                                 if (it == pagerState.currentPage) 1f
-                                                 else if (it == (pagerState.currentPage + 1) || it == (pagerState.currentPage - 1)) 0.85f
-                                                 else if (it == (pagerState.currentPage + 2) || it == (pagerState.currentPage - 2)) 0.78f
-                                                 else if (it == (pagerState.currentPage + 3) || it == (pagerState.currentPage - 3)) 0.73f
-                                                 else if (it == (pagerState.currentPage + 4) || it == (pagerState.currentPage - 4)) 0.68f
-                                                 else if (it == (pagerState.currentPage + 5) || it == (pagerState.currentPage - 5)) 0.63f
-                                                 else 0.57f
-                                             )
-                                             .graphicsLayer {
-                                                 val pageOffSet =
-                                                     ((pagerState.currentPage - it) + pagerState.currentPageOffsetFraction).absoluteValue
-                                                 alpha = lerp(
-                                                     start = 0.9f,
-                                                     stop = 1f,
-                                                     fraction = 1f - pageOffSet.coerceIn(0f, 1f)
-                                                 )
-                                                 scaleY = lerp(
-                                                     start = if (it == (pagerState.currentPage + 1) || it == (pagerState.currentPage - 1)) 0.85f
-                                                     else if (it == (pagerState.currentPage + 2) || it == (pagerState.currentPage - 2)) 0.78f
-                                                     else if (it == (pagerState.currentPage + 3) || it == (pagerState.currentPage - 3)) 0.73f
-                                                     else if (it == (pagerState.currentPage + 4) || it == (pagerState.currentPage - 4)) 0.68f
-                                                     else if (it == (pagerState.currentPage + 5) || it == (pagerState.currentPage - 5)) 0.63f
-                                                     else 0.57f,
-                                                     stop = 1f,
-                                                     fraction = 1f - pageOffSet.coerceIn(0f, 1f)
-                                                 )
-                                                 scaleX = lerp(
-                                                     start = if (it == (pagerState.currentPage + 1) || it == (pagerState.currentPage - 1)) 0.85f
-                                                     else if (it == (pagerState.currentPage + 2) || it == (pagerState.currentPage - 2)) 0.78f
-                                                     else if (it == (pagerState.currentPage + 3) || it == (pagerState.currentPage - 3)) 0.73f
-                                                     else if (it == (pagerState.currentPage + 4) || it == (pagerState.currentPage - 4)) 0.68f
-                                                     else if (it == (pagerState.currentPage + 5) || it == (pagerState.currentPage - 5)) 0.63f
-                                                     else 0.57f,
-                                                     stop = 1f,
-                                                     fraction = 1f - pageOffSet.coerceIn(0f, 1f)
-                                                 )
-                                             }
-                                             .conditional(thumbnailType == ThumbnailType.Modern) {
-                                                 padding(
-                                                     all = 10.dp
-                                                 )
-                                             }
-                                             .conditional(thumbnailType == ThumbnailType.Modern) {
-                                                 doubleShadowDrop(
-                                                     if (showVinylThumbnailAnimation) CircleShape else thumbnailRoundness.shape(),
-                                                     4.dp,
-                                                     8.dp
-                                                 )
-                                             }
-                                             .clip(if (showVinylThumbnailAnimation) CircleShape else thumbnailRoundness.shape())
-                                             .combinedClickable(
-                                                 interactionSource = remember { MutableInteractionSource() },
-                                                 indication = null,
-                                                 onClick = {
-                                                     if (it == pagerState.settledPage && thumbnailTapEnabled) {
-                                                         if (isShowingVisualizer) isShowingVisualizer =
-                                                             false
-                                                         isShowingLyrics = !isShowingLyrics
-                                                     }
-                                                     if (it != pagerState.settledPage) {
-                                                         binder.player.forcePlayAtIndex(
-                                                             mediaItems,
-                                                             it
-                                                         )
-                                                     }
-                                                 },
-                                                 onLongClick = {
-                                                     if (it == pagerState.settledPage)
-                                                         showThumbnailOffsetDialog = true
-                                                 }
-                                             )
-
-
-                                        if (showVinylThumbnailAnimation)
-                                            VinylThumbnailCoverAnimation(
-                                                painter = coverPainter,
-                                                isSongPlaying = player.isPlaying,
-                                                //modifier = coverModifier
-
-                                            )
-                                        else
-                                            Image(
-                                                painter = coverPainter,
-                                                contentDescription = "",
-                                                contentScale = ContentScale.Fit,
-                                                modifier = coverModifier
-                                            )
-                                        */
 
                                          AsyncImage(
                                              model = ImageRequest.Builder(LocalContext.current)
@@ -2938,28 +2773,6 @@ fun Player(
                     queueLoopType = it
                     showQueue = false
                 },
-            )
-        }
-
-        CustomModalBottomSheet(
-            showSheet = showFullLyrics,
-            onDismissRequest = { showFullLyrics = false },
-            containerColor = colorPalette().background2,
-            contentColor = colorPalette().background2,
-            modifier = Modifier.fillMaxWidth(),
-            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-            dragHandle = {
-                Surface(
-                    modifier = Modifier.padding(vertical = 0.dp),
-                    color = colorPalette().background0,
-                    shape = thumbnailShape()
-                ) {}
-            },
-            shape = thumbnailRoundness.shape()
-        ) {
-            FullLyricsSheetModern(
-                onMaximize = { showFullLyrics = false },
-                onRefresh = {}
             )
         }
 

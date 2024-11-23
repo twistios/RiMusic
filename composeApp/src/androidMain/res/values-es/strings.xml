@@ -772,16 +772,16 @@
     <string name="toggle_romanization">Toggle Romanization</string>
     <string name="edit_thumbnail">Editar miniatura</string>
     <string name="thumbnail_not_selected">Miniatura no seleccionada</string>
-    <string name="reset_thumbnail">Reestablecer miniatura</string>
+    <string name="reset_thumbnail">Restablecer miniatura</string>
     <string name="no_thumbnail_present">No hay miniatura presente</string>
     <string name="removed_thumbnail">Miniatura eliminada</string>
     <string name="failed_to_remove_thumbnail">Error al eliminar miniatura</string>
-    <string name="settings_enable_pip">Activar imagen en imagen</string>
-    <string name="settings_enable_pip_auto">Activar imagen en imagen automático</string>
+    <string name="settings_enable_pip">Habilitar imagen en imagen</string>
+    <string name="settings_enable_pip_auto">Habilitar imagen en imagen automático</string>
     <string name="pipmodule_cover">Portada</string>
     <string name="settings_pip_module">Módulo Pip</string>
     <string name="menu_go_to_picture_in_picture">PIP</string>
-    <string name="pip_info_from_android_12_pip_can_be_automatically_enabled">A partir de Android 12 pip puede activarse automáticamente</string>
+    <string name="pip_info_from_android_12_pip_can_be_automatically_enabled">A partir de Android 12 pip puede habilitarse automáticamente</string>
     <string name="showsecondline">Mostrar traducción en la segunda línea</string>
     <string name="enter_the_value">Introduce el valor</string>
     <string name="resume_playback_on_start">Reanudar reproducción al iniciar</string>
@@ -792,4 +792,5 @@
     <string name="repeat">Repetir</string>
     <string name="original_lyrics">Letra original</string>
     <string name="translated_lyrics">Letra traducida</string>
+    <string name="press_once_again_to_exit">Press once again to exit</string>
 </resources>

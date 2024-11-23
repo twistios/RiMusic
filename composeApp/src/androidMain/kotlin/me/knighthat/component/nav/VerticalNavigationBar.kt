@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -108,11 +109,12 @@ class VerticalNavigationBar(
 
             val buttonModifier: Modifier =
                 if ( NavigationBarType.IconOnly.isCurrent() ) {
-                    Modifier.padding( top = 12.dp, bottom = 12.dp )
+                    Modifier
+                        .padding( top = 12.dp, bottom = 12.dp )
                             .size(24.dp)
                 } else {
                     Modifier.vertical( enabled = !isLandscape )
-                            .size( Dimensions.navigationRailIconOffset * 2 )
+                            .size( Dimensions.navigationRailIconOffset * 3 )
                             .graphicsLayer {
                                 alpha = dothAlpha
                                 translationX = (1f - dothAlpha) * -48.dp.toPx()
@@ -198,7 +200,9 @@ class VerticalNavigationBar(
     override fun Draw() {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = modifier.verticalScroll( rememberScrollState() )
+            modifier = modifier
+                .width(Dimensions.navigationRailWidth)
+                .verticalScroll( rememberScrollState() )
         ) {
             val boxPadding: Dp =
                 if( UiType.ViMusic.isCurrent() )

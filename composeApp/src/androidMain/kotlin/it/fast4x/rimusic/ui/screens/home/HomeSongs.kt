@@ -947,7 +947,7 @@ fun HomeSongs(
 
             LazyColumn(
                 state = lazyListState,
-                contentPadding = PaddingValues( bottom = Dimensions.bottomSpacer )
+                contentPadding = PaddingValues( start = 8.dp, bottom = Dimensions.bottomSpacer )
             ) {
                 if (builtInPlaylist == BuiltInPlaylist.OnDevice) {
                     if (!hasPermission) {

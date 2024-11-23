@@ -510,7 +510,7 @@ inline fun SelectorArtistsDialog(
         ) {
             if (values != null) {
                 val pagerState = rememberPagerState(pageCount = { values.size })
-                val colorPaletteMode by rememberPreference(colorPaletteModeKey, ColorPaletteMode.System)
+                val colorPaletteMode by rememberPreference(colorPaletteModeKey, ColorPaletteMode.Dark)
 
                 Box {
                     HorizontalPager(state = pagerState) { idArtist ->

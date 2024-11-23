@@ -101,7 +101,8 @@ fun TabHeader(
         horizontalArrangement = arrangement,
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
-            .padding(horizontal = 12.dp)
+            .padding(start = 24.dp, end = 12.dp)
+            //.padding(horizontal = 12.dp)
             .padding(top = 10.dp, bottom = 4.dp)
             .fillMaxWidth()
     ) {

@@ -938,17 +938,7 @@ fun AppearanceSettings(
                 title = stringResource(R.string.timeline),
                 selectedValue = playerTimelineType,
                 onValueSelected = { playerTimelineType = it },
-                valueText = {
-                    when (it) {
-                        PlayerTimelineType.Default -> stringResource(R.string._default)
-                        PlayerTimelineType.Wavy -> stringResource(R.string.wavy_timeline)
-                        PlayerTimelineType.BodiedBar -> stringResource(R.string.bodied_bar)
-                        PlayerTimelineType.PinBar -> stringResource(R.string.pin_bar)
-                        PlayerTimelineType.FakeAudioBar -> stringResource(R.string.fake_audio_bar)
-                        PlayerTimelineType.ThinBar -> stringResource(R.string.thin_bar)
-                        //PlayerTimelineType.ColoredBar -> "Colored bar"
-                    }
-                }
+                valueText = { it.textName }
             )
 
         if (searchInput.isBlank() || stringResource(R.string.transparentbar).contains(

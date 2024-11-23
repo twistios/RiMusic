@@ -7,6 +7,8 @@ import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeContent
+import androidx.compose.foundation.layout.systemBars
 import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ModalBottomSheet
@@ -14,11 +16,17 @@ import androidx.compose.material3.SheetState
 import androidx.compose.material3.contentColorFor
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.DialogWindowProvider
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat
 import it.fast4x.rimusic.utils.isLandscape
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -36,7 +44,7 @@ fun CustomModalBottomSheet(
     tonalElevation: Dp = BottomSheetDefaults.Elevation,
     scrimColor: Color = BottomSheetDefaults.ScrimColor,
     dragHandle: @Composable (() -> Unit)? = { BottomSheetDefaults.DragHandle() },
-    contentWindowInsets: @Composable () -> WindowInsets = { WindowInsets.ime }, //BottomSheetDefaults.windowInsets,
+    contentWindowInsets: @Composable () -> WindowInsets = { WindowInsets.ime },
     content: @Composable ColumnScope.() -> Unit,
 ) {
     val bottomPadding = if(isLandscape) 0.dp else WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
@@ -55,6 +63,21 @@ fun CustomModalBottomSheet(
             contentWindowInsets = contentWindowInsets
         ) {
             Column(modifier = Modifier.padding(bottom = bottomPadding)) {
+
+                val view = LocalView.current
+                (view.parent as? DialogWindowProvider)?.window?.let { window ->
+                    SideEffect {
+//                        WindowInsetsControllerCompat(window, view).apply {
+//                            hide(WindowInsetsCompat.Type.navigationBars())
+//                            systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+//                        }
+
+                        WindowCompat.getInsetsController(window, view).isAppearanceLightNavigationBars = false
+
+                    }
+                }
+
+
                 content()
             }
         }

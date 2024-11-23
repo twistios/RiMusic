@@ -347,7 +347,7 @@ fun HomeLibrary(
                         chips = buttonsList,
                         currentValue = playlistType,
                         onValueUpdate = { playlistType = it },
-                        modifier = Modifier.padding(end = 12.dp)
+                        modifier = Modifier.padding(start = 12.dp, end = 12.dp)
                     )
                 }
 

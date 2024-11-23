@@ -224,22 +224,9 @@ fun AppNavigation(
         }
 
         composable(route = NavRoutes.player.name) {
-            val density = LocalDensity.current
-            val windowsInsets = WindowInsets.systemBars
-            val bottomDp = with(density) { windowsInsets.getBottom(density).toDp() }
-            val playerSheetState = rememberPlayerSheetState(
-                dismissedBound = 0.dp,
-                collapsedBound = Dimensions.collapsedPlayer + bottomDp,
-                //collapsedBound = Dimensions.collapsedPlayer, // bottom navigation
-                expandedBound = 1500.dp,
-            )
-            val playerState =
-                rememberModalBottomSheetState(skipPartiallyExpanded = true)
             modalBottomSheetPage {
                 Player(
                     navController = navController,
-                    //layoutState = playerSheetState,
-                    //playerState = playerState,
                     onDismiss = {}
                 )
             }

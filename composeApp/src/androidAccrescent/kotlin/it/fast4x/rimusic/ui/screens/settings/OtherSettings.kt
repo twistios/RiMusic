@@ -64,7 +64,7 @@ import it.fast4x.rimusic.ui.components.themed.Menu
 import it.fast4x.rimusic.ui.components.themed.MenuEntry
 import it.fast4x.rimusic.ui.components.themed.SmartMessage
 import it.fast4x.rimusic.ui.styling.Dimensions
-import it.fast4x.rimusic.utils.TextCopyToClipboard
+import it.fast4x.rimusic.utils.textCopyToClipboard
 import it.fast4x.rimusic.utils.ytAccountChannelHandleKey
 import it.fast4x.rimusic.utils.ytAccountEmailKey
 import it.fast4x.rimusic.utils.ytAccountNameKey
@@ -824,15 +824,6 @@ fun OtherSettings() {
     SettingsGroupSpacer()
 
     var text by remember { mutableStateOf(null as String?) }
-    var copyToClipboard by remember {
-        mutableStateOf(false)
-    }
-
-    if (copyToClipboard) text?.let {
-        TextCopyToClipboard(it)
-        copyToClipboard = false
-    }
-
     val noLogAvailable = stringResource(R.string.no_log_available)
 
     SettingsEntryGroupText(title = stringResource(R.string.debug))
@@ -869,7 +860,9 @@ fun OtherSettings() {
             val file = File(context.filesDir.resolve("logs"), "RiMusic_log.txt")
             if (file.exists()) {
                 text = file.readText()
-                copyToClipboard = true
+                text?.let {
+                    textCopyToClipboard(it, context)
+                }
             } else
                 SmartMessage(noLogAvailable, type = PopupType.Info, context = context)
         }
@@ -883,7 +876,9 @@ fun OtherSettings() {
             val file = File(context.filesDir.resolve("logs"), "RiMusic_crash_log.txt")
             if (file.exists()) {
                 text = file.readText()
-                copyToClipboard = true
+                text?.let {
+                    textCopyToClipboard(it, context)
+                }
             } else
                 SmartMessage(noLogAvailable, type = PopupType.Info, context = context)
         }

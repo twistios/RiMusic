@@ -231,8 +231,7 @@ fun HomeScreen(
 
         if( confirmCount == 0 ) {
             SmartMessage(
-                // TODO: add this string to xml
-                "Press once again to exit",
+                context.resources.getString(R.string.press_once_again_to_exit),
                 context = context
             )
             confirmCount++

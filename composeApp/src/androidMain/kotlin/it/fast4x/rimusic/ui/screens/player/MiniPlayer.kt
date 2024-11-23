@@ -316,7 +316,7 @@ fun MiniPlayer(
             Box(
                 contentAlignment = Alignment.Center,
                 modifier = Modifier
-                    .height(Dimensions.collapsedPlayer)
+                    .height(Dimensions.miniPlayerHeight)
             ) {
                 AsyncImage(
                     model = mediaItem.mediaMetadata.artworkUri.thumbnail(Dimensions.thumbnails.song.px),
@@ -331,7 +331,7 @@ fun MiniPlayer(
             Column(
                 verticalArrangement = Arrangement.Center,
                 modifier = Modifier
-                    .height(Dimensions.collapsedPlayer)
+                    .height(Dimensions.miniPlayerHeight)
                     .weight(1f)
             ) {
                 Row(
@@ -376,7 +376,7 @@ fun MiniPlayer(
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier
-                    .height(Dimensions.collapsedPlayer)
+                    .height(Dimensions.miniPlayerHeight)
             ) {
                if (miniPlayerType == MiniPlayerType.Essential)
                 it.fast4x.rimusic.ui.components.themed.IconButton(
