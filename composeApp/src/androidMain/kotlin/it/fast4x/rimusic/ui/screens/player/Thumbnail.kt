@@ -271,8 +271,8 @@ fun Thumbnail(
                                             onDoubleTap = { onDoubleTap() }
                                         )
 
-                                    }
-
+                                    },
+                                type = coverThumbnailAnimation
                             )
                         else
                             Image (
