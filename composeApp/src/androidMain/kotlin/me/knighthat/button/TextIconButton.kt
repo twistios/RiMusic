@@ -24,8 +24,9 @@ class TextIconButton(
     color: Color,
     padding: Dp,
     size: Dp,
+    forceWidth: Dp = Dp.Unspecified,
     modifier: Modifier = Modifier
-): Button( iconId, color, padding, size, modifier ) {
+): Button( iconId, color, padding, size, forceWidth, modifier ) {
 
     @Composable
     override fun Draw() {

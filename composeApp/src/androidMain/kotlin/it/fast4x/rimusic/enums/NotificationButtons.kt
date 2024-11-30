@@ -10,6 +10,7 @@ import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.offline.Download
 import androidx.media3.session.SessionCommand
 import it.fast4x.rimusic.R
+import it.fast4x.rimusic.service.modern.MediaSessionConstants.CommandSearch
 import it.fast4x.rimusic.service.modern.MediaSessionConstants.CommandStartRadio
 import it.fast4x.rimusic.service.modern.MediaSessionConstants.CommandToggleDownload
 import it.fast4x.rimusic.service.modern.MediaSessionConstants.CommandToggleLike
@@ -22,7 +23,8 @@ enum class NotificationButtons {
     Favorites,
     Repeat,
     Shuffle,
-    Radio;
+    Radio,
+    Search;
 
     val sessionCommand: SessionCommand
     get() = when (this) {
@@ -31,6 +33,7 @@ enum class NotificationButtons {
         Repeat -> CommandToggleRepeatMode
         Shuffle -> CommandToggleShuffle
         Radio -> CommandStartRadio
+        Search -> CommandSearch
     }
 
     val displayName: String
@@ -40,6 +43,7 @@ enum class NotificationButtons {
         Repeat -> appContext().resources.getString(R.string.repeat)
         Shuffle -> appContext().resources.getString(R.string.shuffle)
         Radio -> appContext().resources.getString(R.string.start_radio)
+        Search -> appContext().resources.getString(R.string.search)
     }
 
     val icon: Int
@@ -49,6 +53,7 @@ enum class NotificationButtons {
             Repeat -> R.drawable.repeat
             Shuffle -> R.drawable.shuffle
             Radio -> R.drawable.radio
+            Search -> R.drawable.search
         }
 
         @OptIn(UnstableApi::class)
@@ -73,6 +78,7 @@ enum class NotificationButtons {
                 }
                 Shuffle -> if (shuffleMode) R.drawable.shuffle_filled else R.drawable.shuffle
                 Radio -> R.drawable.radio
+                Search -> R.drawable.search
             }
 
         }

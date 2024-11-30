@@ -792,5 +792,26 @@
     <string name="repeat">Repetir</string>
     <string name="original_lyrics">Letras originais</string>
     <string name="translated_lyrics">Letras Traduzidas</string>
-    <string name="press_once_again_to_exit">Press once again to exit</string>
+    <string name="press_once_again_to_exit">Pressione mais uma vez para sair</string>
+    <string name="random_sorting">Classificação aleatória</string>
+    <string name="music_animations_bars">Barras</string>
+    <string name="music_animations_crazy_bars">Barras malucas</string>
+    <string name="music_animations_crazy_points">Pontos malucos</string>
+    <string name="music_animations_bubbles">Bolhas</string>
+    <string name="now_playing_indicator">Indicador de reprodução atual</string>
+    <string name="good_morning">Bom dia</string>
+    <string name="good_afternoon">Boa tarde</string>
+    <string name="good_evening">Bom fim de tarde</string>
+    <string name="good_night">Boa noite</string>
+    <string name="colored_bar">Colored bar</string>
+    <string name="about_developers_designers">Developers / Designers</string>
+    <string name="set_custom_value">Custom value</string>
+    <string name="title_youtube_music">YOUTUBE MUSIC</string>
+    <string name="enable_youtube_music_login">Enable YouTube Music Login</string>
+    <string name="show_cover_thumbnail_animation">Show cover thumbnail animation</string>
+    <string name="cover_thumbnail_animation_type">Cover animation type</string>
+    <string name="jump_previous">Previous Button Will Restart the Current Song After the Following Seconds Have Passed</string>
+    <string name="jump_previous_blank">Leave it Blank or 0 for Previous Button to Always Play the Previous Song</string>
+    <string name="delete_hidden_songs">Do you really want to delete all hidden songs from database? This action is irreversible.</string>
+    <string name="delete_hidden_songs_message">Delete hidden songs</string>
 </resources>

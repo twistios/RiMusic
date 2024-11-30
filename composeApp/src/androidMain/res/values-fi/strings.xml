@@ -793,4 +793,25 @@
     <string name="original_lyrics">Alkuperäiset sanoitukset</string>
     <string name="translated_lyrics">Käännetyt sanoitukset</string>
     <string name="press_once_again_to_exit">Press once again to exit</string>
+    <string name="random_sorting">Random sorting</string>
+    <string name="music_animations_bars">Bars</string>
+    <string name="music_animations_crazy_bars">Crazy Bars</string>
+    <string name="music_animations_crazy_points">Crazy Points</string>
+    <string name="music_animations_bubbles">Bubbles</string>
+    <string name="now_playing_indicator">Now Playing Indicator</string>
+    <string name="good_morning">Good Morning</string>
+    <string name="good_afternoon">Good Afternoon</string>
+    <string name="good_evening">Good Evening</string>
+    <string name="good_night">Good Night</string>
+    <string name="colored_bar">Colored bar</string>
+    <string name="about_developers_designers">Developers / Designers</string>
+    <string name="set_custom_value">Custom value</string>
+    <string name="title_youtube_music">YOUTUBE MUSIC</string>
+    <string name="enable_youtube_music_login">Enable YouTube Music Login</string>
+    <string name="show_cover_thumbnail_animation">Show cover thumbnail animation</string>
+    <string name="cover_thumbnail_animation_type">Cover animation type</string>
+    <string name="jump_previous">Previous Button Will Restart the Current Song After the Following Seconds Have Passed</string>
+    <string name="jump_previous_blank">Leave it Blank or 0 for Previous Button to Always Play the Previous Song</string>
+    <string name="delete_hidden_songs">Do you really want to delete all hidden songs from database? This action is irreversible.</string>
+    <string name="delete_hidden_songs_message">Delete hidden songs</string>
 </resources>

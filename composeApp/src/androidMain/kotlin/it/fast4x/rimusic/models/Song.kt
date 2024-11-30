@@ -3,6 +3,7 @@ package it.fast4x.rimusic.models
 import androidx.compose.runtime.Immutable
 import androidx.room.Entity
 import androidx.room.PrimaryKey
+import it.fast4x.rimusic.cleanPrefix
 import it.fast4x.rimusic.utils.setLikeState
 import kotlinx.serialization.Serializable
 
@@ -37,4 +38,6 @@ data class Song(
             likedAt = setLikeState(likedAt)
         )
     }
+
+    fun cleanTitle() = cleanPrefix( this.title )
 }

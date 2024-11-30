@@ -117,7 +117,7 @@ fun rememberPipHandler(key: Any = Unit): PipHandler {
 }
 
 @Immutable
-data class PipHandler internal constructor(
+data class PipHandler (
     private val enterPip: () -> Boolean?,
     private val exitPip: () -> Boolean?
 ) {

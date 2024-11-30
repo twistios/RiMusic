@@ -36,9 +36,7 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
 import androidx.core.graphics.drawable.toBitmap
 import androidx.media3.common.MediaItem
-import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
-import androidx.media3.common.Timeline
 import androidx.media3.common.util.UnstableApi
 import it.fast4x.rimusic.LocalPlayerServiceBinder
 import it.fast4x.rimusic.R
@@ -71,14 +69,10 @@ import it.fast4x.rimusic.utils.currentWindow
 import it.fast4x.rimusic.utils.getBitmapFromUrl
 import it.fast4x.rimusic.utils.hasPermission
 import it.fast4x.rimusic.utils.isCompositionLaunched
-import it.fast4x.rimusic.utils.mediaItems
 import it.fast4x.rimusic.utils.rememberPreference
 import it.fast4x.rimusic.utils.resize
 import it.fast4x.rimusic.utils.semiBold
-import it.fast4x.rimusic.utils.shouldBePlaying
 import it.fast4x.rimusic.utils.visualizerEnabledKey
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import me.knighthat.colorPalette
 import me.knighthat.typography
@@ -263,16 +257,16 @@ fun getVisualizers(): List<Painter> {
     binder?.player?.DisposableListener {
         object : Player.Listener {
             override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
-                try {
-                    coroutineScope.launch {
+                coroutineScope.launch {
+                    try {
                         bitmapCover = getBitmapFromUrl(
                             context,
                             binder.player.currentWindow?.mediaItem?.mediaMetadata?.artworkUri.toString()
                                 .resize(1200, 1200)
                         )
+                    } catch (e: Exception) {
+                        Timber.e("Failed to get bitmap in NextVisualizer ${e.stackTraceToString()}")
                     }
-                } catch (e: Exception) {
-                    Timber.e("Failed get bitmap in NextVisualizer ${e.stackTraceToString()}")
                 }
             }
         }

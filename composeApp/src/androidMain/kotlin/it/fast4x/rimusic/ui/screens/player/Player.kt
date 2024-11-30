@@ -17,7 +17,6 @@ import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
-import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.isSystemInDarkTheme
@@ -80,13 +79,22 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.LinearGradientShader
+import androidx.compose.ui.graphics.StrokeJoin
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.ExperimentalTextApi
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Density
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.media3.common.MediaItem
@@ -109,7 +117,6 @@ import it.fast4x.rimusic.enums.PopupType
 import it.fast4x.rimusic.models.Info
 import it.fast4x.rimusic.models.Song
 import it.fast4x.rimusic.models.ui.toUiMedia
-import it.fast4x.rimusic.query
 import it.fast4x.rimusic.ui.components.CustomModalBottomSheet
 import it.fast4x.rimusic.ui.components.LocalMenuState
 import it.fast4x.rimusic.ui.components.themed.BlurParamsDialog
@@ -138,7 +145,6 @@ import it.fast4x.rimusic.utils.currentWindow
 import it.fast4x.rimusic.utils.disablePlayerHorizontalSwipeKey
 import it.fast4x.rimusic.utils.durationTextToMillis
 import it.fast4x.rimusic.utils.effectRotationKey
-import it.fast4x.rimusic.utils.forceSeekToNext
 import it.fast4x.rimusic.utils.formatAsDuration
 import it.fast4x.rimusic.utils.formatAsTime
 import it.fast4x.rimusic.utils.getBitmapFromUrl
@@ -174,15 +180,6 @@ import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlin.math.absoluteValue
-import androidx.compose.ui.graphics.StrokeJoin
-import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.hapticfeedback.HapticFeedbackType
-import androidx.compose.ui.platform.LocalConfiguration
-import androidx.compose.ui.platform.LocalHapticFeedback
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.times
 import androidx.compose.ui.util.lerp
 import androidx.compose.ui.zIndex
@@ -198,7 +195,6 @@ import it.fast4x.rimusic.enums.QueueType
 import it.fast4x.rimusic.enums.SongsNumber
 import it.fast4x.rimusic.enums.ThumbnailRoundness
 import it.fast4x.rimusic.enums.ThumbnailType
-import it.fast4x.rimusic.transaction
 import it.fast4x.rimusic.ui.components.themed.SmartMessage
 import it.fast4x.rimusic.utils.SearchYoutubeEntity
 import it.fast4x.rimusic.utils.actionspacedevenlyKey
@@ -213,11 +209,9 @@ import it.fast4x.rimusic.utils.bottomgradientKey
 import it.fast4x.rimusic.utils.carouselKey
 import it.fast4x.rimusic.utils.carouselSizeKey
 import it.fast4x.rimusic.cleanPrefix
-import it.fast4x.rimusic.enums.ColorPaletteName
 import it.fast4x.rimusic.enums.QueueLoopType
-import it.fast4x.rimusic.extensions.pip.rememberPipHandler
-import it.fast4x.rimusic.ui.components.themed.VinylThumbnailCoverAnimation
-import it.fast4x.rimusic.ui.components.themed.VinylThumbnailCoverAnimationModern
+import it.fast4x.rimusic.enums.ThumbnailCoverType
+import it.fast4x.rimusic.ui.components.themed.RotateThumbnailCoverAnimationModern
 import it.fast4x.rimusic.utils.VerticalfadingEdge2
 import it.fast4x.rimusic.utils.VinylSizeKey
 import it.fast4x.rimusic.utils.actionExpandedKey
@@ -226,6 +220,7 @@ import kotlin.Float.Companion.POSITIVE_INFINITY
 import it.fast4x.rimusic.utils.clickOnLyricsTextKey
 import it.fast4x.rimusic.utils.conditional
 import it.fast4x.rimusic.utils.controlsExpandedKey
+import it.fast4x.rimusic.utils.coverThumbnailAnimationKey
 import it.fast4x.rimusic.utils.disableScrollingTextKey
 import it.fast4x.rimusic.utils.discoverKey
 import it.fast4x.rimusic.utils.doubleShadowDrop
@@ -233,7 +228,6 @@ import it.fast4x.rimusic.utils.expandedlyricsKey
 import it.fast4x.rimusic.utils.extraspaceKey
 import it.fast4x.rimusic.utils.fadingedgeKey
 import it.fast4x.rimusic.utils.forcePlayAtIndex
-import it.fast4x.rimusic.utils.forceSeekToPrevious
 import it.fast4x.rimusic.utils.horizontalFadingEdge
 import it.fast4x.rimusic.utils.miniQueueExpandedKey
 import it.fast4x.rimusic.utils.noblurKey
@@ -258,15 +252,11 @@ import it.fast4x.rimusic.utils.thumbnailSpacingKey
 import it.fast4x.rimusic.utils.thumbnailTypeKey
 import it.fast4x.rimusic.utils.timelineExpandedKey
 import it.fast4x.rimusic.utils.titleExpandedKey
-import it.fast4x.rimusic.utils.verticalFadingEdge
 import it.fast4x.rimusic.utils.getIconQueueLoopState
 import it.fast4x.rimusic.utils.isDownloadedSong
-import it.fast4x.rimusic.utils.pinchToToggle
-import it.fast4x.rimusic.utils.PinchDirection
-import it.fast4x.rimusic.utils.colorPaletteNameKey
 import it.fast4x.rimusic.utils.playNext
 import it.fast4x.rimusic.utils.playPrevious
-import it.fast4x.rimusic.utils.showVinylThumbnailAnimationKey
+import it.fast4x.rimusic.utils.showCoverThumbnailAnimationKey
 import it.fast4x.rimusic.utils.statsExpandedKey
 import it.fast4x.rimusic.utils.thumbnailFadeKey
 import me.knighthat.colorPalette
@@ -325,12 +315,12 @@ fun Player(
     val defaultOffset = 0f
     val defaultSpacing = 0f
     val defaultFade = 5f
-    val defaultVinylSize = 50f
+    val defaultImageCoverSize = 50f
     var blurStrength by rememberPreference(blurStrengthKey, defaultStrength)
     var thumbnailOffset  by rememberPreference(thumbnailOffsetKey, defaultOffset)
     var thumbnailSpacing  by rememberPreference(thumbnailSpacingKey, defaultSpacing)
     var thumbnailFade  by rememberPreference(thumbnailFadeKey, defaultFade)
-    var vinylSize by rememberPreference(VinylSizeKey, defaultVinylSize)
+    var imageCoverSize by rememberPreference(VinylSizeKey, defaultImageCoverSize)
     var blurDarkenFactor by rememberPreference(blurDarkenFactorKey, defaultDarkenFactor)
     var showBlurPlayerDialog by rememberSaveable {
         mutableStateOf(false)
@@ -364,7 +354,7 @@ fun Player(
             scaleValue = { thumbnailOffset = it },
             spacingValue = { thumbnailSpacing = it },
             fadeValue = { thumbnailFade = it },
-            vinylSizeValue = { vinylSize = it }
+            imageCoverSizeValue = { imageCoverSize = it }
         )
     }
 
@@ -870,7 +860,8 @@ fun Player(
     val timelineExpanded by rememberPreference(timelineExpandedKey, true)
     val controlsExpanded by rememberPreference(controlsExpandedKey, true)
 
-    val showVinylThumbnailAnimation by rememberPreference(showVinylThumbnailAnimationKey, false)
+    val showCoverThumbnailAnimation by rememberPreference(showCoverThumbnailAnimationKey, false)
+    var coverThumbnailAnimation by rememberPreference(coverThumbnailAnimationKey, ThumbnailCoverType.Vinyl)
 
 
     if (!isGradientBackgroundEnabled) {
@@ -1002,8 +993,8 @@ fun Player(
                 },
                 onDoubleTap = {
                     val currentMediaItem = binder.player.currentMediaItem
-                    query {
-                        if (Database.like(
+                    Database.asyncTransaction {
+                        if (like(
                                 mediaItem.mediaId,
                                 if (likedAt == null) System.currentTimeMillis() else null
                             ) == 0
@@ -1011,7 +1002,7 @@ fun Player(
                             currentMediaItem
                                 ?.takeIf { it.mediaId == mediaItem.mediaId }
                                 ?.let {
-                                    Database.insert(currentMediaItem, Song::toggleLike)
+                                    insert(currentMediaItem, Song::toggleLike)
                                 }
                         }
                     }
@@ -1179,7 +1170,7 @@ fun Player(
                                     pagerSnapDistance = PagerSnapDistance.atMost(showsongs.number)
                                 )
                                 LaunchedEffect(binder.player.currentMediaItemIndex) {
-                                    pagerStateQueue.animateScrollToPage(binder.player.currentMediaItemIndex)
+                                    pagerStateQueue.animateScrollToPage(binder.player.currentMediaItemIndex + 1)
                                 }
                                 Row(
                                     modifier = Modifier
@@ -1197,7 +1188,7 @@ fun Player(
                                                 interactionSource = remember { MutableInteractionSource() },
                                                 onClick = {
                                                     scope.launch {
-                                                        pagerStateQueue.animateScrollToPage(binder.player.currentMediaItemIndex)
+                                                        pagerStateQueue.animateScrollToPage(binder.player.currentMediaItemIndex + 1)
                                                     }
                                                 }
                                             ),
@@ -1210,7 +1201,7 @@ fun Player(
                                         availableSpace: Int,
                                         pageSpacing: Int
                                     ): Int {
-                                        return if (showsongs == SongsNumber.`1`) (availableSpace) else ((availableSpace - 2 * pageSpacing) / (showsongs.number))
+                                        return if  (showsongs == SongsNumber.`1`) availableSpace else ((availableSpace - 2 * pageSpacing) / (showsongs.number))
                                     }
                                 }
 
@@ -1242,9 +1233,9 @@ fun Player(
                                                             type = PopupType.Info,
                                                             context = context
                                                         )
-                                                        hapticFeedback.performHapticFeedback(
-                                                            HapticFeedbackType.LongPress
-                                                        )
+//                                                        hapticFeedback.performHapticFeedback(
+//                                                            HapticFeedbackType.LongPress
+//                                                        )
                                                     }
                                                 }
                                             )
@@ -1458,8 +1449,8 @@ fun Player(
                                             navController = navController,
                                             onDismiss = {
                                                 menuState.hide()
-                                                transaction {
-                                                    songPlaylist = Database.songUsedInPlaylists(mediaItem.mediaId)
+                                                Database.asyncTransaction {
+                                                    songPlaylist = songUsedInPlaylists(mediaItem.mediaId)
                                                 }
                                             },
                                             mediaItem = mediaItem,
@@ -1777,14 +1768,15 @@ fun Player(
                              }
                          )
 
-                     if (showVinylThumbnailAnimation)
-                         VinylThumbnailCoverAnimationModern(
+                     if (showCoverThumbnailAnimation)
+                         RotateThumbnailCoverAnimationModern(
                              painter = coverPainter,
                              isSongPlaying = player.isPlaying,
                              modifier = coverModifier,
                              state = pagerState,
                              it = it,
-                             vinylSize = vinylSize
+                             imageCoverSize = imageCoverSize,
+                             type = coverThumbnailAnimation
                          )
                      else
                          Image(
@@ -2437,7 +2429,7 @@ fun Player(
                                          }
                                          .conditional(thumbnailType == ThumbnailType.Modern) {
                                              doubleShadowDrop(
-                                                 if (showVinylThumbnailAnimation) CircleShape else thumbnailRoundness.shape(),
+                                                 if (showCoverThumbnailAnimation) CircleShape else thumbnailRoundness.shape(),
                                                  4.dp,
                                                  8.dp
                                              )
@@ -2465,14 +2457,15 @@ fun Player(
                                              }
                                          )
 
-                                     if (showVinylThumbnailAnimation)
-                                         VinylThumbnailCoverAnimationModern(
+                                     if (showCoverThumbnailAnimation)
+                                         RotateThumbnailCoverAnimationModern(
                                              painter = coverPainter,
                                              isSongPlaying = player.isPlaying,
                                              modifier = coverModifier,
                                              state = pagerState,
                                              it = it,
-                                             vinylSize = vinylSize
+                                             imageCoverSize = imageCoverSize,
+                                             type = coverThumbnailAnimation
                                          )
                                      else
                                          Image(

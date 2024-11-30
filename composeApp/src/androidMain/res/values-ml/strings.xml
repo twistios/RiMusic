@@ -123,7 +123,7 @@
     <string name="delete_playback_events">%1$s പ്ലേബാക്ക് ഇവന്റുകൾ നീക്കം ചെയ്യുക</string>
     <string name="existing_data_will_be_overwritten">Existing data will be overwritten. %1$s will automatically close itself after restoring the database.</string>
     <string name="folder_cache">ഫോൾഡർ കാഷെ</string>
-    <string name="cache_reset_by_clicking_button">Attention by clicking on the button below, the cache location folder will be reset to the default</string>
+    <string name="cache_reset_by_clicking_button"></string>
     <string name="cache_location_folder">സ്ഥലം ഫോൾഡർ</string>
     <string name="custom_cache_from_android_10_may_not_be_available">ആൻഡ്രോയിഡ് 10 മുതൽ ഈ സവിശേഷത ലഭ്യമല്ലാവും</string>
     <string name="reset_cache_location_folder">കാഷെ ലൊക്കേഷൻ ഫോൾഡർ പുന: ക്രമീകരിക്കുക</string>
@@ -793,4 +793,25 @@
     <string name="original_lyrics">Original Lyrics</string>
     <string name="translated_lyrics">Translated Lyrics</string>
     <string name="press_once_again_to_exit">Press once again to exit</string>
+    <string name="random_sorting">Random sorting</string>
+    <string name="music_animations_bars">Bars</string>
+    <string name="music_animations_crazy_bars">Crazy Bars</string>
+    <string name="music_animations_crazy_points">Crazy Points</string>
+    <string name="music_animations_bubbles">Bubbles</string>
+    <string name="now_playing_indicator">Now Playing Indicator</string>
+    <string name="good_morning">Good Morning</string>
+    <string name="good_afternoon">Good Afternoon</string>
+    <string name="good_evening">Good Evening</string>
+    <string name="good_night">Good Night</string>
+    <string name="colored_bar">Colored bar</string>
+    <string name="about_developers_designers">Developers / Designers</string>
+    <string name="set_custom_value">Custom value</string>
+    <string name="title_youtube_music">YOUTUBE MUSIC</string>
+    <string name="enable_youtube_music_login">Enable YouTube Music Login</string>
+    <string name="show_cover_thumbnail_animation">Show cover thumbnail animation</string>
+    <string name="cover_thumbnail_animation_type">Cover animation type</string>
+    <string name="jump_previous">Previous Button Will Restart the Current Song After the Following Seconds Have Passed</string>
+    <string name="jump_previous_blank">Leave it Blank or 0 for Previous Button to Always Play the Previous Song</string>
+    <string name="delete_hidden_songs">Do you really want to delete all hidden songs from database? This action is irreversible.</string>
+    <string name="delete_hidden_songs_message">Delete hidden songs</string>
 </resources>

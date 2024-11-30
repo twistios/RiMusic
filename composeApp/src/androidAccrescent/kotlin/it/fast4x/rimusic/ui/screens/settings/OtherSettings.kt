@@ -119,25 +119,26 @@ fun OtherSettings() {
         thumbnailRoundnessKey,
         ThumbnailRoundness.Heavy
     )
-    var isAndroidAutoEnabled by remember {
-        val component = ComponentName(context, PlayerServiceModern::class.java)
-        val disabledFlag = PackageManager.COMPONENT_ENABLED_STATE_DISABLED
-        val enabledFlag = PackageManager.COMPONENT_ENABLED_STATE_ENABLED
 
-        mutableStateOf(
-            value = context.packageManager.getComponentEnabledSetting(component) == enabledFlag,
-            policy = object : SnapshotMutationPolicy<Boolean> {
-                override fun equivalent(a: Boolean, b: Boolean): Boolean {
-                    context.packageManager.setComponentEnabledSetting(
-                        component,
-                        if (b) enabledFlag else disabledFlag,
-                        PackageManager.DONT_KILL_APP
-                    )
-                    return a == b
-                }
-            }
-        )
-    }
+//    var isAndroidAutoEnabled by remember {
+//        val component = ComponentName(context, PlayerServiceModern::class.java)
+//        val disabledFlag = PackageManager.COMPONENT_ENABLED_STATE_DISABLED
+//        val enabledFlag = PackageManager.COMPONENT_ENABLED_STATE_ENABLED
+//
+//        mutableStateOf(
+//            value = context.packageManager.getComponentEnabledSetting(component) == enabledFlag,
+//            policy = object : SnapshotMutationPolicy<Boolean> {
+//                override fun equivalent(a: Boolean, b: Boolean): Boolean {
+//                    context.packageManager.setComponentEnabledSetting(
+//                        component,
+//                        if (b) enabledFlag else disabledFlag,
+//                        PackageManager.DONT_KILL_APP
+//                    )
+//                    return a == b
+//                }
+//            }
+//        )
+//    }
 
     //var isInvincibilityEnabled by rememberPreference(isInvincibilityEnabledKey, false)
 
@@ -692,18 +693,18 @@ fun OtherSettings() {
 
     SettingsGroupSpacer()
 
-    SettingsEntryGroupText(title = stringResource(R.string.android_auto))
-
-    SettingsDescription(text = stringResource(R.string.enable_unknown_sources))
-
-    SwitchSettingEntry(
-        title = stringResource(R.string.android_auto_1),
-        text = stringResource(R.string.enable_android_auto_support),
-        isChecked = isAndroidAutoEnabled,
-        onCheckedChange = { isAndroidAutoEnabled = it }
-    )
-
-    SettingsGroupSpacer()
+//    SettingsEntryGroupText(title = stringResource(R.string.android_auto))
+//
+//    SettingsDescription(text = stringResource(R.string.enable_unknown_sources))
+//
+//    SwitchSettingEntry(
+//        title = stringResource(R.string.android_auto_1),
+//        text = stringResource(R.string.enable_android_auto_support),
+//        isChecked = isAndroidAutoEnabled,
+//        onCheckedChange = { isAndroidAutoEnabled = it }
+//    )
+//
+//    SettingsGroupSpacer()
 
     SettingsEntryGroupText(title = stringResource(R.string.androidheadunit))
     SwitchSettingEntry(

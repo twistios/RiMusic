@@ -17,9 +17,7 @@ import it.fast4x.innertube.models.NavigationEndpoint
 import it.fast4x.rimusic.Database
 import it.fast4x.rimusic.R
 import it.fast4x.rimusic.enums.MenuStyle
-import it.fast4x.rimusic.query
 import it.fast4x.rimusic.service.modern.PlayerServiceModern
-import it.fast4x.rimusic.transaction
 import it.fast4x.rimusic.utils.menuStyleKey
 import it.fast4x.rimusic.utils.rememberEqualizerLauncher
 import it.fast4x.rimusic.utils.rememberPreference
@@ -60,20 +58,10 @@ fun PlayerMenu(
             onDismiss = { isHiding = false },
             onConfirm = {
                 onDismiss()
-                query {
-                    binder.cache.removeResource(mediaItem.mediaId)
-                    binder.downloadCache.removeResource(mediaItem.mediaId)
-                    Database.resetTotalPlayTimeMs(mediaItem.mediaId)
-                    /*
-                    if (binder.player.hasNextMediaItem()) {
-                        binder.player.forceSeekToNext()
-                        binder.player.removeMediaItem(binder.player.currentMediaItemIndex - 1)
-                    }
-                    if (binder.player.hasPreviousMediaItem()) {
-                        binder.player.forceSeekToPrevious()
-                        binder.player.removeMediaItem(binder.player.currentMediaItemIndex + 1)
-                    }
-                     */
+                binder.cache.removeResource(mediaItem.mediaId)
+                binder.downloadCache.removeResource(mediaItem.mediaId)
+                Database.asyncTransaction {
+                    resetTotalPlayTimeMs(mediaItem.mediaId)
                 }
             }
         )
@@ -124,8 +112,8 @@ fun PlayerMenu(
             onHideFromDatabase = { isHiding = true },
             onDismiss = onDismiss,
             onAddToPreferites = {
-                transaction {
-                    Database.like(
+                Database.asyncTransaction {
+                    like(
                         mediaItem.mediaId,
                         System.currentTimeMillis()
                     )
@@ -165,8 +153,8 @@ fun MiniPlayerMenu(
                 onClosePlayer()
             },
             onAddToPreferites = {
-                transaction {
-                    Database.like(
+                Database.asyncTransaction {
+                    like(
                         mediaItem.mediaId,
                         System.currentTimeMillis()
                     )
@@ -183,8 +171,8 @@ fun MiniPlayerMenu(
                 onClosePlayer()
             },
             onAddToPreferites = {
-                transaction {
-                    Database.like(
+                Database.asyncTransaction {
+                    like(
                         mediaItem.mediaId,
                         System.currentTimeMillis()
                     )

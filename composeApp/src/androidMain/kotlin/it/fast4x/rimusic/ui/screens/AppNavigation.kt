@@ -14,9 +14,7 @@ import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
 import androidx.compose.animation.shrinkOut
 import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.systemBars
 import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Scaffold
@@ -32,7 +30,6 @@ import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.ExperimentalTextApi
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
@@ -67,14 +64,12 @@ import it.fast4x.rimusic.ui.screens.newreleases.NewreleasesScreen
 import it.fast4x.rimusic.ui.screens.ondevice.DeviceListSongsScreen
 import it.fast4x.rimusic.ui.screens.player.Player
 import it.fast4x.rimusic.ui.screens.player.QueueModern
-import it.fast4x.rimusic.ui.screens.player.rememberPlayerSheetState
 import it.fast4x.rimusic.ui.screens.playlist.PlaylistScreen
 import it.fast4x.rimusic.ui.screens.podcast.PodcastScreen
 import it.fast4x.rimusic.ui.screens.search.SearchScreen
 import it.fast4x.rimusic.ui.screens.searchresult.SearchResultScreen
 import it.fast4x.rimusic.ui.screens.settings.SettingsScreen
 import it.fast4x.rimusic.ui.screens.statistics.StatisticsScreen
-import it.fast4x.rimusic.ui.styling.Dimensions
 import it.fast4x.rimusic.utils.pauseSearchHistoryKey
 import it.fast4x.rimusic.utils.preferences
 import it.fast4x.rimusic.utils.rememberPreference
@@ -380,8 +375,8 @@ fun AppNavigation(
                     )
 
                     if (!context.preferences.getBoolean(pauseSearchHistoryKey, false)) {
-                        it.fast4x.rimusic.query {
-                            Database.insert(SearchQuery(query = query))
+                        Database.asyncTransaction {
+                            insert(SearchQuery(query = query))
                         }
                     }
                 },
@@ -506,8 +501,8 @@ fun AppNavigation(
                     navController.navigate(route = "${NavRoutes.searchResults.name}/${cleanString(newQuery)}")
 
                     if (!context.preferences.getBoolean(pauseSearchHistoryKey, false)) {
-                        it.fast4x.rimusic.query {
-                            Database.insert(SearchQuery(query = newQuery))
+                        Database.asyncTransaction {
+                            insert(SearchQuery(query = newQuery))
                         }
                     }
                 },

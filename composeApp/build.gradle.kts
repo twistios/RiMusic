@@ -123,8 +123,8 @@ android {
         applicationId = "it.fast4x.rimusic"
         minSdk = 21
         targetSdk = 35
-        versionCode = 69
-        versionName = "0.6.61"
+        versionCode = 70
+        versionName = "0.6.62"
     }
 
     splits {
@@ -197,13 +197,6 @@ android {
         generateLocaleConfig = true
     }
 
-    /*
-    ksp {
-        //arg("room.schemaLocation", "${rootProject.projectDir}/DBschemas")
-        arg("room.schemaLocation", "$projectDir/schemas")
-    }
-     */
-
 }
 
 
@@ -263,20 +256,12 @@ compose.resources {
     publicResClass = true
     generateResClass = always
 }
-/*
-ksp {
-    arg("room.schemaLocation", "$projectDir/schemas")
-}
- */
 
 room {
     schemaDirectory("$projectDir/schemas")
 }
 
 dependencies {
-    // KSP support for Room Compiler.
-    // commented and replaced
-    //kspCommonMainMetadata(libs.room.compiler)
 
     listOf(
         "kspAndroid",
@@ -305,8 +290,6 @@ dependencies {
     implementation(libs.media3.datasource.okhttp)
     implementation(libs.appcompat)
     implementation(libs.appcompat.resources)
-    //implementation(libs.core.splashscreen)
-    //implementation(libs.core.ktx)
     implementation(libs.media)
     implementation(libs.material)
     implementation(libs.material3)

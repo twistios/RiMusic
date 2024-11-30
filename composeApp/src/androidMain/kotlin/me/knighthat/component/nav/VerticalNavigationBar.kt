@@ -121,7 +121,7 @@ class VerticalNavigationBar(
                                 rotationZ = if (isLandscape) 0f else -90f
                             }
                 }
-            val button = Button( iconId, textColor, 0.dp, 0.dp, buttonModifier )
+            val button = Button( iconId, textColor, 0.dp, 0.dp, Dp.Unspecified, buttonModifier )
             val contentModifier = Modifier.clip( RoundedCornerShape(24.dp) )
                                           .clickable( onClick = { onTabChanged(index) } )
                                           .padding( vertical = 8.dp )

@@ -93,11 +93,14 @@ private fun AppLogoText( navController: NavController ) {
             navController.navigate(NavRoutes.home.name)
     }
 
+
+
     Button(
         iconId = R.drawable.app_logo_text,
         color = AppBar.contentColor(),
         padding = 0.dp,
-        size = 100.dp,
+        size = 36.dp,
+        forceWidth = 100.dp,
         modifier = Modifier.clickable { iconTextClick() }
     ).Draw()
 }

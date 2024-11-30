@@ -10,8 +10,13 @@ import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import it.fast4x.rimusic.enums.ColorPaletteMode
+import it.fast4x.rimusic.utils.colorPaletteModeKey
+import it.fast4x.rimusic.utils.rememberPreference
 import me.knighthat.colorPalette
 
 @Composable
@@ -21,6 +26,7 @@ fun <E> ButtonsRow(
     onValueUpdate: (E) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val colorPaletteMode by rememberPreference(colorPaletteModeKey, ColorPaletteMode.Dark)
     Row(
         modifier = modifier
             .fillMaxWidth()
@@ -36,7 +42,11 @@ fun <E> ButtonsRow(
                     .filterChipColors(
                         containerColor = colorPalette().background1,
                         labelColor = colorPalette().text,
-                        selectedContainerColor = colorPalette().background3,
+                        selectedContainerColor = when (colorPaletteMode) {
+                            ColorPaletteMode.Dark, ColorPaletteMode.PitchBlack
+                                -> colorPalette().textDisabled
+                            else -> colorPalette().background3
+                        } ,
                         selectedLabelColor = colorPalette().text,
                     ),
                 onClick = { onValueUpdate(value) }

@@ -77,6 +77,8 @@ import it.fast4x.rimusic.utils.DisposableListener
 import it.fast4x.rimusic.utils.backgroundProgressKey
 import it.fast4x.rimusic.cleanPrefix
 import it.fast4x.rimusic.service.modern.PlayerServiceModern
+import it.fast4x.rimusic.ui.components.themed.NowPlayingSongIndicator
+import it.fast4x.rimusic.utils.asMediaItem
 import it.fast4x.rimusic.utils.conditional
 import it.fast4x.rimusic.utils.disableClosingPlayerSwipingDownKey
 import it.fast4x.rimusic.utils.disableScrollingTextKey
@@ -326,6 +328,7 @@ fun MiniPlayer(
                         .clip(thumbnailShape())
                         .size(48.dp)
                 )
+                NowPlayingSongIndicator(mediaItem.mediaId)
             }
 
             Column(

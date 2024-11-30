@@ -33,7 +33,6 @@ import it.fast4x.rimusic.R
 import it.fast4x.rimusic.cleanPrefix
 import it.fast4x.rimusic.enums.MaxTopPlaylistItems
 import it.fast4x.rimusic.models.Song
-import it.fast4x.rimusic.query
 import it.fast4x.rimusic.service.MyDownloadHelper
 import it.fast4x.rimusic.service.modern.MediaSessionConstants.ID_CACHED
 import it.fast4x.rimusic.service.modern.MediaSessionConstants.ID_DOWNLOADED
@@ -52,7 +51,6 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.guava.future
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.plus
 import kotlinx.coroutines.runBlocking
 import javax.inject.Inject
@@ -70,6 +68,7 @@ class MediaLibrarySessionCallback @Inject constructor(
     var toggleShuffle: () -> Unit = {}
     var startRadio: () -> Unit = {}
     var callPause: () -> Unit = {}
+    var actionSearch: () -> Unit = {}
     var searchedSongs: List<Song> = emptyList()
 
     override fun onConnect(
@@ -84,6 +83,7 @@ class MediaLibrarySessionCallback @Inject constructor(
                 .add(MediaSessionConstants.CommandToggleShuffle)
                 .add(MediaSessionConstants.CommandToggleRepeatMode)
                 .add(MediaSessionConstants.CommandStartRadio)
+                .add(MediaSessionConstants.CommandSearch)
                 .build(),
             connectionResult.availablePlayerCommands
         )
@@ -145,6 +145,7 @@ class MediaLibrarySessionCallback @Inject constructor(
             MediaSessionConstants.ACTION_TOGGLE_SHUFFLE -> toggleShuffle()
             MediaSessionConstants.ACTION_TOGGLE_REPEAT_MODE -> toggleRepeat()
             MediaSessionConstants.ACTION_START_RADIO -> startRadio()
+            MediaSessionConstants.ACTION_SEARCH -> actionSearch()
         }
         return Futures.immediateFuture(SessionResult(SessionResult.RESULT_SUCCESS))
     }
@@ -337,7 +338,7 @@ class MediaLibrarySessionCallback @Inject constructor(
                                     }
                             }
 
-                            else -> database.songsPlaylistByRowIdAsc(playlistId.toLong())
+                            else -> database.sortSongsFromPlaylistByRowId( playlistId.toLong() )
                                 .map { list ->
                                     list.map { it.song }
                                 }
@@ -456,7 +457,7 @@ class MediaLibrarySessionCallback @Inject constructor(
                             }
                     }
 
-                    else -> database.songsPlaylistByRowIdAsc(playlistId.toLong())
+                    else -> database.sortSongsFromPlaylistByRowId( playlistId.toLong() )
                         .map { list ->
                             list.map { it }
                         }
@@ -583,9 +584,11 @@ object MediaSessionConstants {
     const val ACTION_TOGGLE_SHUFFLE = "TOGGLE_SHUFFLE"
     const val ACTION_TOGGLE_REPEAT_MODE = "TOGGLE_REPEAT_MODE"
     const val ACTION_START_RADIO = "START_RADIO"
+    const val ACTION_SEARCH = "ACTION_SEARCH"
     val CommandToggleDownload = SessionCommand(ACTION_TOGGLE_DOWNLOAD, Bundle.EMPTY)
     val CommandToggleLike = SessionCommand(ACTION_TOGGLE_LIKE, Bundle.EMPTY)
     val CommandToggleShuffle = SessionCommand(ACTION_TOGGLE_SHUFFLE, Bundle.EMPTY)
     val CommandToggleRepeatMode = SessionCommand(ACTION_TOGGLE_REPEAT_MODE, Bundle.EMPTY)
     val CommandStartRadio = SessionCommand(ACTION_START_RADIO, Bundle.EMPTY)
+    val CommandSearch = SessionCommand(ACTION_SEARCH, Bundle.EMPTY)
 }

@@ -67,8 +67,6 @@ import it.fast4x.rimusic.enums.NavRoutes
 import it.fast4x.rimusic.enums.NavigationBarPosition
 import it.fast4x.rimusic.enums.UiType
 import it.fast4x.rimusic.models.Artist
-import it.fast4x.rimusic.query
-import it.fast4x.rimusic.transaction
 import it.fast4x.rimusic.ui.components.LocalMenuState
 import it.fast4x.rimusic.ui.components.ShimmerHost
 import it.fast4x.rimusic.ui.components.SwipeablePlaylistItem
@@ -104,6 +102,7 @@ import it.fast4x.rimusic.utils.getDownloadState
 import it.fast4x.rimusic.utils.getHttpClient
 import it.fast4x.rimusic.utils.isDownloadedSong
 import it.fast4x.rimusic.utils.isLandscape
+import it.fast4x.rimusic.utils.isNowPlaying
 import it.fast4x.rimusic.utils.languageDestination
 import it.fast4x.rimusic.utils.manageDownload
 import it.fast4x.rimusic.utils.medium
@@ -350,10 +349,9 @@ fun ArtistOverview(
                             val bookmarkedAt =
                                 if (artist?.bookmarkedAt == null) System.currentTimeMillis() else null
                             //CoroutineScope(Dispatchers.IO).launch {
-                                transaction {
-                                    artist
-                                        ?.copy(bookmarkedAt = bookmarkedAt)
-                                        ?.let(Database::update)
+                            Database.asyncTransaction {
+                                    artist?.copy(bookmarkedAt = bookmarkedAt)
+                                          ?.let( ::update )
                                 }
                             //}
                         },
@@ -387,9 +385,7 @@ fun ArtistOverview(
                                 if (youtubeArtistPage?.songs?.isNotEmpty() == true)
                                     youtubeArtistPage.songs?.forEach {
                                         binder?.cache?.removeResource(it.asMediaItem.mediaId)
-                                        query {
-                                            Database.resetFormatContentLength(it.asMediaItem.mediaId)
-                                        }
+                                        Database.resetContentLength( it.asMediaItem.mediaId )
                                         manageDownload(
                                             context = context,
                                             mediaItem = it.asMediaItem,
@@ -426,9 +422,7 @@ fun ArtistOverview(
                                 if (youtubeArtistPage?.songs?.isNotEmpty() == true)
                                     youtubeArtistPage.songs?.forEach {
                                         binder?.cache?.removeResource(it.asMediaItem.mediaId)
-                                        query {
-                                            Database.resetFormatContentLength(it.asMediaItem.mediaId)
-                                        }
+                                        Database.resetContentLength( it.asMediaItem.mediaId )
                                         manageDownload(
                                             context = context,
                                             mediaItem = it.asMediaItem,
@@ -540,9 +534,7 @@ fun ArtistOverview(
                                     song = song,
                                     onDownloadClick = {
                                         binder?.cache?.removeResource(song.asMediaItem.mediaId)
-                                        query {
-                                            Database.resetFormatContentLength(song.asMediaItem.mediaId)
-                                        }
+                                        Database.resetContentLength( song.asMediaItem.mediaId )
 
                                         manageDownload(
                                             context = context,
@@ -616,7 +608,8 @@ fun ArtistOverview(
                                             }
                                         )
                                         .padding(endPaddingValues),
-                                    disableScrollingText = disableScrollingText
+                                    disableScrollingText = disableScrollingText,
+                                    isNowPlaying = binder?.player?.isNowPlaying(song.key) ?: false
                                 )
                             }
                         }

@@ -792,5 +792,26 @@
     <string name="repeat">Ripeti</string>
     <string name="original_lyrics">Lyrics originali</string>
     <string name="translated_lyrics">Lyrics tradotte</string>
-    <string name="press_once_again_to_exit">Press once again to exit</string>
+    <string name="press_once_again_to_exit">Premete nuovamente per uscire</string>
+    <string name="random_sorting">Ordinamento casuale</string>
+    <string name="music_animations_bars">Barre</string>
+    <string name="music_animations_crazy_bars">Barre Pazze</string>
+    <string name="music_animations_crazy_points">Punti Pazzi</string>
+    <string name="music_animations_bubbles">Bolle</string>
+    <string name="now_playing_indicator">Indicatore Ora In Riproduzione</string>
+    <string name="good_morning">Buongiorno</string>
+    <string name="good_afternoon">Buon pomeriggio</string>
+    <string name="good_evening">Buonasera</string>
+    <string name="good_night">Buonanotte</string>
+    <string name="colored_bar">Barra Colorata</string>
+    <string name="about_developers_designers">Sviluppatori / Designers</string>
+    <string name="set_custom_value">Valore personalizzato</string>
+    <string name="title_youtube_music">YOUTUBE MUSIC</string>
+    <string name="enable_youtube_music_login">Abilita Accesso YouTube Music</string>
+    <string name="show_cover_thumbnail_animation">Mostra l\'animazione della miniatura della copertina</string>
+    <string name="cover_thumbnail_animation_type">Tipo animazione copertina</string>
+    <string name="jump_previous">Il pulsante per il brano precedente riavvierà la canzone corrente dopo che i seguenti secondi sono passati</string>
+    <string name="jump_previous_blank">Lascia vuoto o 0 per il pulsante precedente per riprodurre sempre il brano precedente</string>
+    <string name="delete_hidden_songs">Vuoi davvero eliminare tutti i brani nascosti dal database? Questa azione è irreversibile.</string>
+    <string name="delete_hidden_songs_message">Elimina brani nascosti</string>
 </resources>

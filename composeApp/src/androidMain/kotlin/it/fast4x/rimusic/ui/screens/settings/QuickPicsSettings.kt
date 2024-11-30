@@ -25,7 +25,6 @@ import it.fast4x.rimusic.Database
 import it.fast4x.rimusic.R
 import it.fast4x.rimusic.enums.NavigationBarPosition
 import it.fast4x.rimusic.enums.PlayEventsType
-import it.fast4x.rimusic.query
 import it.fast4x.rimusic.ui.components.themed.ConfirmationDialog
 import it.fast4x.rimusic.ui.components.themed.HeaderWithIcon
 import it.fast4x.rimusic.ui.styling.Dimensions
@@ -70,7 +69,7 @@ fun  QuickPicsSettings() {
         ConfirmationDialog(
             text = stringResource(R.string.do_you_really_want_to_delete_all_playback_events),
             onDismiss = { clearEvents = false },
-            onConfirm = { query(Database::clearEvents) }
+            onConfirm = { Database.asyncTransaction( Database::clearEvents ) }
         )
     }
 

@@ -1,4 +1,4 @@
-package me.knighthat.component.tab.toolbar
+package me.knighthat.component
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
@@ -21,6 +21,7 @@ import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -44,38 +45,73 @@ import it.fast4x.rimusic.utils.secondary
 import it.fast4x.rimusic.utils.semiBold
 import it.fast4x.rimusic.utils.thumbnailRoundnessKey
 import me.knighthat.colorPalette
-import me.knighthat.component.header.TabToolBar
+import me.knighthat.component.tab.toolbar.Descriptive
+import me.knighthat.component.tab.toolbar.MenuIcon
 import me.knighthat.typography
 
-interface Search: Button {
+class Search private constructor(
+    private val inputState: MutableState<String>,
+    private val visibleState: MutableState<Boolean>,
+    private val focusState: MutableState<Boolean>,
+): MenuIcon, Descriptive {
 
-    val visibleState: MutableState<Boolean>
-    val focusState: MutableState<Boolean>
-    val inputState: MutableState<String>
+    companion object {
+        @JvmStatic
+        @Composable
+        fun init() = Search(
+            rememberSaveable { mutableStateOf( "" ) },
+            rememberSaveable { mutableStateOf( false ) },
+            rememberSaveable { mutableStateOf( false ) }
+        )
+    }
+
+    override val iconId: Int = R.drawable.search_circle
+    override val messageId: Int = R.string.search
+    override val menuIconTitle: String
+        @Composable
+        get() = stringResource( messageId )
+
+    var isVisible: Boolean = visibleState.value
+        set(value) {
+            visibleState.value = value
+            field = value
+        }
+    var isFocused: Boolean = focusState.value
+        set(value) {
+            focusState.value = value
+            field = value
+        }
+    var input: String = inputState.value
+        set(value) {
+            inputState.value = value
+            field = value
+        }
 
     @Composable
-    private fun ColumnScope.DecorationBox( innerTextField: @Composable () -> Unit ) {
+    private fun ColumnScope.DecorationBox(
+        innerTextField: @Composable () -> Unit,
+        onBackClick: () -> Unit
+    ) {
         Box(
             contentAlignment = Alignment.CenterStart,
-            modifier = Modifier.weight(1f)
-                               .padding(horizontal = 10.dp)
+            modifier = Modifier.padding( horizontal = 10.dp )
         ) {
             IconButton(
                 onClick = {},
                 icon = R.drawable.search,
                 color = colorPalette().favoritesIcon,
                 modifier = Modifier.align( Alignment.CenterStart )
-                                   .size(16.dp)
+                    .size(16.dp)
             )
         }
         Box(
             contentAlignment = Alignment.CenterStart,
             modifier = Modifier.weight(1f)
-                               .padding(horizontal = 30.dp)
+                .padding(horizontal = 30.dp)
         ) {
             // Search hint
             androidx.compose.animation.AnimatedVisibility(
-                visible = inputState.value.isBlank(),
+                visible = input.isBlank(),
                 enter = fadeIn(tween(100)),
                 exit = fadeOut(tween(100)),
             ) {
@@ -84,25 +120,41 @@ interface Search: Button {
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                     style = typography().xs
-                                        .semiBold
-                                        .secondary
-                                        .copy(
-                                            color = colorPalette().textDisabled
-                                        )
+                        .semiBold
+                        .secondary
+                        .copy(
+                            color = colorPalette().textDisabled
+                        )
                 )
             }
 
             // Actual text from user
             innerTextField()
         }
+        Box(
+            contentAlignment = Alignment.CenterEnd,
+            modifier = Modifier.padding( start = 30.dp, end = 15.dp )
+        ) {
+            IconButton(
+                onClick = onBackClick,
+                icon = R.drawable.backspace_outline,
+                color = colorPalette().text.copy( alpha = .8f ), // A little dimmer to prevent eye-candy
+                modifier = Modifier.align( Alignment.CenterEnd )
+                                   .size( 16.dp )
+            )
+        }
+    }
+
+    fun onItemSelected() {
+        if ( isVisible )
+            if ( input.isBlank() )
+                isVisible = false
+            else
+                isFocused = false
     }
 
     @Composable
-    fun SearchBar( colScope: ColumnScope ) {
-        var showSearchBar by visibleState
-        var isFocused by focusState
-        var input by inputState
-
+    fun SearchBar( columnScope: ColumnScope ) {
         val thumbnailRoundness by rememberPreference(
             thumbnailRoundnessKey,
             ThumbnailRoundness.Heavy
@@ -111,15 +163,15 @@ interface Search: Button {
         val focusRequester = remember { FocusRequester() }
 
         AnimatedVisibility(
-            visible = showSearchBar,
+            visible = isVisible,
             modifier = Modifier.padding(all = 10.dp)
-                               .fillMaxWidth()
+                .fillMaxWidth()
         ) {
             // Auto focus on search bar when it's visible
             val focusManager = LocalFocusManager.current
             val keyboardController = LocalSoftwareKeyboardController.current
-            LaunchedEffect( showSearchBar, isFocused ) {
-                if( !showSearchBar ) return@LaunchedEffect
+            LaunchedEffect( isVisible, isFocused ) {
+                if( !isVisible ) return@LaunchedEffect
 
                 if( isFocused )
                     focusRequester.requestFocus()
@@ -129,20 +181,21 @@ interface Search: Button {
                 }
             }
 
-            /*
-                TextFieldValue gives control over cursor.
-
-                This prevents the cursor from being placed
-                at the beginning of search term.
+            /**
+             * [TextFieldValue] gives control over cursor.
+             *
+             * This prevents the cursor from being placed
+             * at the beginning of search term.
              */
-            var searchInput by remember {
-                mutableStateOf( TextFieldValue( input ) )
-            }
+            var searchTerm by remember { mutableStateOf(
+                TextFieldValue( input, TextRange( input.length ) )
+            )}
             BasicTextField(
-                value = searchInput,
+                value = searchTerm,
                 onValueChange = {
-                    searchInput = it.copy(
-                        selection = TextRange( it.text.length )
+                    searchTerm = it.copy(
+                        text = it.text,
+                        selection = it.selection
                     )
                     input = it.text
                 },
@@ -151,29 +204,33 @@ interface Search: Button {
                 maxLines = 1,
                 keyboardOptions = KeyboardOptions( imeAction = ImeAction.Done ),
                 keyboardActions = KeyboardActions(onDone = {
-                    showSearchBar = input.isNotBlank()
+                    isVisible = input.isNotBlank()
                     isFocused = false
+                    keyboardController?.hide()
                 }),
                 cursorBrush = SolidColor(colorPalette().text),
-                decorationBox = { colScope.DecorationBox( it ) },
+                decorationBox = {
+                    columnScope.DecorationBox( it ) {
+                        searchTerm = TextFieldValue( "" )
+                        input = ""
+
+                        // Regain focus in case keyboard is hidden
+                        isFocused = true
+                    }
+                },
                 modifier = Modifier.height( 30.dp )
-                                   .fillMaxWidth()
-                                   .focusRequester(focusRequester)
-                                   .background(
-                                       colorPalette().background4,
-                                       thumbnailRoundness.shape()
-                                   )
+                    .fillMaxWidth()
+                    .focusRequester(focusRequester)
+                    .background(
+                        colorPalette().background4,
+                        thumbnailRoundness.shape()
+                    )
             )
         }
     }
 
-    @Composable
-    override fun ToolBarButton() {
-        var showSearchBar by visibleState
-
-        TabToolBar.Icon( iconId  = R.drawable.search_circle ) {
-            showSearchBar = !showSearchBar
-            focusState.value = showSearchBar
-        }
+    override fun onShortClick() {
+        isVisible = !isVisible
+        isFocused = isVisible
     }
 }

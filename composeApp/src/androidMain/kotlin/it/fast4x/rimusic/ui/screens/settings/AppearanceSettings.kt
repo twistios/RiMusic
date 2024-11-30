@@ -43,6 +43,7 @@ import it.fast4x.rimusic.enums.PlayerType
 import it.fast4x.rimusic.enums.PrevNextSongs
 import it.fast4x.rimusic.enums.QueueType
 import it.fast4x.rimusic.enums.SongsNumber
+import it.fast4x.rimusic.enums.ThumbnailCoverType
 import it.fast4x.rimusic.enums.ThumbnailRoundness
 import it.fast4x.rimusic.enums.ThumbnailType
 import it.fast4x.rimusic.ui.components.themed.HeaderWithIcon
@@ -59,10 +60,12 @@ import it.fast4x.rimusic.utils.carouselKey
 import it.fast4x.rimusic.utils.carouselSizeKey
 import it.fast4x.rimusic.utils.clickOnLyricsTextKey
 import it.fast4x.rimusic.utils.controlsExpandedKey
+import it.fast4x.rimusic.utils.coverThumbnailAnimationKey
 import it.fast4x.rimusic.utils.disablePlayerHorizontalSwipeKey
 import it.fast4x.rimusic.utils.disableScrollingTextKey
 import it.fast4x.rimusic.utils.effectRotationKey
 import it.fast4x.rimusic.utils.expandedlyricsKey
+import it.fast4x.rimusic.utils.expandedplayerKey
 import it.fast4x.rimusic.utils.expandedplayertoggleKey
 import it.fast4x.rimusic.utils.fadingedgeKey
 import it.fast4x.rimusic.utils.iconLikeTypeKey
@@ -110,7 +113,7 @@ import it.fast4x.rimusic.utils.showNextSongsInPlayerKey
 import it.fast4x.rimusic.utils.showRemainingSongTimeKey
 import it.fast4x.rimusic.utils.showTopActionsBarKey
 import it.fast4x.rimusic.utils.showTotalTimeQueueKey
-import it.fast4x.rimusic.utils.showVinylThumbnailAnimationKey
+import it.fast4x.rimusic.utils.showCoverThumbnailAnimationKey
 import it.fast4x.rimusic.utils.showalbumcoverKey
 import it.fast4x.rimusic.utils.showlyricsthumbnailKey
 import it.fast4x.rimusic.utils.showsongsKey
@@ -131,7 +134,7 @@ import it.fast4x.rimusic.utils.transparentBackgroundPlayerActionBarKey
 import it.fast4x.rimusic.utils.transparentbarKey
 import it.fast4x.rimusic.utils.visualizerEnabledKey
 import me.knighthat.colorPalette
-import me.knighthat.component.tab.toolbar.Search
+import me.knighthat.component.Search
 
 @Composable
 fun DefaultAppearanceSettings() {
@@ -337,6 +340,7 @@ fun AppearanceSettings(
     var transparentbar by rememberPreference(transparentbarKey, true)
     var blackgradient by rememberPreference(blackgradientKey, false)
     var showlyricsthumbnail by rememberPreference(showlyricsthumbnailKey, false)
+    var expandedplayer by rememberPreference(expandedplayerKey, false)
     var playerPlayButtonType by rememberPreference(
         playerPlayButtonTypeKey,
         PlayerPlayButtonType.Disabled
@@ -414,21 +418,7 @@ fun AppearanceSettings(
     var clickLyricsText by rememberPreference(clickOnLyricsTextKey, true)
     var showBackgroundLyrics by rememberPreference(showBackgroundLyricsKey, false)
 
-    // Search states
-    val visibleState = rememberSaveable { mutableStateOf( false ) }
-    val focusState = rememberSaveable { mutableStateOf( false ) }
-    val inputState = rememberSaveable { mutableStateOf( "" ) }
-
-    val search = remember {
-        object: Search{
-            override val visibleState = visibleState
-            override val focusState = focusState
-            override val inputState = inputState
-        }
-    }
-
-    // Search mutable
-    val searchInput by search.inputState
+    val search = Search.init()
 
     var thumbnailRoundness by rememberPreference(
         thumbnailRoundnessKey,
@@ -489,7 +479,8 @@ fun AppearanceSettings(
     var statsExpanded by rememberPreference(statsExpandedKey, true)
     var actionExpanded by rememberPreference(actionExpandedKey, true)
     var restartService by rememberSaveable { mutableStateOf(false) }
-    var showVinylThumbnailAnimation by rememberPreference(showVinylThumbnailAnimationKey, false)
+    var showCoverThumbnailAnimation by rememberPreference(showCoverThumbnailAnimationKey, false)
+    var coverThumbnailAnimation by rememberPreference(coverThumbnailAnimationKey, ThumbnailCoverType.Vinyl)
 
     var notificationPlayerFirstIcon by rememberPreference(notificationPlayerFirstIconKey, NotificationButtons.Download)
     var notificationPlayerSecondIcon by rememberPreference(notificationPlayerSecondIconKey, NotificationButtons.Favorites)
@@ -546,8 +537,8 @@ fun AppearanceSettings(
 
         if (showlyricsthumbnail) expandedlyrics = false
 
-        if (searchInput.isBlank() || stringResource(R.string.show_player_top_actions_bar).contains(
-                searchInput,
+        if (search.input.isBlank() || stringResource(R.string.show_player_top_actions_bar).contains(
+                search.input,
                 true
             )
         )
@@ -557,8 +548,8 @@ fun AppearanceSettings(
                 isChecked = showTopActionsBar,
                 onCheckedChange = { showTopActionsBar = it }
             )
-        if (searchInput.isBlank() || stringResource(R.string.playertype).contains(
-                searchInput,
+        if (search.input.isBlank() || stringResource(R.string.playertype).contains(
+                search.input,
                 true
             )
         )
@@ -576,8 +567,8 @@ fun AppearanceSettings(
                 },
             )
 
-        if (searchInput.isBlank() || stringResource(R.string.queuetype).contains(
-                searchInput,
+        if (search.input.isBlank() || stringResource(R.string.queuetype).contains(
+                search.input,
                 true
             )
         )
@@ -596,8 +587,8 @@ fun AppearanceSettings(
             )
 
         if (playerBackgroundColors == PlayerBackgroundColors.BlurredCoverColor) {
-            if (searchInput.isBlank() || stringResource(R.string.show_thumbnail).contains(
-                    searchInput,
+            if (search.input.isBlank() || stringResource(R.string.show_thumbnail).contains(
+                    search.input,
                     true
                 )
             )
@@ -611,22 +602,34 @@ fun AppearanceSettings(
         AnimatedVisibility(visible = showthumbnail) {
             Column {
 
-                if (searchInput.isBlank() || stringResource(R.string.show_vinyl_thumbnail_animation).contains(
-                        searchInput,
+                if (search.input.isBlank() || stringResource(R.string.show_cover_thumbnail_animation).contains(
+                        search.input,
                         true
                     )
-                )
+                ) {
                     SwitchSettingEntry(
-                        title = stringResource(R.string.show_vinyl_thumbnail_animation),
+                        title = stringResource(R.string.show_cover_thumbnail_animation),
                         text = "",
-                        isChecked = showVinylThumbnailAnimation,
-                        onCheckedChange = { showVinylThumbnailAnimation = it },
+                        isChecked = showCoverThumbnailAnimation,
+                        onCheckedChange = { showCoverThumbnailAnimation = it },
                         Modifier.padding(start = 25.dp)
                     )
+                    AnimatedVisibility(visible = showCoverThumbnailAnimation) {
+                        Column {
+                            EnumValueSelectorSettingsEntry(
+                                title = stringResource(R.string.cover_thumbnail_animation_type),
+                                selectedValue = coverThumbnailAnimation,
+                                onValueSelected = { coverThumbnailAnimation = it },
+                                valueText = { it.textName },
+                                modifier = Modifier.padding(start = 25.dp)
+                            )
+                        }
+                    }
+                }
 
                 if (playerType == PlayerType.Modern) {
-                    if (searchInput.isBlank() || stringResource(R.string.fadingedge).contains(
-                            searchInput,
+                    if (search.input.isBlank() || stringResource(R.string.fadingedge).contains(
+                            search.input,
                             true
                         )
                     )
@@ -640,8 +643,8 @@ fun AppearanceSettings(
                 }
 
                 if (playerType == PlayerType.Modern && !isLandscape) {
-                    if (searchInput.isBlank() || stringResource(R.string.carousel).contains(
-                            searchInput,
+                    if (search.input.isBlank() || stringResource(R.string.carousel).contains(
+                            search.input,
                             true
                         )
                     )
@@ -653,8 +656,8 @@ fun AppearanceSettings(
                             modifier = Modifier.padding(start = if (playerBackgroundColors == PlayerBackgroundColors.BlurredCoverColor) 25.dp else 0.dp)
                         )
 
-                    if (searchInput.isBlank() || stringResource(R.string.carouselsize).contains(
-                            searchInput,
+                    if (search.input.isBlank() || stringResource(R.string.carouselsize).contains(
+                            search.input,
                             true
                         )
                     )
@@ -676,8 +679,8 @@ fun AppearanceSettings(
                 }
                 if (playerType == PlayerType.Essential) {
 
-                    if (searchInput.isBlank() || stringResource(R.string.thumbnailpause).contains(
-                            searchInput,
+                    if (search.input.isBlank() || stringResource(R.string.thumbnailpause).contains(
+                            search.input,
                             true
                         )
                     )
@@ -689,8 +692,8 @@ fun AppearanceSettings(
                             modifier = Modifier.padding(start = if (playerBackgroundColors == PlayerBackgroundColors.BlurredCoverColor) 25.dp else 0.dp)
                         )
 
-                    if (searchInput.isBlank() || stringResource(R.string.show_lyrics_thumbnail).contains(
-                            searchInput,
+                    if (search.input.isBlank() || stringResource(R.string.show_lyrics_thumbnail).contains(
+                            search.input,
                             true
                         )
                     )
@@ -702,8 +705,8 @@ fun AppearanceSettings(
                             modifier = Modifier.padding(start = if (playerBackgroundColors == PlayerBackgroundColors.BlurredCoverColor) 25.dp else 0.dp)
                         )
                     if (visualizerEnabled) {
-                        if (searchInput.isBlank() || stringResource(R.string.showvisthumbnail).contains(
-                                searchInput,
+                        if (search.input.isBlank() || stringResource(R.string.showvisthumbnail).contains(
+                                search.input,
                                 true
                             )
                         )
@@ -717,8 +720,8 @@ fun AppearanceSettings(
                     }
                 }
 
-                if (searchInput.isBlank() || stringResource(R.string.player_thumbnail_size).contains(
-                        searchInput,
+                if (search.input.isBlank() || stringResource(R.string.player_thumbnail_size).contains(
+                        search.input,
                         true
                     )
                 )
@@ -737,8 +740,8 @@ fun AppearanceSettings(
                         },
                         modifier = Modifier.padding(start = if (playerBackgroundColors == PlayerBackgroundColors.BlurredCoverColor) 25.dp else 0.dp)
                     )
-                if (searchInput.isBlank() || stringResource(R.string.thumbnailtype).contains(
-                        searchInput,
+                if (search.input.isBlank() || stringResource(R.string.thumbnailtype).contains(
+                        search.input,
                         true
                     )
                 )
@@ -757,8 +760,8 @@ fun AppearanceSettings(
                         modifier = Modifier.padding(start = if (playerBackgroundColors == PlayerBackgroundColors.BlurredCoverColor) 25.dp else 0.dp)
                     )
 
-                if (searchInput.isBlank() || stringResource(R.string.thumbnail_roundness).contains(
-                        searchInput,
+                if (search.input.isBlank() || stringResource(R.string.thumbnail_roundness).contains(
+                        search.input,
                         true
                     )
                 )
@@ -794,8 +797,8 @@ fun AppearanceSettings(
             }
         }
         if (!showthumbnail) {
-            if (searchInput.isBlank() || stringResource(R.string.noblur).contains(
-                    searchInput,
+            if (search.input.isBlank() || stringResource(R.string.noblur).contains(
+                    search.input,
                     true
                 )
             )
@@ -810,8 +813,8 @@ fun AppearanceSettings(
         }
 
         if (!(showthumbnail && playerType == PlayerType.Essential)){
-            if (searchInput.isBlank() || stringResource(R.string.statsfornerdsplayer).contains(
-                    searchInput,
+            if (search.input.isBlank() || stringResource(R.string.statsfornerdsplayer).contains(
+                    search.input,
                     true
                 )
             )
@@ -824,8 +827,8 @@ fun AppearanceSettings(
         }
 
         if (!showlyricsthumbnail && !isLandscape)
-            if (searchInput.isBlank() || stringResource(R.string.expandedlyrics).contains(
-                    searchInput,
+            if (search.input.isBlank() || stringResource(R.string.expandedlyrics).contains(
+                    search.input,
                     true
                 )
             )
@@ -836,8 +839,8 @@ fun AppearanceSettings(
                     onCheckedChange = { expandedlyrics = it }
                 )
 
-        if (searchInput.isBlank() || stringResource(R.string.timelinesize).contains(
-                searchInput,
+        if (search.input.isBlank() || stringResource(R.string.timelinesize).contains(
+                search.input,
                 true
             )
         )
@@ -856,8 +859,8 @@ fun AppearanceSettings(
                 }
             )
 
-        if (searchInput.isBlank() || stringResource(R.string.pinfo_type).contains(
-                searchInput,
+        if (search.input.isBlank() || stringResource(R.string.pinfo_type).contains(
+                search.input,
                 true
             )
         ) {
@@ -878,8 +881,8 @@ fun AppearanceSettings(
 
             AnimatedVisibility( visible = playerInfoType == PlayerInfoType.Modern) {
                 Column {
-                    if (searchInput.isBlank() || stringResource(R.string.pinfo_show_icons).contains(
-                            searchInput,
+                    if (search.input.isBlank() || stringResource(R.string.pinfo_show_icons).contains(
+                            search.input,
                             true
                         )
                     )
@@ -898,8 +901,8 @@ fun AppearanceSettings(
 
 
 
-        if (searchInput.isBlank() || stringResource(R.string.miniplayertype).contains(
-                searchInput,
+        if (search.input.isBlank() || stringResource(R.string.miniplayertype).contains(
+                search.input,
                 true
             )
         )
@@ -917,8 +920,8 @@ fun AppearanceSettings(
                 },
             )
 
-        if (searchInput.isBlank() || stringResource(R.string.player_swap_controls_with_timeline).contains(
-                searchInput,
+        if (search.input.isBlank() || stringResource(R.string.player_swap_controls_with_timeline).contains(
+                search.input,
                 true
             )
         )
@@ -929,8 +932,8 @@ fun AppearanceSettings(
                 onCheckedChange = { playerSwapControlsWithTimeline = it }
             )
 
-        if (searchInput.isBlank() || stringResource(R.string.timeline).contains(
-                searchInput,
+        if (search.input.isBlank() || stringResource(R.string.timeline).contains(
+                search.input,
                 true
             )
         )
@@ -941,8 +944,8 @@ fun AppearanceSettings(
                 valueText = { it.textName }
             )
 
-        if (searchInput.isBlank() || stringResource(R.string.transparentbar).contains(
-                searchInput,
+        if (search.input.isBlank() || stringResource(R.string.transparentbar).contains(
+                search.input,
                 true
             )
         )
@@ -953,8 +956,8 @@ fun AppearanceSettings(
                 onCheckedChange = { transparentbar = it }
             )
 
-        if (searchInput.isBlank() || stringResource(R.string.pcontrols_type).contains(
-                searchInput,
+        if (search.input.isBlank() || stringResource(R.string.pcontrols_type).contains(
+                search.input,
                 true
             )
         )
@@ -973,8 +976,8 @@ fun AppearanceSettings(
             )
 
 
-        if (searchInput.isBlank() || stringResource(R.string.play_button).contains(
-                searchInput,
+        if (search.input.isBlank() || stringResource(R.string.play_button).contains(
+                search.input,
                 true
             )
         )
@@ -996,8 +999,8 @@ fun AppearanceSettings(
                 },
             )
 
-        if (searchInput.isBlank() || stringResource(R.string.buttonzoomout).contains(
-                searchInput,
+        if (search.input.isBlank() || stringResource(R.string.buttonzoomout).contains(
+                search.input,
                 true
             )
         )
@@ -1009,8 +1012,8 @@ fun AppearanceSettings(
             )
 
 
-        if (searchInput.isBlank() || stringResource(R.string.play_button).contains(
-                searchInput,
+        if (search.input.isBlank() || stringResource(R.string.play_button).contains(
+                search.input,
                 true
             )
         )
@@ -1044,8 +1047,8 @@ fun AppearanceSettings(
             )
          */
 
-        if (searchInput.isBlank() || stringResource(R.string.background_colors).contains(
-                searchInput,
+        if (search.input.isBlank() || stringResource(R.string.background_colors).contains(
+                search.input,
                 true
             )
         )
@@ -1069,8 +1072,8 @@ fun AppearanceSettings(
             )
 
         if ((playerBackgroundColors == PlayerBackgroundColors.CoverColorGradient) || (playerBackgroundColors == PlayerBackgroundColors.ThemeColorGradient))
-            if (searchInput.isBlank() || stringResource(R.string.blackgradient).contains(
-                    searchInput,
+            if (search.input.isBlank() || stringResource(R.string.blackgradient).contains(
+                    search.input,
                     true
                 )
             )
@@ -1081,8 +1084,8 @@ fun AppearanceSettings(
                     onCheckedChange = { blackgradient = it }
                 )
         if (playerBackgroundColors == PlayerBackgroundColors.BlurredCoverColor)
-            if (searchInput.isBlank() || stringResource(R.string.bottomgradient).contains(
-                    searchInput,
+            if (search.input.isBlank() || stringResource(R.string.bottomgradient).contains(
+                    search.input,
                     true
                 )
             )
@@ -1092,20 +1095,20 @@ fun AppearanceSettings(
                     isChecked = bottomgradient,
                     onCheckedChange = { bottomgradient = it }
                 )
-        if (playerBackgroundColors == PlayerBackgroundColors.BlurredCoverColor)
-           if (searchInput.isBlank() || stringResource(R.string.textoutline).contains(
-                searchInput,
-                true
-                )
-           )
-               SwitchSettingEntry(
-                   title = stringResource(R.string.textoutline),
-                   text = "",
-                   isChecked = textoutline,
-                   onCheckedChange = { textoutline = it }
-               )
-       if (searchInput.isBlank() || stringResource(R.string.show_total_time_of_queue).contains(
-                searchInput,
+        if (search.input.isBlank() || stringResource(R.string.textoutline).contains(
+              search.input,
+              true
+              )
+         )
+             SwitchSettingEntry(
+                 title = stringResource(R.string.textoutline),
+                 text = "",
+                 isChecked = textoutline,
+                 onCheckedChange = { textoutline = it }
+             )
+
+       if (search.input.isBlank() || stringResource(R.string.show_total_time_of_queue).contains(
+                search.input,
                 true
             )
         )
@@ -1116,8 +1119,8 @@ fun AppearanceSettings(
                 onCheckedChange = { showTotalTimeQueue = it }
             )
 
-        if (searchInput.isBlank() || stringResource(R.string.show_remaining_song_time).contains(
-                searchInput,
+        if (search.input.isBlank() || stringResource(R.string.show_remaining_song_time).contains(
+                search.input,
                 true
             )
         )
@@ -1128,8 +1131,8 @@ fun AppearanceSettings(
                 onCheckedChange = { showRemainingSongTime = it }
             )
 
-        if (searchInput.isBlank() || stringResource(R.string.show_next_songs_in_player).contains(
-                searchInput,
+        if (search.input.isBlank() || stringResource(R.string.show_next_songs_in_player).contains(
+                search.input,
                 true
             )
         )
@@ -1141,7 +1144,7 @@ fun AppearanceSettings(
             )
         AnimatedVisibility( visible = showNextSongsInPlayer) {
           Column {
-              if (searchInput.isBlank() || stringResource(R.string.showtwosongs).contains(searchInput,true))
+              if (search.input.isBlank() || stringResource(R.string.showtwosongs).contains(search.input,true))
                   EnumValueSelectorSettingsEntry(
                       title = stringResource(R.string.songs_number_to_show),
                       selectedValue = showsongs,
@@ -1156,8 +1159,8 @@ fun AppearanceSettings(
                   )
 
 
-            if (searchInput.isBlank() || stringResource(R.string.showalbumcover).contains(
-                    searchInput,
+            if (search.input.isBlank() || stringResource(R.string.showalbumcover).contains(
+                    search.input,
                     true
                 )
             )
@@ -1171,8 +1174,8 @@ fun AppearanceSettings(
           }
         }
 
-        if (searchInput.isBlank() || stringResource(R.string.disable_scrolling_text).contains(
-                searchInput,
+        if (search.input.isBlank() || stringResource(R.string.disable_scrolling_text).contains(
+                search.input,
                 true
             )
         )
@@ -1183,8 +1186,8 @@ fun AppearanceSettings(
                 onCheckedChange = { disableScrollingText = it }
             )
         if (playerType == PlayerType.Essential) {
-            if (searchInput.isBlank() || stringResource(R.string.disable_horizontal_swipe).contains(
-                    searchInput,
+            if (search.input.isBlank() || stringResource(R.string.disable_horizontal_swipe).contains(
+                    search.input,
                     true
                 )
             )
@@ -1196,8 +1199,8 @@ fun AppearanceSettings(
                 )
         }
 
-        if (searchInput.isBlank() || stringResource(R.string.player_rotating_buttons).contains(
-                searchInput,
+        if (search.input.isBlank() || stringResource(R.string.player_rotating_buttons).contains(
+                search.input,
                 true
             )
         )
@@ -1208,8 +1211,8 @@ fun AppearanceSettings(
                 onCheckedChange = { effectRotationEnabled = it }
             )
 
-        if (searchInput.isBlank() || stringResource(R.string.toggle_lyrics).contains(
-                searchInput,
+        if (search.input.isBlank() || stringResource(R.string.toggle_lyrics).contains(
+                search.input,
                 true
             )
         )
@@ -1220,8 +1223,8 @@ fun AppearanceSettings(
                 onCheckedChange = { thumbnailTapEnabled = it }
             )
 
-        if (searchInput.isBlank() || stringResource(R.string.click_lyrics_text).contains(
-                searchInput,
+        if (search.input.isBlank() || stringResource(R.string.click_lyrics_text).contains(
+                search.input,
                 true
             )
         )
@@ -1232,8 +1235,8 @@ fun AppearanceSettings(
                 onCheckedChange = { clickLyricsText = it }
             )
         if (showlyricsthumbnail)
-            if (searchInput.isBlank() || stringResource(R.string.show_background_in_lyrics).contains(
-                    searchInput,
+            if (search.input.isBlank() || stringResource(R.string.show_background_in_lyrics).contains(
+                    search.input,
                     true
                 )
             )
@@ -1244,8 +1247,8 @@ fun AppearanceSettings(
                     onCheckedChange = { showBackgroundLyrics = it }
                 )
 
-        if (searchInput.isBlank() || stringResource(R.string.player_enable_lyrics_popup_message).contains(
-                searchInput,
+        if (search.input.isBlank() || stringResource(R.string.player_enable_lyrics_popup_message).contains(
+                search.input,
                 true
             )
         )
@@ -1256,8 +1259,8 @@ fun AppearanceSettings(
                 onCheckedChange = { playerEnableLyricsPopupMessage = it }
             )
 
-        if (searchInput.isBlank() || stringResource(R.string.background_progress_bar).contains(
-                searchInput,
+        if (search.input.isBlank() || stringResource(R.string.background_progress_bar).contains(
+                search.input,
                 true
             )
         )
@@ -1278,8 +1281,8 @@ fun AppearanceSettings(
             )
 
 
-        if (searchInput.isBlank() || stringResource(R.string.visualizer).contains(
-                searchInput,
+        if (search.input.isBlank() || stringResource(R.string.visualizer).contains(
+                search.input,
                 true
             )
         ) {
@@ -1314,8 +1317,8 @@ fun AppearanceSettings(
         SettingsGroupSpacer()
         SettingsEntryGroupText(title = stringResource(R.string.player_action_bar))
 
-        if (searchInput.isBlank() || stringResource(R.string.action_bar_transparent_background).contains(
-                searchInput,
+        if (search.input.isBlank() || stringResource(R.string.action_bar_transparent_background).contains(
+                search.input,
                 true
             )
         )
@@ -1326,8 +1329,8 @@ fun AppearanceSettings(
                 onCheckedChange = { transparentBackgroundActionBarPlayer = it }
             )
 
-        if (searchInput.isBlank() || stringResource(R.string.actionspacedevenly).contains(
-                searchInput,
+        if (search.input.isBlank() || stringResource(R.string.actionspacedevenly).contains(
+                search.input,
                 true
             )
         )
@@ -1338,8 +1341,8 @@ fun AppearanceSettings(
                 onCheckedChange = { actionspacedevenly = it }
             )
 
-        if (searchInput.isBlank() || stringResource(R.string.tapqueue).contains(
-                searchInput,
+        if (search.input.isBlank() || stringResource(R.string.tapqueue).contains(
+                search.input,
                 true
             )
         )
@@ -1350,8 +1353,8 @@ fun AppearanceSettings(
                 onCheckedChange = { tapqueue = it }
             )
 
-        if (searchInput.isBlank() || stringResource(R.string.swipe_up_to_open_the_queue).contains(
-                searchInput,
+        if (search.input.isBlank() || stringResource(R.string.swipe_up_to_open_the_queue).contains(
+                search.input,
                 true
             )
         )
@@ -1362,8 +1365,8 @@ fun AppearanceSettings(
                 onCheckedChange = { swipeUpQueue = it }
             )
 
-        if (searchInput.isBlank() || stringResource(R.string.action_bar_show_video_button).contains(
-                searchInput,
+        if (search.input.isBlank() || stringResource(R.string.action_bar_show_video_button).contains(
+                search.input,
                 true
             )
         )
@@ -1374,8 +1377,8 @@ fun AppearanceSettings(
                 onCheckedChange = { showButtonPlayerVideo = it }
             )
 
-        if (searchInput.isBlank() || stringResource(R.string.action_bar_show_discover_button).contains(
-                searchInput,
+        if (search.input.isBlank() || stringResource(R.string.action_bar_show_discover_button).contains(
+                search.input,
                 true
             )
         )
@@ -1386,8 +1389,8 @@ fun AppearanceSettings(
                 onCheckedChange = { showButtonPlayerDiscover = it }
             )
 
-        if (searchInput.isBlank() || stringResource(R.string.action_bar_show_download_button).contains(
-                searchInput,
+        if (search.input.isBlank() || stringResource(R.string.action_bar_show_download_button).contains(
+                search.input,
                 true
             )
         )
@@ -1398,8 +1401,8 @@ fun AppearanceSettings(
                 onCheckedChange = { showButtonPlayerDownload = it }
             )
 
-        if (searchInput.isBlank() || stringResource(R.string.action_bar_show_add_to_playlist_button).contains(
-                searchInput,
+        if (search.input.isBlank() || stringResource(R.string.action_bar_show_add_to_playlist_button).contains(
+                search.input,
                 true
             )
         )
@@ -1410,8 +1413,8 @@ fun AppearanceSettings(
                 onCheckedChange = { showButtonPlayerAddToPlaylist = it }
             )
 
-        if (searchInput.isBlank() || stringResource(R.string.action_bar_show_loop_button).contains(
-                searchInput,
+        if (search.input.isBlank() || stringResource(R.string.action_bar_show_loop_button).contains(
+                search.input,
                 true
             )
         )
@@ -1422,8 +1425,8 @@ fun AppearanceSettings(
                 onCheckedChange = { showButtonPlayerLoop = it }
             )
 
-        if (searchInput.isBlank() || stringResource(R.string.action_bar_show_shuffle_button).contains(
-                searchInput,
+        if (search.input.isBlank() || stringResource(R.string.action_bar_show_shuffle_button).contains(
+                search.input,
                 true
             )
         )
@@ -1434,8 +1437,8 @@ fun AppearanceSettings(
                 onCheckedChange = { showButtonPlayerShuffle = it }
             )
 
-        if (searchInput.isBlank() || stringResource(R.string.action_bar_show_lyrics_button).contains(
-                searchInput,
+        if (search.input.isBlank() || stringResource(R.string.action_bar_show_lyrics_button).contains(
+                search.input,
                 true
             )
         )
@@ -1447,8 +1450,8 @@ fun AppearanceSettings(
             )
         if (!isLandscape || !showthumbnail) {
             if (!showlyricsthumbnail and !expandedlyrics) {
-                if (searchInput.isBlank() || stringResource(R.string.expandedplayer).contains(
-                        searchInput,
+                if (search.input.isBlank() || stringResource(R.string.expandedplayer).contains(
+                        search.input,
                         true
                     )
                 )
@@ -1461,8 +1464,8 @@ fun AppearanceSettings(
             }
         }
 
-        if (searchInput.isBlank() || stringResource(R.string.action_bar_show_sleep_timer_button).contains(
-                searchInput,
+        if (search.input.isBlank() || stringResource(R.string.action_bar_show_sleep_timer_button).contains(
+                search.input,
                 true
             )
         )
@@ -1473,8 +1476,8 @@ fun AppearanceSettings(
                 onCheckedChange = { showButtonPlayerSleepTimer = it }
             )
 
-        if (searchInput.isBlank() || stringResource(R.string.show_equalizer).contains(
-                searchInput,
+        if (search.input.isBlank() || stringResource(R.string.show_equalizer).contains(
+                search.input,
                 true
             )
         )
@@ -1485,8 +1488,8 @@ fun AppearanceSettings(
                 onCheckedChange = { showButtonPlayerSystemEqualizer = it }
             )
 
-        if (searchInput.isBlank() || stringResource(R.string.action_bar_show_arrow_button_to_open_queue).contains(
-                searchInput,
+        if (search.input.isBlank() || stringResource(R.string.action_bar_show_arrow_button_to_open_queue).contains(
+                search.input,
                 true
             )
         )
@@ -1497,8 +1500,8 @@ fun AppearanceSettings(
                 onCheckedChange = { showButtonPlayerArrow = it }
             )
 
-        if (searchInput.isBlank() || stringResource(R.string.action_bar_show_menu_button).contains(
-                searchInput,
+        if (search.input.isBlank() || stringResource(R.string.action_bar_show_menu_button).contains(
+                search.input,
                 true
             )
         )
@@ -1509,13 +1512,13 @@ fun AppearanceSettings(
                 onCheckedChange = { showButtonPlayerMenu = it }
             )
 
-        if (!showlyricsthumbnail && (expandedplayertoggle || expandedlyrics)) {
+        if (!showlyricsthumbnail && (expandedplayertoggle || expandedplayer || expandedlyrics)) {
             SettingsGroupSpacer()
             SettingsEntryGroupText(title = stringResource(R.string.full_screen_lyrics_components))
 
             if (showTotalTimeQueue) {
-                if (searchInput.isBlank() || stringResource(R.string.show_total_time_of_queue).contains(
-                        searchInput,
+                if (search.input.isBlank() || stringResource(R.string.show_total_time_of_queue).contains(
+                        search.input,
                         true
                     )
                 )
@@ -1527,8 +1530,8 @@ fun AppearanceSettings(
                     )
             }
 
-            if (searchInput.isBlank() || stringResource(R.string.titleartist).contains(
-                    searchInput,
+            if (search.input.isBlank() || stringResource(R.string.titleartist).contains(
+                    search.input,
                     true
                 )
             )
@@ -1539,8 +1542,8 @@ fun AppearanceSettings(
                     onCheckedChange = { titleExpanded = it }
                 )
 
-            if (searchInput.isBlank() || stringResource(R.string.timeline).contains(
-                    searchInput,
+            if (search.input.isBlank() || stringResource(R.string.timeline).contains(
+                    search.input,
                     true
                 )
             )
@@ -1551,8 +1554,8 @@ fun AppearanceSettings(
                     onCheckedChange = { timelineExpanded = it }
                 )
 
-            if (searchInput.isBlank() || stringResource(R.string.controls).contains(
-                    searchInput,
+            if (search.input.isBlank() || stringResource(R.string.controls).contains(
+                    search.input,
                     true
                 )
             )
@@ -1564,8 +1567,8 @@ fun AppearanceSettings(
                 )
 
             if (statsfornerds){
-                if (searchInput.isBlank() || stringResource(R.string.statsfornerds).contains(
-                        searchInput,
+                if (search.input.isBlank() || stringResource(R.string.statsfornerds).contains(
+                        search.input,
                         true
                     )
                 )
@@ -1591,8 +1594,8 @@ fun AppearanceSettings(
                 showButtonPlayerDiscover ||
                 showButtonPlayerVideo
             ){
-                if (searchInput.isBlank() || stringResource(R.string.actionbar).contains(
-                        searchInput,
+                if (search.input.isBlank() || stringResource(R.string.actionbar).contains(
+                        search.input,
                         true
                     )
                 )
@@ -1606,8 +1609,8 @@ fun AppearanceSettings(
                     )
             }
             if (showNextSongsInPlayer && actionExpanded) {
-                if (searchInput.isBlank() || stringResource(R.string.miniqueue).contains(
-                        searchInput,
+                if (search.input.isBlank() || stringResource(R.string.miniqueue).contains(
+                        search.input,
                         true
                     )
                 )
@@ -1625,8 +1628,8 @@ fun AppearanceSettings(
         SettingsGroupSpacer()
         SettingsEntryGroupText(title = stringResource(R.string.notification_player))
 
-        if (searchInput.isBlank() || stringResource(R.string.notification_player).contains(
-                searchInput,
+        if (search.input.isBlank() || stringResource(R.string.notification_player).contains(
+                search.input,
                 true
             )
         ) {
@@ -1656,8 +1659,8 @@ fun AppearanceSettings(
         }
 
 
-        if (searchInput.isBlank() || stringResource(R.string.show_song_cover).contains(
-                searchInput,
+        if (search.input.isBlank() || stringResource(R.string.show_song_cover).contains(
+                search.input,
                 true
             )
         )

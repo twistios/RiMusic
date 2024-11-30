@@ -44,7 +44,6 @@ import it.fast4x.rimusic.LocalPlayerServiceBinder
 import it.fast4x.rimusic.enums.NavigationBarPosition
 import it.fast4x.rimusic.enums.ThumbnailRoundness
 import it.fast4x.rimusic.models.Song
-import it.fast4x.rimusic.query
 import it.fast4x.rimusic.service.isLocal
 import it.fast4x.rimusic.ui.components.LocalMenuState
 import it.fast4x.rimusic.ui.components.themed.FloatingActionsContainerWithScrollToTop
@@ -56,10 +55,10 @@ import it.fast4x.rimusic.ui.styling.px
 import it.fast4x.rimusic.utils.align
 import it.fast4x.rimusic.utils.asMediaItem
 import it.fast4x.rimusic.utils.disableScrollingTextKey
-
 import it.fast4x.rimusic.utils.forcePlay
 import it.fast4x.rimusic.utils.getDownloadState
 import it.fast4x.rimusic.utils.isDownloadedSong
+import it.fast4x.rimusic.utils.isNowPlaying
 import it.fast4x.rimusic.utils.manageDownload
 import it.fast4x.rimusic.utils.medium
 import it.fast4x.rimusic.utils.rememberPreference
@@ -260,9 +259,7 @@ fun LocalSongSearch(
                     song = song,
                     onDownloadClick = {
                         binder?.cache?.removeResource(song.asMediaItem.mediaId)
-                        query {
-                            Database.resetFormatContentLength(song.asMediaItem.mediaId)
-                        }
+                        Database.resetContentLength( song.asMediaItem.mediaId )
 
                         if (!isLocal)
                         manageDownload(
@@ -295,8 +292,9 @@ fun LocalSongSearch(
                                 )
                             }
                         )
-                        .animateItemPlacement(),
-                    disableScrollingText = disableScrollingText
+                        .animateItem(),
+                    disableScrollingText = disableScrollingText,
+                    isNowPlaying = binder?.player?.isNowPlaying(song.id) ?: false
                 )
             }
         }

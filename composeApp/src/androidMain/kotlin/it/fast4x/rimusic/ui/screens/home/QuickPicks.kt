@@ -79,7 +79,6 @@ import it.fast4x.rimusic.enums.UiType
 import it.fast4x.rimusic.models.Artist
 import it.fast4x.rimusic.models.PlaylistPreview
 import it.fast4x.rimusic.models.Song
-import it.fast4x.rimusic.query
 import it.fast4x.rimusic.service.MyDownloadHelper
 import it.fast4x.rimusic.service.isLocal
 import it.fast4x.rimusic.ui.components.LocalMenuState
@@ -98,6 +97,7 @@ import it.fast4x.rimusic.ui.items.PlaylistItem
 import it.fast4x.rimusic.ui.items.SongItem
 import it.fast4x.rimusic.ui.styling.Dimensions
 import it.fast4x.rimusic.ui.styling.px
+import it.fast4x.rimusic.utils.WelcomeMessage
 import it.fast4x.rimusic.utils.asMediaItem
 import it.fast4x.rimusic.utils.asSong
 import it.fast4x.rimusic.utils.bold
@@ -108,6 +108,7 @@ import it.fast4x.rimusic.utils.forcePlay
 import it.fast4x.rimusic.utils.getDownloadState
 import it.fast4x.rimusic.utils.isDownloadedSong
 import it.fast4x.rimusic.utils.isLandscape
+import it.fast4x.rimusic.utils.isNowPlaying
 import it.fast4x.rimusic.utils.loadedDataKey
 import it.fast4x.rimusic.utils.manageDownload
 import it.fast4x.rimusic.utils.parentalControlEnabledKey
@@ -179,7 +180,7 @@ fun QuickPicks(
 
     var chartsPageResult by persist<Result<Innertube.ChartsPage?>>("home/chartsPage")
     var chartsPageInit by persist<Innertube.ChartsPage>("home/chartsPage")
-    var chartsPagePreference by rememberPreference(quickPicsChartsPageKey, chartsPageInit)
+//    var chartsPagePreference by rememberPreference(quickPicsChartsPageKey, chartsPageInit)
 
     var preferitesArtists by persistList<Artist>("home/artists")
 
@@ -221,6 +222,12 @@ fun QuickPicks(
     var loadedData by rememberPreference(loadedDataKey, false)
 
     suspend fun loadData() {
+
+        //Used to refresh chart when country change
+        if (showCharts)
+            chartsPageResult =
+                Innertube.chartsPageComplete(countryCode = selectedCountryCode.name)
+
         if (loadedData) return
 
         runCatching {
@@ -265,15 +272,13 @@ fun QuickPicks(
                 discoverPageResult = Innertube.discoverPage()
             }
 
-
-            if (showCharts)
-                chartsPageResult =
-                    Innertube.chartsPageComplete(countryCode = selectedCountryCode.name)
-
         }.onFailure {
             Timber.e("Failed loadData in QuickPicsModern ${it.stackTraceToString()}")
+            println("Failed loadData in QuickPicsModern ${it.stackTraceToString()}")
             loadedData = false
         }.onSuccess {
+            Timber.d("Success loadData in QuickPicsModern")
+            println("Success loadData in QuickPicsModern")
             loadedData = true
         }
     }
@@ -327,8 +332,6 @@ fun QuickPicks(
 
     val showSearchTab by rememberPreference(showSearchTabKey, false)
 
-    //val showActionsBar by rememberPreference(showActionsBarKey, true)
-
     val downloadedSongs = remember {
         MyDownloadHelper.downloads.value.filter {
             it.value.state == Download.STATE_COMPLETED
@@ -374,45 +377,43 @@ fun QuickPicks(
                     .background(colorPalette().background0)
                     .fillMaxHeight()
                     .verticalScroll(scrollState)
-                /*
-                .padding(
-                    windowInsets
-                        .only(WindowInsetsSides.Vertical)
-                        .asPaddingValues()
-                )
-                 */
             ) {
 
                 /*   Load data from url or from saved preference   */
-                if (trendingPreference != null && loadedData) {
-                    trending = trendingPreference
-                } else {
-                    trendingPreference = trending
-                }
+                if (trendingPreference != null) {
+                    if (loadedData) trending = trendingPreference
+                     else trendingPreference = trending
+                } else trendingPreference = trending
 
-                if (relatedPreference != null && loadedData) {
-                    relatedPageResult = Result.success(relatedPreference)
-                    relatedInit = relatedPageResult?.getOrNull()
+                if (relatedPreference != null) {
+                    if (loadedData) {
+                        relatedPageResult = Result.success(relatedPreference)
+                        relatedInit = relatedPageResult?.getOrNull()
+                    }
                 } else {
                     relatedInit = relatedPageResult?.getOrNull()
                     relatedPreference = relatedInit
                 }
 
-                if (discoverPagePreference != null && loadedData) {
-                    discoverPageResult = Result.success(discoverPagePreference)
-                    discoverPageInit = discoverPageResult?.getOrNull()
+                if (discoverPagePreference != null) {
+                    if (loadedData) {
+                        discoverPageResult = Result.success(discoverPagePreference)
+                        discoverPageInit = discoverPageResult?.getOrNull()
+                    }
                 } else {
                     discoverPageInit = discoverPageResult?.getOrNull()
                     discoverPagePreference = discoverPageInit
                 }
 
-                if (chartsPagePreference != null && loadedData) {
-                    chartsPageResult = Result.success(chartsPagePreference)
-                    chartsPageInit = chartsPageResult?.getOrNull()
-                } else {
-                    chartsPageInit = chartsPageResult?.getOrNull()
-                    chartsPagePreference = chartsPageInit
-                }
+                // Not saved/cached to preference
+                chartsPageInit = chartsPageResult?.getOrNull()
+//                if (chartsPagePreference != null && loadedData) {
+//                    chartsPageResult = Result.success(chartsPagePreference)
+//                    chartsPageInit = chartsPageResult?.getOrNull()
+//                } else {
+//                    chartsPageInit = chartsPageResult?.getOrNull()
+//                    chartsPagePreference = chartsPageInit
+//                }
                 /*   Load data from url or from saved preference   */
 
 
@@ -425,6 +426,8 @@ fun QuickPicks(
                         modifier = Modifier,
                         onClick = onSearchClick
                     )
+
+                WelcomeMessage()
 
                 if (showTips) {
                     Title2Actions(
@@ -501,14 +504,12 @@ fun QuickPicks(
                                 downloadState = getDownloadState(song.asMediaItem.mediaId)
                                 val isDownloaded =
                                     if (!isLocal) isDownloadedSong(song.asMediaItem.mediaId) else true
-
+                                var forceRecompose by remember { mutableStateOf(false) }
                                 SongItem(
                                     song = song,
                                     onDownloadClick = {
                                         binder?.cache?.removeResource(song.asMediaItem.mediaId)
-                                        query {
-                                            Database.resetFormatContentLength(song.asMediaItem.mediaId)
-                                        }
+                                        Database.resetContentLength( song.asMediaItem.mediaId )
 
                                         if (!isLocal)
                                             manageDownload(
@@ -536,21 +537,20 @@ fun QuickPicks(
                                                 menuState.display {
                                                     NonQueuedMediaItemMenu(
                                                         navController = navController,
-                                                        onDismiss = menuState::hide,
+                                                        onDismiss = {
+                                                            forceRecompose = true
+                                                            menuState.hide()
+                                                        },
                                                         mediaItem = song.asMediaItem,
                                                         onRemoveFromQuickPicks = {
-                                                            query {
-                                                                Database.clearEventsFor(song.id)
+                                                            Database.asyncTransaction {
+                                                                clearEventsFor(song.id)
                                                             }
                                                         },
 
                                                         onDownload = {
                                                             binder?.cache?.removeResource(song.asMediaItem.mediaId)
-                                                            query {
-                                                                Database.resetFormatContentLength(
-                                                                    song.asMediaItem.mediaId
-                                                                )
-                                                            }
+                                                            Database.resetContentLength(song.asMediaItem.mediaId)
                                                             manageDownload(
                                                                 context = context,
                                                                 mediaItem = song.asMediaItem,
@@ -578,7 +578,9 @@ fun QuickPicks(
                                             fadeOutSpec = null
                                         )
                                         .width(itemInHorizontalGridWidth),
-                                    disableScrollingText = disableScrollingText
+                                    disableScrollingText = disableScrollingText,
+                                    isNowPlaying = binder?.player?.isNowPlaying(song.id) ?: false,
+                                    forceRecompose = forceRecompose
                                 )
                             }
                         }
@@ -598,14 +600,12 @@ fun QuickPicks(
                                 downloadState = getDownloadState(song.asMediaItem.mediaId)
                                 val isDownloaded =
                                     if (!isLocal) isDownloadedSong(song.asMediaItem.mediaId) else true
-
+                                var forceRecompose by remember { mutableStateOf(false) }
                                 SongItem(
                                     song = song,
                                     onDownloadClick = {
                                         binder?.cache?.removeResource(song.asMediaItem.mediaId)
-                                        query {
-                                            Database.resetFormatContentLength(song.asMediaItem.mediaId)
-                                        }
+                                        Database.resetContentLength( song.asMediaItem.mediaId )
                                         if (!isLocal)
                                             manageDownload(
                                                 context = context,
@@ -628,15 +628,14 @@ fun QuickPicks(
                                                 menuState.display {
                                                     NonQueuedMediaItemMenu(
                                                         navController = navController,
-                                                        onDismiss = menuState::hide,
+                                                        onDismiss = {
+                                                            forceRecompose = true
+                                                            menuState.hide()
+                                                        },
                                                         mediaItem = song.asMediaItem,
                                                         onDownload = {
                                                             binder?.cache?.removeResource(song.asMediaItem.mediaId)
-                                                            query {
-                                                                Database.resetFormatContentLength(
-                                                                    song.asMediaItem.mediaId
-                                                                )
-                                                            }
+                                                            Database.resetContentLength(song.asMediaItem.mediaId)
                                                             manageDownload(
                                                                 context = context,
                                                                 mediaItem = song.asMediaItem,
@@ -659,7 +658,9 @@ fun QuickPicks(
                                                 )
                                             }
                                         ),
-                                    disableScrollingText = disableScrollingText
+                                    disableScrollingText = disableScrollingText,
+                                    isNowPlaying = binder?.player?.isNowPlaying(song.key) ?: false,
+                                    forceRecompose = forceRecompose
                                 )
                             }
                         }
@@ -1002,7 +1003,8 @@ fun QuickPicks(
                                                         binder?.player?.addMediaItems(songs.map { it.asMediaItem })
                                                     })
                                                     .width(itemWidth),
-                                                disableScrollingText = disableScrollingText
+                                                disableScrollingText = disableScrollingText,
+                                                isNowPlaying = binder?.player?.isNowPlaying(song.key) ?: false
                                             )
                                         }
                                     }
