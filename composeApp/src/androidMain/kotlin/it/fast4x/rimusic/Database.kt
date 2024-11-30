@@ -787,8 +787,8 @@ interface Database {
                 SortOrder.Descending -> artistsInLibraryByNameDesc()
             }
             ArtistSortBy.DateAdded -> when (sortOrder) {
-                SortOrder.Ascending -> artistsByRowIdAsc()
-                SortOrder.Descending -> artistsByRowIdDesc()
+                SortOrder.Ascending -> artistsInLibraryByRowIdAsc()
+                SortOrder.Descending -> artistsInLibraryByRowIdDesc()
             }
         }
     }
