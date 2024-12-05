@@ -3,6 +3,12 @@
 This branch is used for the custom twistios build. It will mainly follow upstream RiMusic.
 It will potentially contain custom changes or fixes (maybe also upcoming changes to upstream RiMusic).
 
+RiMusic (official):
+<a href="https://github.com/fast4x/RiMusic/releases"><img src="https://img.shields.io/github/downloads/fast4x/RiMusic/total?label=Total%20Downloads"></a>
+<a href="https://github.com/fast4x/RiMusic/releases/latest"><img src="https://img.shields.io/github/downloads/fast4x/RiMusic/latest/total?label=Downloads%20of%20latest%20Release"></a>
+<a href="https://github.com/fast4x/RiMusic/releases/latest"><img src="https://img.shields.io/github/v/release/fast4x/RiMusic"></a>
+
+
 ------------------------------------------------------------------------------------------
 
 <div align="center">
