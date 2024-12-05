@@ -75,9 +75,7 @@ import it.fast4x.rimusic.models.Info
 import it.fast4x.rimusic.models.Playlist
 import it.fast4x.rimusic.models.Song
 import it.fast4x.rimusic.models.SongPlaylistMap
-import it.fast4x.rimusic.query
 import it.fast4x.rimusic.service.isLocal
-import it.fast4x.rimusic.transaction
 import it.fast4x.rimusic.ui.components.LocalMenuState
 import it.fast4x.rimusic.ui.components.ShimmerHost
 import it.fast4x.rimusic.ui.components.SwipeablePlaylistItem
@@ -92,7 +90,7 @@ import it.fast4x.rimusic.ui.components.themed.ItemsList
 import it.fast4x.rimusic.ui.components.themed.LayoutWithAdaptiveThumbnail
 import it.fast4x.rimusic.ui.components.themed.MultiFloatingActionsContainer
 import it.fast4x.rimusic.ui.components.themed.NonQueuedMediaItemMenu
-import it.fast4x.rimusic.ui.components.themed.NowPlayingShow
+import it.fast4x.rimusic.ui.components.themed.NowPlayingSongIndicator
 import it.fast4x.rimusic.ui.components.themed.SelectorDialog
 import it.fast4x.rimusic.ui.components.themed.SmartMessage
 import it.fast4x.rimusic.ui.items.AlbumItem
@@ -118,6 +116,7 @@ import it.fast4x.rimusic.utils.getDownloadState
 import it.fast4x.rimusic.utils.getHttpClient
 import it.fast4x.rimusic.utils.isDownloadedSong
 import it.fast4x.rimusic.utils.isLandscape
+import it.fast4x.rimusic.utils.isNowPlaying
 import it.fast4x.rimusic.utils.languageDestination
 import it.fast4x.rimusic.utils.manageDownload
 import it.fast4x.rimusic.utils.medium
@@ -127,7 +126,9 @@ import it.fast4x.rimusic.utils.resize
 import it.fast4x.rimusic.utils.secondary
 import it.fast4x.rimusic.utils.semiBold
 import it.fast4x.rimusic.utils.showFloatingIconKey
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import me.bush.translator.Language
 import me.bush.translator.Translator
@@ -261,10 +262,9 @@ fun AlbumDetails(
             placeholder = stringResource(R.string.title),
             setValue = {
                 if (it.isNotEmpty()) {
-                    query {
-                        Database.updateAlbumTitle(browseId, it)
+                    Database.asyncTransaction {
+                        updateAlbumTitle(browseId, it)
                     }
-                    //context.toast("Album Saved $it")
                 }
             },
             prefix = MODIFIED_PREFIX
@@ -277,8 +277,8 @@ fun AlbumDetails(
             placeholder = stringResource(R.string.authors),
             setValue = {
                 if (it.isNotEmpty()) {
-                    query {
-                        Database.updateAlbumAuthors(browseId, it)
+                    Database.asyncTransaction {
+                        updateAlbumAuthors(browseId, it)
                     }
                     //context.toast("Album Saved $it")
                 }
@@ -294,8 +294,8 @@ fun AlbumDetails(
             placeholder = stringResource(R.string.cover),
             setValue = {
                 if (it.isNotEmpty()) {
-                    query {
-                        Database.updateAlbumCover(browseId, it)
+                    Database.asyncTransaction {
+                        updateAlbumCover(browseId, it)
                     }
                     //context.toast("Album Saved $it")
                 }
@@ -311,10 +311,9 @@ fun AlbumDetails(
             placeholder = stringResource(R.string.new_playlist),
             setValue = {
                 if (it.isNotEmpty()) {
-                    query {
-                        Database.insert(Playlist(name = it))
+                    Database.asyncTransaction {
+                        insert(Playlist(name = it))
                     }
-                    //context.toast("Song Saved $it")
                 }
             }
         )
@@ -330,8 +329,8 @@ fun AlbumDetails(
                     if (songs.isNotEmpty() == true)
                         songs.forEach {
                             binder?.cache?.removeResource(it.asMediaItem.mediaId)
-                            query {
-                                Database.resetFormatContentLength(it.asMediaItem.mediaId)
+                            CoroutineScope(Dispatchers.IO).launch {
+                                Database.resetContentLength( it.asMediaItem.mediaId )
                             }
                             manageDownload(
                                 context = context,
@@ -343,8 +342,8 @@ fun AlbumDetails(
                     runCatching {
                         listMediaItems.forEach {
                             binder?.cache?.removeResource(it.mediaId)
-                            query {
-                                Database.resetFormatContentLength(it.mediaId)
+                            CoroutineScope(Dispatchers.IO).launch {
+                                Database.resetContentLength( it.mediaId )
                             }
                             manageDownload(
                                 context = context,
@@ -373,8 +372,8 @@ fun AlbumDetails(
                     if (songs.isNotEmpty() == true)
                         songs.forEach {
                             binder?.cache?.removeResource(it.asMediaItem.mediaId)
-                            query {
-                                Database.resetFormatContentLength(it.asMediaItem.mediaId)
+                            CoroutineScope(Dispatchers.IO).launch {
+                                Database.resetContentLength( it.asMediaItem.mediaId )
                             }
                             manageDownload(
                                 context = context,
@@ -386,8 +385,8 @@ fun AlbumDetails(
                     runCatching {
                         listMediaItems.forEach {
                             binder?.cache?.removeResource(it.mediaId)
-                            query {
-                                Database.resetFormatContentLength(it.mediaId)
+                            CoroutineScope(Dispatchers.IO).launch {
+                                Database.resetContentLength( it.mediaId )
                             }
                             manageDownload(
                                 context = context,
@@ -628,10 +627,9 @@ fun AlbumDetails(
                                         val bookmarkedAt =
                                             if (album?.bookmarkedAt == null) System.currentTimeMillis() else null
 
-                                        query {
-                                            album
-                                                ?.copy(bookmarkedAt = bookmarkedAt)
-                                                ?.let(Database::update)
+                                        Database.asyncTransaction {
+                                            album?.copy( bookmarkedAt = bookmarkedAt )
+                                                 ?.let( ::update )
                                         }
                                     },
                                     onLongClick = {
@@ -844,9 +842,9 @@ fun AlbumDetails(
                                                 //Log.d("mediaItem", "next initial pos ${position}")
                                                 if (listMediaItems.isEmpty()) {
                                                     songs.forEachIndexed { index, song ->
-                                                        transaction {
-                                                            Database.insert(song.asMediaItem)
-                                                            Database.insert(
+                                                        Database.asyncTransaction {
+                                                            insert(song.asMediaItem)
+                                                            insert(
                                                                 SongPlaylistMap(
                                                                     songId = song.asMediaItem.mediaId,
                                                                     playlistId = playlistPreview.playlist.id,
@@ -859,9 +857,9 @@ fun AlbumDetails(
                                                 } else {
                                                     listMediaItems.forEachIndexed { index, song ->
                                                         //Log.d("mediaItemMaxPos", position.toString())
-                                                        transaction {
-                                                            Database.insert(song)
-                                                            Database.insert(
+                                                        Database.asyncTransaction {
+                                                            insert(song)
+                                                            insert(
                                                                 SongPlaylistMap(
                                                                     songId = song.mediaId,
                                                                     playlistId = playlistPreview.playlist.id,
@@ -912,14 +910,16 @@ fun AlbumDetails(
                         val isDownloaded =
                             if (!isLocal) isDownloadedSong(song.asMediaItem.mediaId) else true
                         val checkedState = rememberSaveable { mutableStateOf(false) }
+                        var forceRecompose by remember { mutableStateOf(false) }
                         SongItem(
                             mediaItem = song.asMediaItem,
                             downloadState = downloadState,
                             onDownloadClick = {
                                 binder?.cache?.removeResource(song.asMediaItem.mediaId)
-                                query {
-                                    Database.resetFormatContentLength(song.asMediaItem.mediaId)
+                                Database.asyncTransaction {
+                                    resetContentLength( song.asMediaItem.mediaId )
                                 }
+
                                 if (!isLocal)
                                     manageDownload(
                                         context = context,
@@ -950,8 +950,8 @@ fun AlbumDetails(
                                         .align(Alignment.Center)
                                 )
 
-                                if (nowPlayingItem > -1)
-                                    NowPlayingShow(song.asMediaItem.mediaId)
+
+                                    NowPlayingSongIndicator(song.asMediaItem.mediaId, binder?.player)
                             },
                             modifier = Modifier
                                 .combinedClickable(
@@ -959,7 +959,10 @@ fun AlbumDetails(
                                         menuState.display {
                                             NonQueuedMediaItemMenu(
                                                 navController = navController,
-                                                onDismiss = menuState::hide,
+                                                onDismiss = {
+                                                    menuState.hide()
+                                                    forceRecompose = true
+                                                },
                                                 mediaItem = song.asMediaItem,
                                                 disableScrollingText = disableScrollingText
                                             )
@@ -997,7 +1000,9 @@ fun AlbumDetails(
                                 else checkedState.value = false
                             },
                             //mediaId = song.asMediaItem.mediaId
-                            disableScrollingText = disableScrollingText
+                            disableScrollingText = disableScrollingText,
+                            isNowPlaying = binder?.player?.isNowPlaying(song.id) ?: false,
+                            forceRecompose = forceRecompose
                         )
                     }
                 }

@@ -1,19 +1,15 @@
 package it.fast4x.rimusic.service
 
 
+//import androidx.media3.datasource.HttpDataSource
 import android.annotation.SuppressLint
 import android.content.Context
 import android.net.Uri
-import androidx.core.net.toUri
 import androidx.media3.common.MediaItem
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.database.DatabaseProvider
 import androidx.media3.database.StandaloneDatabaseProvider
-import androidx.media3.datasource.DataSource
-//import androidx.media3.datasource.HttpDataSource
-import androidx.media3.datasource.ResolvingDataSource
 import androidx.media3.datasource.cache.Cache
-import androidx.media3.datasource.cache.CacheDataSource
 import androidx.media3.datasource.cache.NoOpCacheEvictor
 import androidx.media3.datasource.cache.SimpleCache
 import androidx.media3.exoplayer.offline.Download
@@ -23,7 +19,6 @@ import androidx.media3.exoplayer.offline.DownloadRequest
 import androidx.media3.exoplayer.scheduler.Requirements
 import it.fast4x.rimusic.Database
 import it.fast4x.rimusic.enums.AudioQualityFormat
-import it.fast4x.rimusic.transaction
 import it.fast4x.rimusic.utils.audioQualityFormatKey
 import it.fast4x.rimusic.utils.download
 import it.fast4x.rimusic.utils.getEnum
@@ -41,16 +36,8 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
-import okhttp3.OkHttpClient
 import timber.log.Timber
 import java.io.File
-import java.net.ConnectException
-import java.net.InetSocketAddress
-import java.net.Proxy
-import java.net.SocketTimeoutException
-import java.net.UnknownHostException
-import java.time.Duration
 import java.util.concurrent.Executors
 
 @UnstableApi
@@ -246,10 +233,10 @@ object MyDownloadHelper {
                 .setData("${mediaItem.mediaMetadata.artist.toString()} - ${mediaItem.mediaMetadata.title.toString()}".encodeToByteArray()) // Title in notification
                 .build()
 
-            transaction {
+            Database.asyncTransaction {
                 runCatching {
-                    Database.insert(mediaItem)
-                }.also { if (it.isFailure) return@transaction }
+                    insert(mediaItem)
+                }.also { if (it.isFailure) return@asyncTransaction }
 
                 coroutineScope.launch {
                     context.download<MyDownloadService>(downloadRequest).exceptionOrNull()?.let {

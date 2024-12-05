@@ -88,11 +88,13 @@ class Search private constructor(
         }
 
     @Composable
-    private fun ColumnScope.DecorationBox(innerTextField: @Composable () -> Unit ) {
+    private fun ColumnScope.DecorationBox(
+        innerTextField: @Composable () -> Unit,
+        onBackClick: () -> Unit
+    ) {
         Box(
             contentAlignment = Alignment.CenterStart,
-            modifier = Modifier.weight(1f)
-                .padding(horizontal = 10.dp)
+            modifier = Modifier.padding( horizontal = 10.dp )
         ) {
             IconButton(
                 onClick = {},
@@ -129,6 +131,18 @@ class Search private constructor(
             // Actual text from user
             innerTextField()
         }
+        Box(
+            contentAlignment = Alignment.CenterEnd,
+            modifier = Modifier.padding( start = 30.dp, end = 15.dp )
+        ) {
+            IconButton(
+                onClick = onBackClick,
+                icon = R.drawable.backspace_outline,
+                color = colorPalette().text.copy( alpha = .8f ), // A little dimmer to prevent eye-candy
+                modifier = Modifier.align( Alignment.CenterEnd )
+                                   .size( 16.dp )
+            )
+        }
     }
 
     fun onItemSelected() {
@@ -141,10 +155,6 @@ class Search private constructor(
 
     @Composable
     fun SearchBar( columnScope: ColumnScope ) {
-        var showSearchBar by visibleState
-        var isFocused by focusState
-        var input by inputState
-
         val thumbnailRoundness by rememberPreference(
             thumbnailRoundnessKey,
             ThumbnailRoundness.Heavy
@@ -153,15 +163,15 @@ class Search private constructor(
         val focusRequester = remember { FocusRequester() }
 
         AnimatedVisibility(
-            visible = showSearchBar,
+            visible = isVisible,
             modifier = Modifier.padding(all = 10.dp)
                 .fillMaxWidth()
         ) {
             // Auto focus on search bar when it's visible
             val focusManager = LocalFocusManager.current
             val keyboardController = LocalSoftwareKeyboardController.current
-            LaunchedEffect( showSearchBar, isFocused ) {
-                if( !showSearchBar ) return@LaunchedEffect
+            LaunchedEffect( isVisible, isFocused ) {
+                if( !isVisible ) return@LaunchedEffect
 
                 if( isFocused )
                     focusRequester.requestFocus()
@@ -171,20 +181,21 @@ class Search private constructor(
                 }
             }
 
-            /*
-                TextFieldValue gives control over cursor.
-
-                This prevents the cursor from being placed
-                at the beginning of search term.
+            /**
+             * [TextFieldValue] gives control over cursor.
+             *
+             * This prevents the cursor from being placed
+             * at the beginning of search term.
              */
-            var searchInput by remember {
-                mutableStateOf( TextFieldValue( input ) )
-            }
+            var searchTerm by remember { mutableStateOf(
+                TextFieldValue( input, TextRange( input.length ) )
+            )}
             BasicTextField(
-                value = searchInput,
+                value = searchTerm,
                 onValueChange = {
-                    searchInput = it.copy(
-                        selection = TextRange( it.text.length )
+                    searchTerm = it.copy(
+                        text = it.text,
+                        selection = it.selection
                     )
                     input = it.text
                 },
@@ -193,12 +204,20 @@ class Search private constructor(
                 maxLines = 1,
                 keyboardOptions = KeyboardOptions( imeAction = ImeAction.Done ),
                 keyboardActions = KeyboardActions(onDone = {
-                    showSearchBar = input.isNotBlank()
+                    isVisible = input.isNotBlank()
                     isFocused = false
                     keyboardController?.hide()
                 }),
                 cursorBrush = SolidColor(colorPalette().text),
-                decorationBox = { columnScope.DecorationBox( it ) },
+                decorationBox = {
+                    columnScope.DecorationBox( it ) {
+                        searchTerm = TextFieldValue( "" )
+                        input = ""
+
+                        // Regain focus in case keyboard is hidden
+                        isFocused = true
+                    }
+                },
                 modifier = Modifier.height( 30.dp )
                     .fillMaxWidth()
                     .focusRequester(focusRequester)

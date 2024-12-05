@@ -103,6 +103,7 @@ import it.fast4x.rimusic.cleanPrefix
 import it.fast4x.rimusic.utils.VinylSizeKey
 import it.fast4x.rimusic.utils.colorPaletteModeKey
 import it.fast4x.rimusic.utils.drawCircle
+import it.fast4x.rimusic.utils.expandedplayerKey
 import it.fast4x.rimusic.utils.fadingedgeKey
 import it.fast4x.rimusic.utils.getDeviceVolume
 import it.fast4x.rimusic.utils.isLandscape
@@ -118,7 +119,7 @@ import it.fast4x.rimusic.utils.resize
 import it.fast4x.rimusic.utils.secondary
 import it.fast4x.rimusic.utils.semiBold
 import it.fast4x.rimusic.utils.setDeviceVolume
-import it.fast4x.rimusic.utils.showVinylThumbnailAnimationKey
+import it.fast4x.rimusic.utils.showCoverThumbnailAnimationKey
 import it.fast4x.rimusic.utils.thumbnailFadeKey
 import it.fast4x.rimusic.utils.thumbnailOffsetKey
 import it.fast4x.rimusic.utils.thumbnailRoundnessKey
@@ -826,7 +827,7 @@ inline fun InputTextDialog(
                                 .scale(0.7f)
                         )
                         BasicText(
-                            text = "Custom value",
+                            text = stringResource(R.string.set_custom_value),
                             style = typography().xs.medium,
                             maxLines = 2,
                             modifier = Modifier
@@ -1280,27 +1281,29 @@ fun BlurParamsDialog(
         scaleValue: (Float) -> Unit,
         spacingValue: (Float) -> Unit,
         fadeValue: (Float) -> Unit,
-        vinylSizeValue: (Float) -> Unit
+        imageCoverSizeValue: (Float) -> Unit
     ) {
         val defaultFade = 5f
         val defaultOffset = 10f
         val defaultSpacing = 0f
-        val defaultVinylSize = 50f
+        val defaultImageCoverSize = 50f
         var thumbnailOffset by rememberPreference(thumbnailOffsetKey, defaultOffset)
         var thumbnailSpacing by rememberPreference(thumbnailSpacingKey, defaultOffset)
         var thumbnailFade by rememberPreference(thumbnailFadeKey, defaultFade)
         var fadingedge by rememberPreference(fadingedgeKey, false)
-        var vinylSize by rememberPreference(VinylSizeKey, defaultVinylSize)
-        val showVinylThumbnailAnimation by rememberPreference(showVinylThumbnailAnimationKey, false)
+        var imageCoverSize by rememberPreference(VinylSizeKey, defaultImageCoverSize)
+        val showCoverThumbnailAnimation by rememberPreference(showCoverThumbnailAnimationKey, false)
+        val expandedplayer by rememberPreference(expandedplayerKey, false)
         DefaultDialog(
             onDismiss = {
                 scaleValue(thumbnailOffset)
                 spacingValue(thumbnailSpacing)
                 fadeValue(thumbnailFade)
+                imageCoverSizeValue(imageCoverSize)
                 onDismiss()
             }
         ) {
-            if (showVinylThumbnailAnimation) {
+            if (showCoverThumbnailAnimation) {
                 Row(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically,
@@ -1309,7 +1312,7 @@ fun BlurParamsDialog(
                 ) {
                     IconButton(
                         onClick = {
-                            vinylSize = defaultVinylSize
+                            imageCoverSize = defaultImageCoverSize
                         },
                         icon = R.drawable.album,
                         color = colorPalette().favoritesIcon,
@@ -1318,9 +1321,11 @@ fun BlurParamsDialog(
                     )
 
                     SliderControl(
-                        state = vinylSize,
-                        onSlide = { vinylSize = it },
-                        onSlideComplete = {},
+                        state = imageCoverSize,
+                        onSlide = { imageCoverSize = it },
+                        onSlideComplete = {
+                            imageCoverSizeValue(imageCoverSize)
+                        },
                         toDisplay = { "%.0f".format(it) },
                         steps = 10,
                         range = 50f..100f
@@ -1328,30 +1333,32 @@ fun BlurParamsDialog(
                 }
             }
 
-            Row(
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier
-                    .fillMaxWidth()
-            ) {
-                IconButton(
-                    onClick = {
-                        thumbnailOffset = defaultOffset
-                    },
-                    icon = R.drawable.up_right_arrow,
-                    color = colorPalette().favoritesIcon,
+            if (expandedplayer || isLandscape) {
+                Row(
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier
-                        .size(24.dp)
-                        .rotate(if (isLandscape) 45f else 135f)
-                )
+                        .fillMaxWidth()
+                ) {
+                    IconButton(
+                        onClick = {
+                            thumbnailOffset = defaultOffset
+                        },
+                        icon = R.drawable.up_right_arrow,
+                        color = colorPalette().favoritesIcon,
+                        modifier = Modifier
+                            .size(24.dp)
+                            .rotate(if (isLandscape) 45f else 135f)
+                    )
 
-                SliderControl(
-                    state = thumbnailOffset,
-                    onSlide = { thumbnailOffset = it },
-                    onSlideComplete = {},
-                    toDisplay = { "%.0f".format(it) },
-                    range = 0f..50f
-                )
+                    SliderControl(
+                        state = thumbnailOffset,
+                        onSlide = { thumbnailOffset = it },
+                        onSlideComplete = {},
+                        toDisplay = { "%.0f".format(it) },
+                        range = 0f..50f
+                    )
+                }
             }
 
             if(fadingedge && !isLandscape) {
@@ -1439,31 +1446,32 @@ fun BlurParamsDialog(
                 */
                 }
             }
-            Row(
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier
-                    .fillMaxWidth()
-            ) {
-                IconButton(
-                    onClick = {
-                        thumbnailSpacing = defaultSpacing
-                    },
-                    icon = R.drawable.burger,
-                    color = colorPalette().favoritesIcon,
+            if (expandedplayer || isLandscape) {
+                Row(
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier
-                        .size(24.dp)
-                )
+                        .fillMaxWidth()
+                ) {
+                    IconButton(
+                        onClick = {
+                            thumbnailSpacing = defaultSpacing
+                        },
+                        icon = R.drawable.burger,
+                        color = colorPalette().favoritesIcon,
+                        modifier = Modifier
+                            .size(24.dp)
+                    )
 
-                SliderControl(
-                    state = thumbnailSpacing,
-                    onSlide = { thumbnailSpacing = it },
-                    onSlideComplete = {},
-                    toDisplay = { "%.0f".format(it) },
-                    range = -50f..50f
-                )
+                    SliderControl(
+                        state = thumbnailSpacing,
+                        onSlide = { thumbnailSpacing = it },
+                        onSlideComplete = {},
+                        toDisplay = { "%.0f".format(it) },
+                        range = -50f..50f
+                    )
 
-                /*
+                    /*
                 CustomSlider(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -1520,6 +1528,7 @@ fun BlurParamsDialog(
                     }
                 )
                  */
+                }
             }
         }
     }

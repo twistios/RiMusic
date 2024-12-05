@@ -123,7 +123,7 @@ fun MoodsPage(
                                     } },
                                     thumbnailSizeDp = thumbnailSizeDp,
                                     modifier = Modifier
-                                        .animateItemPlacement()
+                                        .animateItem()
 
                                 )
                             }

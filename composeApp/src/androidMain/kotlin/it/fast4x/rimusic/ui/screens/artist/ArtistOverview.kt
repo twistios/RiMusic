@@ -67,8 +67,6 @@ import it.fast4x.rimusic.enums.NavRoutes
 import it.fast4x.rimusic.enums.NavigationBarPosition
 import it.fast4x.rimusic.enums.UiType
 import it.fast4x.rimusic.models.Artist
-import it.fast4x.rimusic.query
-import it.fast4x.rimusic.transaction
 import it.fast4x.rimusic.ui.components.LocalMenuState
 import it.fast4x.rimusic.ui.components.ShimmerHost
 import it.fast4x.rimusic.ui.components.SwipeablePlaylistItem
@@ -104,6 +102,7 @@ import it.fast4x.rimusic.utils.getDownloadState
 import it.fast4x.rimusic.utils.getHttpClient
 import it.fast4x.rimusic.utils.isDownloadedSong
 import it.fast4x.rimusic.utils.isLandscape
+import it.fast4x.rimusic.utils.isNowPlaying
 import it.fast4x.rimusic.utils.languageDestination
 import it.fast4x.rimusic.utils.manageDownload
 import it.fast4x.rimusic.utils.medium
@@ -350,10 +349,9 @@ fun ArtistOverview(
                             val bookmarkedAt =
                                 if (artist?.bookmarkedAt == null) System.currentTimeMillis() else null
                             //CoroutineScope(Dispatchers.IO).launch {
-                                transaction {
-                                    artist
-                                        ?.copy(bookmarkedAt = bookmarkedAt)
-                                        ?.let(Database::update)
+                            Database.asyncTransaction {
+                                    artist?.copy(bookmarkedAt = bookmarkedAt)
+                                          ?.let( ::update )
                                 }
                             //}
                         },
@@ -387,8 +385,8 @@ fun ArtistOverview(
                                 if (youtubeArtistPage?.songs?.isNotEmpty() == true)
                                     youtubeArtistPage.songs?.forEach {
                                         binder?.cache?.removeResource(it.asMediaItem.mediaId)
-                                        query {
-                                            Database.resetFormatContentLength(it.asMediaItem.mediaId)
+                                        CoroutineScope(Dispatchers.IO).launch {
+                                            Database.resetContentLength( it.asMediaItem.mediaId )
                                         }
                                         manageDownload(
                                             context = context,
@@ -426,8 +424,8 @@ fun ArtistOverview(
                                 if (youtubeArtistPage?.songs?.isNotEmpty() == true)
                                     youtubeArtistPage.songs?.forEach {
                                         binder?.cache?.removeResource(it.asMediaItem.mediaId)
-                                        query {
-                                            Database.resetFormatContentLength(it.asMediaItem.mediaId)
+                                        CoroutineScope(Dispatchers.IO).launch {
+                                            Database.resetContentLength( it.asMediaItem.mediaId )
                                         }
                                         manageDownload(
                                             context = context,
@@ -540,8 +538,8 @@ fun ArtistOverview(
                                     song = song,
                                     onDownloadClick = {
                                         binder?.cache?.removeResource(song.asMediaItem.mediaId)
-                                        query {
-                                            Database.resetFormatContentLength(song.asMediaItem.mediaId)
+                                        CoroutineScope(Dispatchers.IO).launch {
+                                            Database.resetContentLength( song.asMediaItem.mediaId )
                                         }
 
                                         manageDownload(
@@ -569,23 +567,9 @@ fun ArtistOverview(
                                                 )
                                             },
                                             onClick = {
-                                                /*
                                                 binder?.stopRadio()
-                                                binder?.player?.forcePlayAtIndex(
-                                                    listMediaItems.distinct(),
-                                                    index
-                                                )
-                                                 */
+                                                binder?.player?.forcePlay(song.asMediaItem)
 
-                                                /*
-                                                val mediaItem = song.asMediaItem
-                                                binder?.stopRadio()
-                                                binder?.player?.forcePlay(mediaItem)
-                                                binder?.setupRadio(
-                                                    NavigationEndpoint.Endpoint.Watch(videoId = mediaItem.mediaId),
-                                                    //filterArtist = mediaItem.mediaMetadata.artist.toString()
-                                                )
-                                                 */
                                                 CoroutineScope(Dispatchers.IO).launch {
                                                     youtubeArtistPage
                                                         .songsEndpoint
@@ -604,8 +588,6 @@ fun ArtistOverview(
                                                         ?.map { it.asMediaItem }
                                                         ?.let {
                                                             withContext(Dispatchers.Main) {
-                                                                binder?.stopRadio()
-                                                                binder?.player?.forcePlay(song.asMediaItem)
                                                                 binder?.player?.addMediaItems(
                                                                     it.filterNot { it.mediaId == song.key }
                                                                 )
@@ -616,7 +598,8 @@ fun ArtistOverview(
                                             }
                                         )
                                         .padding(endPaddingValues),
-                                    disableScrollingText = disableScrollingText
+                                    disableScrollingText = disableScrollingText,
+                                    isNowPlaying = binder?.player?.isNowPlaying(song.key) ?: false
                                 )
                             }
                         }

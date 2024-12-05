@@ -83,7 +83,6 @@ import androidx.media3.exoplayer.offline.Download
 import androidx.navigation.NavController
 import com.github.doyaaaaaken.kotlincsv.dsl.csvWriter
 import com.valentinilk.shimmer.shimmer
-import it.fast4x.compose.reordering.animateItemPlacement
 import it.fast4x.compose.reordering.draggedItem
 import it.fast4x.compose.reordering.rememberReorderingState
 import it.fast4x.compose.reordering.reorder
@@ -97,15 +96,14 @@ import it.fast4x.rimusic.enums.QueueType
 import it.fast4x.rimusic.enums.ThumbnailRoundness
 import it.fast4x.rimusic.models.SongPlaylistMap
 import it.fast4x.rimusic.service.isLocal
-import it.fast4x.rimusic.transaction
 import it.fast4x.rimusic.ui.components.LocalMenuState
-import it.fast4x.rimusic.ui.components.MusicBars
 import it.fast4x.rimusic.ui.components.SwipeableQueueItem
 import it.fast4x.rimusic.ui.components.themed.ConfirmationDialog
 import it.fast4x.rimusic.ui.components.themed.FloatingActionsContainerWithScrollToTop
 import it.fast4x.rimusic.ui.components.themed.HeaderIconButton
 import it.fast4x.rimusic.ui.components.themed.IconButton
 import it.fast4x.rimusic.ui.components.themed.InputTextDialog
+import it.fast4x.rimusic.ui.components.themed.NowPlayingSongIndicator
 import it.fast4x.rimusic.ui.components.themed.PlaylistsItemMenu
 import it.fast4x.rimusic.ui.components.themed.QueuedMediaItemMenu
 import it.fast4x.rimusic.ui.components.themed.SmartMessage
@@ -113,7 +111,6 @@ import it.fast4x.rimusic.ui.items.SongItem
 import it.fast4x.rimusic.ui.items.SongItemPlaceholder
 import it.fast4x.rimusic.ui.styling.Dimensions
 import it.fast4x.rimusic.ui.styling.favoritesIcon
-import it.fast4x.rimusic.ui.styling.onOverlay
 import it.fast4x.rimusic.ui.styling.px
 import it.fast4x.rimusic.utils.DisposableListener
 import it.fast4x.rimusic.utils.addNext
@@ -123,6 +120,7 @@ import it.fast4x.rimusic.utils.getDownloadState
 import it.fast4x.rimusic.utils.getIconQueueLoopState
 import it.fast4x.rimusic.utils.isDownloadedSong
 import it.fast4x.rimusic.utils.isLandscape
+import it.fast4x.rimusic.utils.isNowPlaying
 import it.fast4x.rimusic.utils.manageDownload
 import it.fast4x.rimusic.utils.medium
 import it.fast4x.rimusic.utils.queueLoopTypeKey
@@ -518,6 +516,7 @@ fun QueueModern(
                         downloadState = getDownloadState(window.mediaItem.mediaId)
                         val isDownloaded =
                             if (!isLocal) isDownloadedSong(window.mediaItem.mediaId) else true
+                        var forceRecompose by remember { mutableStateOf(false) }
 
                         Box(
                             modifier = Modifier
@@ -594,21 +593,22 @@ fun QueueModern(
                                                     )
                                                     .size(Dimensions.thumbnails.song)
                                             ) {
-                                                if (shouldBePlaying) {
-                                                    MusicBars(
-                                                        color = colorPalette().onOverlay,
-                                                        modifier = Modifier
-                                                            .height(24.dp)
-                                                    )
-                                                } else {
-                                                    Image(
-                                                        painter = painterResource(R.drawable.play),
-                                                        contentDescription = null,
-                                                        colorFilter = ColorFilter.tint(colorPalette().onOverlay),
-                                                        modifier = Modifier
-                                                            .size(24.dp)
-                                                    )
-                                                }
+                                                NowPlayingSongIndicator(window.mediaItem.mediaId, binder?.player)
+//                                                if (shouldBePlaying) {
+//                                                    MusicAnimation(
+//                                                        color = colorPalette().onOverlay,
+//                                                        modifier = Modifier
+//                                                            .height(24.dp)
+//                                                    )
+//                                                } else {
+//                                                    Image(
+//                                                        painter = painterResource(R.drawable.play),
+//                                                        contentDescription = null,
+//                                                        colorFilter = ColorFilter.tint(colorPalette().onOverlay),
+//                                                        modifier = Modifier
+//                                                            .size(24.dp)
+//                                                    )
+//                                                }
                                             }
                                         }
                                     },
@@ -644,7 +644,10 @@ fun QueueModern(
                                                         navController = navController,
                                                         mediaItem = window.mediaItem,
                                                         indexInQueue = if (isPlayingThisMediaItem) null else window.firstPeriodIndex,
-                                                        onDismiss = menuState::hide,
+                                                        onDismiss = {
+                                                            menuState.hide()
+                                                            forceRecompose = true
+                                                        },
                                                         onDownload = {
                                                             manageDownload(
                                                                 context = context,
@@ -675,9 +678,10 @@ fun QueueModern(
                                                 } else checkedState.value = !checkedState.value
                                             }
                                         )
-                                        .animateItemPlacement(reorderingState)
                                         .background(color = if (queueType == QueueType.Modern) Color.Transparent else colorPalette().background0),
-                                    disableScrollingText = disableScrollingText
+                                    disableScrollingText = disableScrollingText,
+                                    isNowPlaying = binder.player.isNowPlaying(window.mediaItem.mediaId) ?: false,
+                                    forceRecompose = forceRecompose
                                 )
                             }
                         }
@@ -956,9 +960,9 @@ fun QueueModern(
                                         //Log.d("mediaItem", "next initial pos ${position}")
                                         if (listMediaItems.isEmpty()) {
                                             windows.forEachIndexed { index, song ->
-                                                transaction {
-                                                    Database.insert(song.mediaItem)
-                                                    Database.insert(
+                                                Database.asyncTransaction {
+                                                    insert(song.mediaItem)
+                                                    insert(
                                                         SongPlaylistMap(
                                                             songId = song.mediaItem.mediaId,
                                                             playlistId = playlistPreview.playlist.id,
@@ -971,9 +975,9 @@ fun QueueModern(
                                         } else {
                                             listMediaItems.forEachIndexed { index, song ->
                                                 //Log.d("mediaItemMaxPos", position.toString())
-                                                transaction {
-                                                    Database.insert(song)
-                                                    Database.insert(
+                                                Database.asyncTransaction {
+                                                    insert(song)
+                                                    insert(
                                                         SongPlaylistMap(
                                                             songId = song.mediaId,
                                                             playlistId = playlistPreview.playlist.id,

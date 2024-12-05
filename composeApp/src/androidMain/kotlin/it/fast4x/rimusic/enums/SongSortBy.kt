@@ -18,7 +18,7 @@ enum class SongSortBy(
 
     Title( R.string.sort_title, R.drawable.text ),
 
-    DateAdded( R.string.sort_date_played, R.drawable.time ),
+    DateAdded( R.string.sort_date_added, R.drawable.time ),
 
     DatePlayed( R.string.sort_date_played, R.drawable.calendar ),
 

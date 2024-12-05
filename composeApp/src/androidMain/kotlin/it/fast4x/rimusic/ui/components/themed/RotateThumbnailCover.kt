@@ -32,16 +32,18 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.LayoutDirection
 import it.fast4x.rimusic.R
+import it.fast4x.rimusic.enums.ThumbnailCoverType
 import it.fast4x.rimusic.utils.VinylSizeKey
 import it.fast4x.rimusic.utils.rememberPreference
 
 @Composable
-fun VinylThumnbailCover(
+fun RotateThumbnailCover(
     modifier: Modifier = Modifier,
     rotationDegrees: Float = 0f,
-    painter: Painter
+    painter: Painter,
+    type: ThumbnailCoverType = ThumbnailCoverType.Vinyl,
+    imageCoverSize : Float = 50f
 ) {
-    var vinylSize by rememberPreference(VinylSizeKey, 50f)
     val roundedShape = object : Shape {
         override fun createOutline(
             size: Size,
@@ -79,28 +81,33 @@ fun VinylThumnbailCover(
             modifier = Modifier
                 .fillMaxSize()
                 .rotate(rotationDegrees),
-            painter = painterResource(id = R.drawable.vinyl_background),
-            contentDescription = "vinyl background"
+            painter = painterResource(id = when (type) {
+                ThumbnailCoverType.Vinyl -> R.drawable.vinyl_background
+                ThumbnailCoverType.CD -> R.drawable.cd
+            }),
+            contentDescription = "disc background"
         )
 
-        Image(
-            modifier = Modifier
-                .fillMaxSize(vinylSize*0.01f)
-                .rotate(rotationDegrees)
-                .aspectRatio(1.0f)
-                .align(Alignment.Center)
-                .clip(roundedShape),
-            painter = painter,
-            contentDescription = "song album cover"
-        )
+        if (type == ThumbnailCoverType.Vinyl)
+            Image(
+                modifier = Modifier
+                    .fillMaxSize(imageCoverSize*0.01f)
+                    .rotate(rotationDegrees)
+                    .aspectRatio(1.0f)
+                    .align(Alignment.Center)
+                    .clip(roundedShape),
+                painter = painter,
+                contentDescription = "song album cover"
+            )
     }
 }
 
 @Composable
-fun VinylThumbnailCoverAnimation(
+fun RotateThumbnailCoverAnimation(
     modifier: Modifier = Modifier,
     isSongPlaying: Boolean = true,
-    painter: Painter
+    painter: Painter,
+    type: ThumbnailCoverType = ThumbnailCoverType.Vinyl
 ) {
     var currentRotation by remember {
         mutableFloatStateOf(0f)
@@ -136,21 +143,23 @@ fun VinylThumbnailCoverAnimation(
         }
     }
 
-    VinylThumnbailCover(
+    RotateThumbnailCover(
         painter = painter,
         rotationDegrees = rotation.value,
-        modifier = modifier
+        modifier = modifier,
+        type = type
     )
 }
 
 @Composable
-fun VinylThumbnailCoverAnimationModern(
+fun RotateThumbnailCoverAnimationModern(
     modifier: Modifier = Modifier,
+    type: ThumbnailCoverType = ThumbnailCoverType.Vinyl,
     isSongPlaying: Boolean = true,
     painter: Painter,
     state : PagerState,
     it : Int,
-    vinylSize : Float
+    imageCoverSize : Float
 ) {
     var currentRotation by remember {
         mutableFloatStateOf(0f)
@@ -160,7 +169,7 @@ fun VinylThumbnailCoverAnimationModern(
         Animatable(currentRotation)
     }
 
-    LaunchedEffect(isSongPlaying) {
+    LaunchedEffect(isSongPlaying, state.settledPage) {
         if (isSongPlaying && it == state.settledPage) {
             rotation.animateTo(
                 targetValue = currentRotation + 360f,
@@ -172,7 +181,7 @@ fun VinylThumbnailCoverAnimationModern(
                 currentRotation = value
             }
         } else {
-            if (currentRotation > 0f) {
+            if (currentRotation > 0f && it == state.settledPage) {
                 rotation.animateTo(
                     targetValue = currentRotation + 50,
                     animationSpec = tween(
@@ -186,9 +195,11 @@ fun VinylThumbnailCoverAnimationModern(
         }
     }
 
-    VinylThumnbailCover(
+    RotateThumbnailCover(
         painter = painter,
         rotationDegrees = rotation.value,
-        modifier = modifier
+        modifier = modifier,
+        type = type,
+        imageCoverSize = imageCoverSize
     )
 }

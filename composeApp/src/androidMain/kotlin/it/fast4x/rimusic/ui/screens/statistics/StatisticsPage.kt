@@ -63,7 +63,6 @@ import it.fast4x.rimusic.models.Album
 import it.fast4x.rimusic.models.Artist
 import it.fast4x.rimusic.models.PlaylistPreview
 import it.fast4x.rimusic.models.Song
-import it.fast4x.rimusic.query
 import it.fast4x.rimusic.ui.components.ButtonsRow
 import it.fast4x.rimusic.ui.components.LocalMenuState
 import it.fast4x.rimusic.ui.components.themed.HeaderWithIcon
@@ -87,6 +86,7 @@ import it.fast4x.rimusic.utils.forcePlayAtIndex
 import it.fast4x.rimusic.utils.formatAsTime
 import it.fast4x.rimusic.utils.getDownloadState
 import it.fast4x.rimusic.utils.isDownloadedSong
+import it.fast4x.rimusic.utils.isNowPlaying
 import it.fast4x.rimusic.utils.manageDownload
 import it.fast4x.rimusic.utils.maxStatisticsItemsKey
 import it.fast4x.rimusic.utils.navigationBarPositionKey
@@ -96,9 +96,11 @@ import it.fast4x.rimusic.utils.showStatsListeningTimeKey
 import it.fast4x.rimusic.utils.statisticsCategoryKey
 import it.fast4x.rimusic.utils.thumbnail
 import it.fast4x.rimusic.utils.thumbnailRoundnessKey
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.launch
 import me.knighthat.colorPalette
 import me.knighthat.typography
 import timber.log.Timber
@@ -335,12 +337,13 @@ fun StatisticsPage(
 
                         downloadState = getDownloadState(songs.get(it).asMediaItem.mediaId)
                         val isDownloaded = isDownloadedSong(songs.get(it).asMediaItem.mediaId)
+                        var forceRecompose by remember { mutableStateOf(false) }
                         SongItem(
                             song = songs.get(it).asMediaItem,
                             onDownloadClick = {
                                 binder?.cache?.removeResource(songs.get(it).asMediaItem.mediaId)
-                                query {
-                                    Database.resetFormatContentLength(songs.get(it).asMediaItem.mediaId)
+                                CoroutineScope(Dispatchers.IO).launch {
+                                    Database.resetContentLength( songs.get(it).asMediaItem.mediaId )
                                 }
                                 manageDownload(
                                     context = context,
@@ -369,7 +372,10 @@ fun StatisticsPage(
                                             NonQueuedMediaItemMenu(
                                                 navController = navController,
                                                 mediaItem = songs.get(it).asMediaItem,
-                                                onDismiss = menuState::hide,
+                                                onDismiss = {
+                                                    menuState.hide()
+                                                    forceRecompose = true
+                                                },
                                                 disableScrollingText = disableScrollingText
                                             )
                                         }
@@ -383,7 +389,9 @@ fun StatisticsPage(
                                     }
                                 )
                                 .fillMaxWidth(),
-                            disableScrollingText = disableScrollingText
+                            disableScrollingText = disableScrollingText,
+                            isNowPlaying = binder?.player?.isNowPlaying(songs.get(it).id) ?: false,
+                            forceRecompose = forceRecompose
                         )
                     }
                 }

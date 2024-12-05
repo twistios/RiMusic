@@ -15,7 +15,7 @@ import it.fast4x.rimusic.utils.thumbnail
 import me.knighthat.appContext
 import timber.log.Timber
 
-context(Context)
+//context(Context)
 class BitmapProvider(
     private val bitmapSize: Int,
     private val colorProvider: (isSystemInDarkMode: Boolean) -> Int
@@ -64,6 +64,7 @@ class BitmapProvider(
     }
 
     fun load(uri: Uri?, onDone: (Bitmap) -> Unit) {
+        Timber.d("BitmapProvider load method being called")
         if (lastUri == uri) return
 
         lastEnqueued?.dispose()

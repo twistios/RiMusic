@@ -48,7 +48,9 @@ import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
 import androidx.navigation.NavController
 import it.fast4x.rimusic.Database
+import it.fast4x.rimusic.EXPLICIT_PREFIX
 import it.fast4x.rimusic.R
+import it.fast4x.rimusic.cleanPrefix
 import it.fast4x.rimusic.enums.ColorPaletteMode
 import it.fast4x.rimusic.enums.NavRoutes
 import it.fast4x.rimusic.enums.PlayerBackgroundColors
@@ -57,22 +59,20 @@ import it.fast4x.rimusic.enums.PlayerPlayButtonType
 import it.fast4x.rimusic.models.Info
 import it.fast4x.rimusic.models.Song
 import it.fast4x.rimusic.models.ui.UiMedia
-import it.fast4x.rimusic.query
+import it.fast4x.rimusic.service.modern.PlayerServiceModern
 import it.fast4x.rimusic.ui.components.themed.CustomElevatedButton
 import it.fast4x.rimusic.ui.components.themed.IconButton
 import it.fast4x.rimusic.ui.components.themed.SelectorArtistsDialog
-import it.fast4x.rimusic.EXPLICIT_PREFIX
 import it.fast4x.rimusic.ui.screens.player.bounceClick
 import it.fast4x.rimusic.ui.styling.favoritesIcon
 import it.fast4x.rimusic.utils.bold
-import it.fast4x.rimusic.cleanPrefix
-import it.fast4x.rimusic.service.modern.PlayerServiceModern
 import it.fast4x.rimusic.utils.colorPaletteModeKey
 import it.fast4x.rimusic.utils.doubleShadowDrop
 import it.fast4x.rimusic.utils.dropShadow
 import it.fast4x.rimusic.utils.effectRotationKey
 import it.fast4x.rimusic.utils.getLikeState
 import it.fast4x.rimusic.utils.getUnlikedIcon
+import it.fast4x.rimusic.utils.jumpPreviousKey
 import it.fast4x.rimusic.utils.playNext
 import it.fast4x.rimusic.utils.playPrevious
 import it.fast4x.rimusic.utils.playerBackgroundColorsKey
@@ -215,17 +215,12 @@ fun InfoAlbumAndArtistModern(
                  icon = getLikeState(mediaId),
                  onClick = {
                      val currentMediaItem = binder.player.currentMediaItem
-                     query {
-                         if (Database.like(
-                                 mediaId,
-                                 setLikeState(likedAt)
-                             ) == 0
-                         ) {
+                     Database.asyncTransaction {
+                         if ( like( mediaId, setLikeState(likedAt) ) == 0 ) {
                              currentMediaItem
                                  ?.takeIf { it.mediaId == mediaId }
                                  ?.let {
-                                     Database.insert(currentMediaItem, Song::toggleLike)
-
+                                     insert(currentMediaItem, Song::toggleLike)
                                  }
                          }
                      }
@@ -371,6 +366,7 @@ fun ControlsModern(
 ) {
     var effectRotationEnabled by rememberPreference(effectRotationKey, true)
     var isRotated by rememberSaveable { mutableStateOf(false) }
+    var jumpPrevious by rememberPreference(jumpPreviousKey, "3")
 
   if (playerPlayButtonType != PlayerPlayButtonType.Disabled) {
       CustomElevatedButton(
@@ -384,8 +380,11 @@ fun ControlsModern(
                   indication = ripple(bounded = true),
                   interactionSource = remember { MutableInteractionSource() },
                   onClick = {
-                      //binder.player.forceSeekToPrevious()
-                      binder.player.playPrevious()
+                      if (jumpPrevious == "") jumpPrevious = "0"
+                      if(!binder.player.hasPreviousMediaItem() || (jumpPrevious != "0" && binder.player.currentPosition > jumpPrevious.toInt()*1000)){
+                          binder.player.seekTo(0)
+                      }
+                      else binder.player.playPrevious()
                       if (effectRotationEnabled) isRotated = !isRotated
                   },
                   onLongClick = {
@@ -617,8 +616,11 @@ fun ControlsModern(
                           interactionSource = null,
                           indication = null,
                           onClick = {
-                              //binder.player.forceSeekToPrevious()
-                              binder.player.playPrevious()
+                              if (jumpPrevious == "") jumpPrevious = "0"
+                              if(!binder.player.hasPreviousMediaItem() || (jumpPrevious != "0" && binder.player.currentPosition > jumpPrevious.toInt()*1000)){
+                                  binder.player.seekTo(0)
+                              }
+                              else binder.player.playPrevious()
                               if (effectRotationEnabled) isRotated = !isRotated
                           },
                           onLongClick = {

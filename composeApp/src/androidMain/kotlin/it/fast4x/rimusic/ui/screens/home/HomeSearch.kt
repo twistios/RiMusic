@@ -94,7 +94,7 @@ fun HomeSearch(
                     modifier = Modifier
                         .clip(thumbnailShape())
                         .clickable(onClick = { onSearchType(SearchType.Online) })
-                        .animateItemPlacement(),
+                        .animateItem(),
                     disableScrollingText = disableScrollingText
                 )
             }
@@ -110,7 +110,7 @@ fun HomeSearch(
                     modifier = Modifier
                         .clip(thumbnailShape())
                         .clickable(onClick = { onSearchType(SearchType.Library) })
-                        .animateItemPlacement(),
+                        .animateItem(),
                     disableScrollingText = disableScrollingText
                 )
             }

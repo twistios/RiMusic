@@ -15,6 +15,7 @@ open class Button(
     var color: Color,
     var padding: Dp,
     var size: Dp,
+    var forceWidth: Dp = Dp.Unspecified,
     var modifier: Modifier = Modifier
 ) {
     fun modifier( newModifier: (Modifier) -> Modifier ) {
@@ -28,7 +29,7 @@ open class Button(
             contentDescription = null,
             colorFilter = ColorFilter.tint( color ),
             modifier = modifier.padding( all = padding )
-                               .size( size )
+                               .size( height = size, width = if ( forceWidth == Dp.Unspecified ) size else forceWidth )
         )
     }
 }

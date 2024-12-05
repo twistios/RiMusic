@@ -47,7 +47,6 @@ import it.fast4x.rimusic.models.Playlist
 import it.fast4x.rimusic.models.PlaylistPreview
 import it.fast4x.rimusic.models.Song
 import it.fast4x.rimusic.models.SongPlaylistMap
-import it.fast4x.rimusic.transaction
 import it.fast4x.rimusic.ui.components.ButtonsRow
 import it.fast4x.rimusic.ui.components.themed.FloatingActionsContainerWithScrollToTop
 import it.fast4x.rimusic.ui.components.themed.HeaderInfo
@@ -166,8 +165,8 @@ fun HomeLibrary(
                     name = newValue
                 )
             else
-                transaction {
-                    Database.insert( Playlist( name = newValue ) )
+                Database.asyncTransaction {
+                    insert( Playlist( name = newValue ) )
                 }
 
             onDismiss()
@@ -187,6 +186,8 @@ fun HomeLibrary(
                 }!!
         },
         afterTransaction = { index, song ->
+            if (song.id.isBlank()) return@init
+
             Database.insert(song)
             Database.insert(
                 SongPlaylistMap(

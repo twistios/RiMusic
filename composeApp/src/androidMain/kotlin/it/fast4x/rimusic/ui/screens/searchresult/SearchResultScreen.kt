@@ -41,13 +41,12 @@ import it.fast4x.rimusic.LocalPlayerServiceBinder
 import it.fast4x.rimusic.R
 import it.fast4x.rimusic.enums.NavRoutes
 import it.fast4x.rimusic.models.Album
-import it.fast4x.rimusic.models.Song
 import it.fast4x.rimusic.models.SongAlbumMap
-import it.fast4x.rimusic.query
 import it.fast4x.rimusic.ui.components.LocalMenuState
 import it.fast4x.rimusic.ui.components.SwipeableAlbumItem
 import it.fast4x.rimusic.ui.components.SwipeablePlaylistItem
 import it.fast4x.rimusic.ui.components.themed.NonQueuedMediaItemMenu
+import it.fast4x.rimusic.ui.components.themed.NowPlayingSongIndicator
 import it.fast4x.rimusic.ui.components.themed.Title
 import it.fast4x.rimusic.ui.items.AlbumItem
 import it.fast4x.rimusic.ui.items.AlbumItemPlaceholder
@@ -69,6 +68,7 @@ import it.fast4x.rimusic.utils.enqueue
 import it.fast4x.rimusic.utils.forcePlay
 import it.fast4x.rimusic.utils.getDownloadState
 import it.fast4x.rimusic.utils.isDownloadedSong
+import it.fast4x.rimusic.utils.isNowPlaying
 import it.fast4x.rimusic.utils.manageDownload
 import it.fast4x.rimusic.utils.parentalControlEnabledKey
 import it.fast4x.rimusic.utils.playVideo
@@ -212,12 +212,13 @@ fun SearchResultScreen(
                                         downloadState = getDownloadState(song.asMediaItem.mediaId)
                                         val isDownloaded =
                                             isDownloadedSong(song.asMediaItem.mediaId)
+                                        var forceRecompose by remember { mutableStateOf(false) }
                                         SongItem(
                                             song = song,
                                             onDownloadClick = {
                                                 localBinder?.cache?.removeResource(song.asMediaItem.mediaId)
-                                                query {
-                                                    Database.resetFormatContentLength(song.asMediaItem.mediaId)
+                                                CoroutineScope(Dispatchers.IO).launch {
+                                                    Database.resetContentLength( song.asMediaItem.mediaId )
                                                 }
 
                                                 manageDownload(
@@ -225,6 +226,9 @@ fun SearchResultScreen(
                                                     mediaItem = song.asMediaItem,
                                                     downloadState = isDownloaded
                                                 )
+                                            },
+                                            thumbnailContent = {
+                                                NowPlayingSongIndicator(song.asMediaItem.mediaId, binder?.player)
                                             },
                                             downloadState = downloadState,
                                             thumbnailSizePx = thumbnailSizePx,
@@ -235,7 +239,10 @@ fun SearchResultScreen(
                                                         menuState.display {
                                                             NonQueuedMediaItemMenu(
                                                                 navController = navController,
-                                                                onDismiss = menuState::hide,
+                                                                onDismiss = {
+                                                                    menuState.hide()
+                                                                    forceRecompose = true
+                                                                },
                                                                 mediaItem = song.asMediaItem,
                                                                 disableScrollingText = disableScrollingText
                                                             )
@@ -250,7 +257,9 @@ fun SearchResultScreen(
                                                         localBinder?.setupRadio(song.info?.endpoint)
                                                     }
                                                 ),
-                                            disableScrollingText = disableScrollingText
+                                            disableScrollingText = disableScrollingText,
+                                            isNowPlaying = binder?.player?.isNowPlaying(song.key) ?: false,
+                                            forceRecompose = forceRecompose
                                         )
                                     }
                                 },

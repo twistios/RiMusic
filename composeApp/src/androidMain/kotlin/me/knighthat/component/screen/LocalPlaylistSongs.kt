@@ -22,7 +22,6 @@ import it.fast4x.rimusic.enums.SortOrder
 import it.fast4x.rimusic.models.PipedSession
 import it.fast4x.rimusic.models.PlaylistPreview
 import it.fast4x.rimusic.models.Song
-import it.fast4x.rimusic.transaction
 import it.fast4x.rimusic.ui.components.LocalMenuState
 import it.fast4x.rimusic.ui.components.MenuState
 import it.fast4x.rimusic.ui.components.themed.MenuEntry
@@ -71,12 +70,12 @@ fun pin(
     }
 
     override fun onShortClick() {
-        transaction {
-            val playlistName = playlistPreview?.playlist?.name ?: return@transaction
+        Database.asyncTransaction {
+            val playlistName = playlistPreview?.playlist?.name ?: return@asyncTransaction
             if( playlistName.startsWith( PINNED_PREFIX ) )
-                Database.unPinPlaylist( playlistId )
+                unPinPlaylist( playlistId )
             else
-                Database.pinPlaylist( playlistId )
+                pinPlaylist( playlistId )
 
             isFirstColor = isPinned()
         }
@@ -240,7 +239,7 @@ fun Reposition(
     override fun onConfirm() {
         val pId = playlistId() ?: return
 
-        transaction {
+        Database.asyncTransaction {
             runBlocking {
                 songs().shuffled()
             }.forEachIndexed { index, song ->
@@ -319,9 +318,9 @@ class RenameDialog private constructor(
                     && pipedSession.token.isNotEmpty()
         val prefix = if( isPipedPlaylist ) PIPED_PREFIX else ""
 
-        transaction {
+        Database.asyncTransaction {
             playlist.copy( name = "$prefix$newValue" )
-                .let( Database::update )
+                    .let( ::update )
         }
 
         if ( isPipedPlaylist )

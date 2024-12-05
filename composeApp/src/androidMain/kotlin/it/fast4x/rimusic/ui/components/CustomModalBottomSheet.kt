@@ -1,5 +1,6 @@
 package it.fast4x.rimusic.ui.components
 
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.WindowInsets
@@ -17,6 +18,8 @@ import androidx.compose.material3.contentColorFor
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
@@ -27,7 +30,10 @@ import androidx.compose.ui.window.DialogWindowProvider
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
+import it.fast4x.rimusic.enums.ColorPaletteMode
+import it.fast4x.rimusic.utils.colorPaletteModeKey
 import it.fast4x.rimusic.utils.isLandscape
+import it.fast4x.rimusic.utils.rememberPreference
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -62,18 +68,18 @@ fun CustomModalBottomSheet(
             dragHandle = dragHandle,
             contentWindowInsets = contentWindowInsets
         ) {
+            val colorPaletteMode by rememberPreference(colorPaletteModeKey, ColorPaletteMode.Dark)
+            val isPicthBlack = colorPaletteMode == ColorPaletteMode.PitchBlack
+            val isDark =
+                colorPaletteMode == ColorPaletteMode.Dark || isPicthBlack || (colorPaletteMode == ColorPaletteMode.System && isSystemInDarkTheme())
+
             Column(modifier = Modifier.padding(bottom = bottomPadding)) {
 
                 val view = LocalView.current
                 (view.parent as? DialogWindowProvider)?.window?.let { window ->
                     SideEffect {
-//                        WindowInsetsControllerCompat(window, view).apply {
-//                            hide(WindowInsetsCompat.Type.navigationBars())
-//                            systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
-//                        }
-
-                        WindowCompat.getInsetsController(window, view).isAppearanceLightNavigationBars = false
-
+                        WindowCompat.getInsetsController(window, view).isAppearanceLightNavigationBars = !isDark
+                        WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = !isDark
                     }
                 }
 

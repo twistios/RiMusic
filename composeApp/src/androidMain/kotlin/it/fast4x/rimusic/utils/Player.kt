@@ -21,6 +21,9 @@ import kotlinx.coroutines.launch
 import timber.log.Timber
 import java.util.ArrayDeque
 
+fun Player.isNowPlaying(mediaId: String): Boolean {
+    return mediaId == currentMediaItem?.mediaId
+}
 
 val Player.currentWindow: Timeline.Window?
     get() = if (mediaItemCount == 0) null else currentTimeline.getWindow(currentMediaItemIndex, Timeline.Window())

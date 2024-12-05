@@ -1,23 +1,25 @@
 package it.fast4x.rimusic.service.modern
 
 import android.annotation.SuppressLint
+import android.app.Notification
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.BroadcastReceiver
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import android.content.Intent.FLAG_ACTIVITY_CLEAR_TASK
+import android.content.Intent.FLAG_ACTIVITY_NEW_TASK
 import android.content.SharedPreferences
+import android.content.pm.PackageManager
 import android.database.SQLException
 import android.graphics.Bitmap
 import android.graphics.Color
 import android.media.AudioDeviceCallback
 import android.media.AudioDeviceInfo
 import android.media.AudioManager
-import android.media.MediaDescription
 import android.media.audiofx.AudioEffect
 import android.media.audiofx.LoudnessEnhancer
-import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import androidx.annotation.OptIn
@@ -31,7 +33,9 @@ import androidx.media3.common.AudioAttributes
 import androidx.media3.common.C
 import androidx.media3.common.ForwardingPlayer
 import androidx.media3.common.MediaItem
+import androidx.media3.common.MediaMetadata
 import androidx.media3.common.PlaybackException
+import androidx.media3.common.PlaybackParameters
 import androidx.media3.common.Player
 import androidx.media3.common.Player.EVENT_POSITION_DISCONTINUITY
 import androidx.media3.common.Player.EVENT_TIMELINE_CHANGED
@@ -66,11 +70,8 @@ import androidx.media3.session.CommandButton
 import androidx.media3.session.DefaultMediaNotificationProvider
 import androidx.media3.session.MediaController
 import androidx.media3.session.MediaLibraryService
-import androidx.media3.session.MediaNotification
 import androidx.media3.session.MediaSession
-import androidx.media3.session.MediaStyleNotificationHelper
 import androidx.media3.session.SessionToken
-import com.google.common.collect.ImmutableList
 import com.google.common.util.concurrent.MoreExecutors
 import it.fast4x.innertube.Innertube
 import it.fast4x.innertube.models.NavigationEndpoint
@@ -80,6 +81,7 @@ import it.fast4x.innertube.utils.from
 import it.fast4x.rimusic.Database
 import it.fast4x.rimusic.MainActivity
 import it.fast4x.rimusic.R
+import it.fast4x.rimusic.cleanPrefix
 import it.fast4x.rimusic.enums.AudioQualityFormat
 import it.fast4x.rimusic.enums.DurationInMilliseconds
 import it.fast4x.rimusic.enums.ExoPlayerCacheLocation
@@ -97,11 +99,9 @@ import it.fast4x.rimusic.models.PersistentSong
 import it.fast4x.rimusic.models.QueuedMediaItem
 import it.fast4x.rimusic.models.Song
 import it.fast4x.rimusic.models.asMediaItem
-import it.fast4x.rimusic.query
 import it.fast4x.rimusic.service.BitmapProvider
 import it.fast4x.rimusic.service.MyDownloadHelper
 import it.fast4x.rimusic.service.MyDownloadService
-import it.fast4x.rimusic.transaction
 import it.fast4x.rimusic.ui.components.themed.SmartMessage
 import it.fast4x.rimusic.ui.widgets.PlayerHorizontalWidget
 import it.fast4x.rimusic.ui.widgets.PlayerVerticalWidget
@@ -125,7 +125,6 @@ import it.fast4x.rimusic.utils.getEnum
 import it.fast4x.rimusic.utils.intent
 import it.fast4x.rimusic.utils.isAtLeastAndroid10
 import it.fast4x.rimusic.utils.isAtLeastAndroid6
-import it.fast4x.rimusic.utils.isAtLeastAndroid8
 import it.fast4x.rimusic.utils.isAtLeastAndroid81
 import it.fast4x.rimusic.utils.isDiscordPresenceEnabledKey
 import it.fast4x.rimusic.utils.isPauseOnVolumeZeroEnabledKey
@@ -139,6 +138,8 @@ import it.fast4x.rimusic.utils.pauseListenHistoryKey
 import it.fast4x.rimusic.utils.persistentQueueKey
 import it.fast4x.rimusic.utils.playNext
 import it.fast4x.rimusic.utils.playbackFadeAudioDurationKey
+import it.fast4x.rimusic.utils.playbackPitchKey
+import it.fast4x.rimusic.utils.playbackSpeedKey
 import it.fast4x.rimusic.utils.preferences
 import it.fast4x.rimusic.utils.putEnum
 import it.fast4x.rimusic.utils.queueLoopTypeKey
@@ -216,7 +217,7 @@ class PlayerServiceModern : MediaLibraryService(),
     private lateinit var downloadListener: DownloadManager.Listener
 
     var loudnessEnhancer: LoudnessEnhancer? = null
-    private val binder = Binder()
+    private var binder = Binder()
     private var showLikeButton = true
     private var showDownloadButton = true
 
@@ -247,21 +248,49 @@ class PlayerServiceModern : MediaLibraryService(),
 //    private var nBuilder: NotificationCompat.Builder =
 //            NotificationCompat.Builder(this@PlayerServiceModern, NotificationChannelId)
 
+
+    @UnstableApi
+    class CustomMediaNotificationProvider(context: Context) : DefaultMediaNotificationProvider(context) {
+        override fun getNotificationContentTitle(metadata: MediaMetadata): CharSequence? {
+            val customMetadata = MediaMetadata.Builder()
+                .setTitle(cleanPrefix(metadata.title?.toString() ?: ""))
+                .build()
+            return super.getNotificationContentTitle(customMetadata)
+        }
+
+//        override fun getNotificationContentText(metadata: MediaMetadata): CharSequence? {
+//            val customMetadata = MediaMetadata.Builder()
+//                .setArtist(cleanPrefix(metadata.artist?.toString() ?: ""))
+//                .build()
+//            return super.getNotificationContentText(customMetadata)
+//        }
+    }
+
+
     @kotlin.OptIn(FlowPreview::class, ExperimentalCoroutinesApi::class)
     override fun onCreate() {
         super.onCreate()
 
-        setMediaNotificationProvider(
-            DefaultMediaNotificationProvider(
-                this,
-                { NotificationId },
-                NotificationChannelId,
-                R.string.player
-            )
-            .apply {
-                setSmallIcon(R.drawable.app_icon)
-            }
+        // Enable Android Auto if disabled
+        val component = ComponentName(this, PlayerServiceModern::class.java)
+        packageManager.setComponentEnabledSetting(
+            component,
+            PackageManager.COMPONENT_ENABLED_STATE_ENABLED,
+            PackageManager.DONT_KILL_APP
         )
+
+        setMediaNotificationProvider(CustomMediaNotificationProvider(this))
+//        setMediaNotificationProvider(
+//            DefaultMediaNotificationProvider(
+//                this,
+//                { NotificationId },
+//                NotificationChannelId,
+//                R.string.player
+//            )
+//            .apply {
+//                setSmallIcon(R.drawable.app_icon)
+//            }
+//        )
 
         runCatching {
             bitmapProvider = BitmapProvider(
@@ -367,6 +396,7 @@ class PlayerServiceModern : MediaLibraryService(),
             toggleShuffle = ::toggleShuffle
             startRadio = ::startRadio
             callPause = ::callActionPause
+            actionSearch = ::actionSearch
         }
 
         // Build the media library session
@@ -393,6 +423,11 @@ class PlayerServiceModern : MediaLibraryService(),
         player.addAnalyticsListener(PlaybackStatsListener(false, this@PlayerServiceModern))
 
         player.repeatMode = preferences.getEnum(queueLoopTypeKey, QueueLoopType.Default).type
+
+        binder.player.playbackParameters = PlaybackParameters(
+            preferences.getFloat(playbackSpeedKey, 1f),
+            preferences.getFloat(playbackPitchKey, 1f)
+        )
 
         // Keep a connected controller so that notification works
         val sessionToken = SessionToken(this, ComponentName(this, PlayerServiceModern::class.java))
@@ -484,8 +519,8 @@ class PlayerServiceModern : MediaLibraryService(),
         val totalPlayTimeMs = playbackStats.totalPlayTimeMs
 
         if (totalPlayTimeMs > 5000) {
-            query {
-                Database.incrementTotalPlayTimeMs(mediaItem.mediaId, totalPlayTimeMs)
+            Database.asyncTransaction {
+                incrementTotalPlayTimeMs(mediaItem.mediaId, totalPlayTimeMs)
             }
         }
 
@@ -494,9 +529,9 @@ class PlayerServiceModern : MediaLibraryService(),
             preferences.getEnum(exoPlayerMinTimeForEventKey, ExoPlayerMinTimeForEvent.`20s`)
 
         if (totalPlayTimeMs > minTimeForEvent.ms) {
-            query {
+            Database.asyncTransaction {
                 try {
-                    Database.insert(
+                    insert(
                         Event(
                             songId = mediaItem.mediaId,
                             timestamp = System.currentTimeMillis(),
@@ -514,13 +549,9 @@ class PlayerServiceModern : MediaLibraryService(),
     override fun onTaskRemoved(rootIntent: Intent?) {
         isclosebackgroundPlayerEnabled = preferences.getBoolean(closebackgroundPlayerKey, false)
         if (isclosebackgroundPlayerEnabled) {
-            //if (!player.shouldBePlaying) {
-            broadCastPendingIntent<NotificationDismissReceiver>().send()
-            //}
-            this.stopService(this.intent<MyDownloadService>())
-            this.stopService(this.intent<PlayerServiceModern>())
-            //stopSelf()
             onDestroy()
+            // not necessary
+            //broadCastPendingIntent<NotificationDismissReceiver>().send()
         }
         super.onTaskRemoved(rootIntent)
     }
@@ -532,6 +563,9 @@ class PlayerServiceModern : MediaLibraryService(),
 
             preferences.unregisterOnSharedPreferenceChangeListener(this)
 
+            stopService(intent<MyDownloadService>())
+            stopService(intent<PlayerServiceModern>())
+
             player.removeListener(this)
             player.stop()
             player.release()
@@ -539,11 +573,20 @@ class PlayerServiceModern : MediaLibraryService(),
             mediaSession.release()
             cache.release()
             //downloadCache.release()
-            loudnessEnhancer?.release()
-            audioVolumeObserver.unregister()
             MyDownloadHelper.getDownloadManager(this).removeListener(downloadListener)
 
+            loudnessEnhancer?.release()
+            audioVolumeObserver.unregister()
+
+            timerJob?.cancel()
+            timerJob = null
+
+            notificationManager?.cancel(NotificationId)
+            notificationManager?.cancelAll()
+            notificationManager = null
+
             coroutineScope.cancel()
+
         }.onFailure {
             Timber.e("Failed onDestroy in PlayerService ${it.stackTraceToString()}")
         }
@@ -608,8 +651,15 @@ class PlayerServiceModern : MediaLibraryService(),
 
         loadFromRadio(reason)
 
-        updateNotification()
-
+        if(binder.player.currentMediaItem?.mediaMetadata?.artworkUri != null) {
+            bitmapProvider.load(binder.player.currentMediaItem?.mediaMetadata?.artworkUri, {
+                updateNotification()
+                updateWidgets()
+            })
+        } else {
+            updateNotification()
+            updateWidgets()
+        }
     }
 
     override fun onTimelineChanged(timeline: Timeline, reason: Int) {
@@ -649,8 +699,6 @@ class PlayerServiceModern : MediaLibraryService(),
         //val totalPlayTimeMs = player.totalBufferedDuration.toString()
         //Log.d("mediaEvent","isPlaying "+isPlaying.toString() + " buffered duration "+totalPlayTimeMs)
         //Log.d("mediaItem","onIsPlayingChanged isPlaying $isPlaying audioSession ${player.audioSessionId}")
-
-        updateWidgets()
 
 
         super.onIsPlayingChanged(isPlaying)
@@ -702,12 +750,12 @@ class PlayerServiceModern : MediaLibraryService(),
 
     }
 
-    override fun onPlaybackStateChanged(playbackState: Int) {
-        if (playbackState == STATE_IDLE) {
-            player.shuffleModeEnabled = false
-            player.clearMediaItems()
-        }
-    }
+//    override fun onPlaybackStateChanged(playbackState: Int) {
+//        if (playbackState == STATE_IDLE) {
+//            player.shuffleModeEnabled = false
+//            //player.clearMediaItems()
+//        }
+//    }
 
     override fun onEvents(player: Player, events: Player.Events) {
         if (events.containsAny(Player.EVENT_PLAYBACK_STATE_CHANGED, Player.EVENT_PLAY_WHEN_READY_CHANGED)) {
@@ -718,9 +766,10 @@ class PlayerServiceModern : MediaLibraryService(),
                 sendCloseEqualizerIntent()
             }
         }
-        if (events.containsAny(EVENT_TIMELINE_CHANGED, EVENT_POSITION_DISCONTINUITY)) {
-            currentMediaItem.value = player.currentMediaItem
-        }
+
+//        if (events.containsAny(EVENT_TIMELINE_CHANGED, EVENT_POSITION_DISCONTINUITY)) {
+//            currentMediaItem.value = player.currentMediaItem
+//        }
     }
 
     private fun maybeRecoverPlaybackError() {
@@ -1015,9 +1064,9 @@ class PlayerServiceModern : MediaLibraryService(),
 
     @kotlin.OptIn(FlowPreview::class)
     fun toggleLike() {
-        transaction {
+        Database.asyncTransaction {
             currentSong.value?.let {
-                Database.like(
+                like(
                     it.id,
                     setLikeState(it.likedAt)
                 )
@@ -1138,9 +1187,7 @@ class PlayerServiceModern : MediaLibraryService(),
                     else it.process().filter { song -> song.mediaMetadata.artist == filterArtist }
 
                     songs.forEach {
-                        transaction {
-                            Database.insert(it)
-                        }
+                        Database.asyncTransaction { insert(it) }
                     }
 
                     if (justAdd) {
@@ -1287,6 +1334,13 @@ class PlayerServiceModern : MediaLibraryService(),
         )
     }
 
+    private fun actionSearch() {
+        startActivity(Intent(applicationContext, MainActivity::class.java)
+            .setAction(MainActivity.action_search)
+            .setFlags(FLAG_ACTIVITY_NEW_TASK + FLAG_ACTIVITY_CLEAR_TASK))
+        println("PlayerServiceModern actionSearch")
+    }
+
     override fun onPositionDiscontinuity(
         oldPosition: Player.PositionInfo,
         newPosition: Player.PositionInfo,
@@ -1301,14 +1355,6 @@ class PlayerServiceModern : MediaLibraryService(),
         println("PlayerServiceModern onCreate savePersistentQueue")
         if (!isPersistentQueueEnabled) return
         println("PlayerServiceModern onCreate savePersistentQueue is enabled")
-        /*
-        if (player.playbackState == Player.STATE_IDLE) {
-            Log.d("mediaItem", "QueuePersistentEnabled playbackstate idle return")
-            return
-        }
-         */
-        //Log.d("mediaItem", "QueuePersistentEnabled Save ${player.currentTimeline.mediaItems.size}")
-        //Log.d("mediaItem", "QueuePersistentEnabled Save initial")
 
         CoroutineScope(Dispatchers.Main).launch {
             val mediaItems = player.currentTimeline.mediaItems
@@ -1325,13 +1371,12 @@ class PlayerServiceModern : MediaLibraryService(),
                 )
             }.let { queuedMediaItems ->
                 if (queuedMediaItems.isEmpty()) return@let
-                withContext(Dispatchers.IO) {
-                    transaction {
-                        Database.clearQueue().apply {
-                            Database.insert(queuedMediaItems)
-                        }
-                    }
+
+                Database.asyncTransaction {
+                    clearQueue()
+                    insert( queuedMediaItems )
                 }
+
                 Timber.d("PlayerServiceModern QueuePersistentEnabled Saved queue")
             }
 
@@ -1352,10 +1397,10 @@ class PlayerServiceModern : MediaLibraryService(),
     private fun maybeRestorePlayerQueue() {
         if (!isPersistentQueueEnabled) return
 
-        query {
-            val queuedSong = Database.queue()
+        Database.asyncQuery {
+            val queuedSong = queue()
 
-            if (queuedSong.isEmpty()) return@query
+            if (queuedSong.isEmpty()) return@asyncQuery
 
             val index = queuedSong.indexOfFirst { it.position != null }.coerceAtLeast(0)
 
@@ -1373,27 +1418,6 @@ class PlayerServiceModern : MediaLibraryService(),
                     queuedSong[index].position ?: C.TIME_UNSET
                 )
                 player.prepare()
-
-                /*
-                runCatching {
-                    ContextCompat.startForegroundService(
-                        this@PlayerServiceModern,
-                        intent<PlayerServiceModern>()
-                    )
-                    startForeground(
-                        NotificationId,
-                        Notification.Builder(this@PlayerServiceModern, NotificationChannelId)
-                            .setSmallIcon(R.drawable.app_icon)
-                            .setContentTitle("RiMusic")
-                            .setContentText("Loading...")
-                            .build()
-                    )
-                    updateNotification()
-                }.onFailure {
-                    Timber.e("PlayerServiceModern maybeRestorePlayerQueue startForegroundService ${it.stackTraceToString()}")
-                }
-                */
-
             }
         }
 
@@ -1504,20 +1528,20 @@ class PlayerServiceModern : MediaLibraryService(),
 
 
 
-    class NotificationDismissReceiver : BroadcastReceiver() {
-        override fun onReceive(context: Context, intent: Intent) {
-            kotlin.runCatching {
-                context.stopService(context.intent<MyDownloadService>())
-            }.onFailure {
-                Timber.e("Failed NotificationDismissReceiver stopService in PlayerServiceModern (MyDownloadService) ${it.stackTraceToString()}")
-            }
-            kotlin.runCatching {
-                context.stopService(context.intent<PlayerServiceModern>())
-            }.onFailure {
-                Timber.e("Failed NotificationDismissReceiver stopService in PlayerServiceModern (PlayerServiceModern) ${it.stackTraceToString()}")
-            }
-        }
-    }
+//    class NotificationDismissReceiver : BroadcastReceiver() {
+//        override fun onReceive(context: Context, intent: Intent) {
+//            kotlin.runCatching {
+//                context.stopService(context.intent<MyDownloadService>())
+//            }.onFailure {
+//                Timber.e("Failed NotificationDismissReceiver stopService in PlayerServiceModern (MyDownloadService) ${it.stackTraceToString()}")
+//            }
+//            kotlin.runCatching {
+//                context.stopService(context.intent<PlayerServiceModern>())
+//            }.onFailure {
+//                Timber.e("Failed NotificationDismissReceiver stopService in PlayerServiceModern (PlayerServiceModern) ${it.stackTraceToString()}")
+//            }
+//        }
+//    }
 
     companion object {
         const val NotificationId = 1001

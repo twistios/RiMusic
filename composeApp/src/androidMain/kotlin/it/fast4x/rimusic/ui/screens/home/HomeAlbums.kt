@@ -5,12 +5,15 @@ import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
@@ -23,11 +26,13 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.ExperimentalTextApi
+import androidx.compose.ui.unit.dp
 import androidx.media3.common.util.UnstableApi
 import it.fast4x.compose.persist.persistList
 import it.fast4x.rimusic.Database
@@ -35,13 +40,14 @@ import it.fast4x.rimusic.LocalPlayerServiceBinder
 import it.fast4x.rimusic.MODIFIED_PREFIX
 import it.fast4x.rimusic.R
 import it.fast4x.rimusic.enums.AlbumSortBy
+import it.fast4x.rimusic.enums.AlbumsType
+import it.fast4x.rimusic.enums.ArtistsType
 import it.fast4x.rimusic.enums.NavigationBarPosition
 import it.fast4x.rimusic.enums.UiType
 import it.fast4x.rimusic.models.Album
 import it.fast4x.rimusic.models.Song
 import it.fast4x.rimusic.models.SongPlaylistMap
-import it.fast4x.rimusic.query
-import it.fast4x.rimusic.transaction
+import it.fast4x.rimusic.ui.components.ButtonsRow
 import it.fast4x.rimusic.ui.components.LocalMenuState
 import it.fast4x.rimusic.ui.components.themed.AlbumsItemMenu
 import it.fast4x.rimusic.ui.components.themed.FloatingActionsContainerWithScrollToTop
@@ -53,6 +59,8 @@ import it.fast4x.rimusic.ui.styling.Dimensions
 import it.fast4x.rimusic.utils.addNext
 import it.fast4x.rimusic.utils.albumSortByKey
 import it.fast4x.rimusic.utils.albumSortOrderKey
+import it.fast4x.rimusic.utils.albumTypeKey
+import it.fast4x.rimusic.utils.artistTypeKey
 import it.fast4x.rimusic.utils.asMediaItem
 import it.fast4x.rimusic.utils.disableScrollingTextKey
 import it.fast4x.rimusic.utils.enqueue
@@ -84,7 +92,7 @@ fun HomeAlbums(
 ) {
     // Essentials
     val menuState = LocalMenuState.current
-    val context = LocalContext.current
+    //val context = LocalContext.current
     val binder = LocalPlayerServiceBinder.current
     val lazyGridState = rememberLazyGridState()
 
@@ -112,8 +120,16 @@ fun HomeAlbums(
         Database.songsInAllBookmarkedAlbums().map { it.map( Song::asMediaItem ) }
     }
 
-    LaunchedEffect( sort.sortBy, sort.sortOrder ) {
-        Database.albums( sort.sortBy, sort.sortOrder ).collect { items = it }
+    var albumType by rememberPreference(albumTypeKey, AlbumsType.Favorites )
+    val buttonsList = AlbumsType.entries.map { it to it.textName }
+
+    LaunchedEffect( sort.sortBy, sort.sortOrder, albumType ) {
+        when ( albumType ) {
+            AlbumsType.Favorites -> Database.albums( sort.sortBy, sort.sortOrder ).collect { items = it }
+            AlbumsType.Library -> Database.albumsInLibrary( sort.sortBy, sort.sortOrder ).collect { items = it }
+            //AlbumsType.All -> Database.albumsWithSongsSaved( sort.sortBy, sort.sortOrder ).collect { items = it }
+
+        }
     }
     LaunchedEffect( items, search.input ) {
         val scrollIndex = lazyGridState.firstVisibleItemIndex
@@ -148,6 +164,23 @@ fun HomeAlbums(
             // Sticky tab's tool bar
             TabToolBar.Buttons( sort, search, randomizer, shuffle, itemSize )
 
+            Row(
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier
+                    .padding(horizontal = 12.dp)
+                    //.padding(vertical = 4.dp)
+                    .padding(bottom = 8.dp)
+                    .fillMaxWidth()
+            ) {
+                ButtonsRow(
+                    chips = buttonsList,
+                    currentValue = albumType,
+                    onValueUpdate = { albumType = it } ,
+                    modifier = Modifier.padding(end = 12.dp)
+                )
+            }
+
             // Sticky search bar
             search.SearchBar( this )
 
@@ -164,8 +197,8 @@ fun HomeAlbums(
                     key = Album::id
                 ) { album ->
                     var songs = remember { listOf<Song>() }
-                    query {
-                        songs = Database.albumSongsList(album.id)
+                    Database.asyncQuery {
+                        songs = albumSongsList(album.id)
                     }
 
                     var showDialogChangeAlbumTitle by remember {
@@ -212,7 +245,7 @@ fun HomeAlbums(
                             placeholder = stringResource( placeholderTextId ),
                             setValue = {
                                 if (it.isNotEmpty())
-                                    query { queryBlock( Database, album.id, it ) }
+                                    Database.asyncTransaction { queryBlock( this, album.id, it ) }
                             },
                             prefix = MODIFIED_PREFIX
                         )
@@ -268,9 +301,9 @@ fun HomeAlbums(
                                                 //Log.d("mediaItem", "next initial pos ${position}")
                                                 //if (listMediaItems.isEmpty()) {
                                                 songs.forEachIndexed { index, song ->
-                                                    transaction {
-                                                        Database.insert(song.asMediaItem)
-                                                        Database.insert(
+                                                    Database.asyncTransaction {
+                                                        insert(song.asMediaItem)
+                                                        insert(
                                                             SongPlaylistMap(
                                                                 songId = song.asMediaItem.mediaId,
                                                                 playlistId = playlistPreview.playlist.id,

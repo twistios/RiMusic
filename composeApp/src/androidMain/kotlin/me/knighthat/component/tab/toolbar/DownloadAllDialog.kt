@@ -13,10 +13,13 @@ import androidx.media3.exoplayer.offline.Download
 import it.fast4x.rimusic.Database
 import it.fast4x.rimusic.LocalPlayerServiceBinder
 import it.fast4x.rimusic.R
-import it.fast4x.rimusic.query
 import it.fast4x.rimusic.service.isLocal
 import it.fast4x.rimusic.service.modern.PlayerServiceModern
+import it.fast4x.rimusic.utils.asMediaItem
 import it.fast4x.rimusic.utils.manageDownload
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import me.knighthat.appContext
 import org.intellij.lang.annotations.MagicConstant
 
@@ -75,8 +78,8 @@ class DownloadAllDialog private constructor(
             if(binder == null) return
             binder.cache.removeResource(it.mediaId)
 
-            query {
-                Database.resetFormatContentLength(it.mediaId)
+            CoroutineScope(Dispatchers.IO).launch {
+                Database.resetContentLength( it.mediaId )
             }
 
             if (!it.isLocal)

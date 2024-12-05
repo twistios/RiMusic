@@ -71,23 +71,26 @@ import it.fast4x.rimusic.enums.SortOrder
 import it.fast4x.rimusic.enums.UiType
 import it.fast4x.rimusic.models.Folder
 import it.fast4x.rimusic.models.OnDeviceSong
+import it.fast4x.rimusic.models.Song
 import it.fast4x.rimusic.models.SongEntity
-import it.fast4x.rimusic.query
 import it.fast4x.rimusic.service.LOCAL_KEY_PREFIX
 import it.fast4x.rimusic.service.MyDownloadHelper
 import it.fast4x.rimusic.service.isLocal
 import it.fast4x.rimusic.ui.components.ButtonsRow
 import it.fast4x.rimusic.ui.components.LocalMenuState
 import it.fast4x.rimusic.ui.components.SwipeablePlaylistItem
+import it.fast4x.rimusic.ui.components.themed.ConfirmationDialog
 import it.fast4x.rimusic.ui.components.themed.FloatingActionsContainerWithScrollToTop
 import it.fast4x.rimusic.ui.components.themed.FolderItemMenu
 import it.fast4x.rimusic.ui.components.themed.HeaderInfo
 import it.fast4x.rimusic.ui.components.themed.InHistoryMediaItemMenu
 import it.fast4x.rimusic.ui.components.themed.MultiFloatingActionsContainer
-import it.fast4x.rimusic.ui.components.themed.NowPlayingShow
+import it.fast4x.rimusic.ui.components.themed.NowPlayingSongIndicator
 import it.fast4x.rimusic.ui.components.themed.SecondaryTextButton
+import it.fast4x.rimusic.ui.components.themed.SmartMessage
 import it.fast4x.rimusic.ui.items.FolderItem
 import it.fast4x.rimusic.ui.items.SongItem
+import it.fast4x.rimusic.ui.items.SongItemPlaceholder
 import it.fast4x.rimusic.ui.screens.ondevice.musicFilesAsFlow
 import it.fast4x.rimusic.ui.styling.Dimensions
 import it.fast4x.rimusic.ui.styling.onOverlay
@@ -111,6 +114,7 @@ import it.fast4x.rimusic.utils.hasPermission
 import it.fast4x.rimusic.utils.includeLocalSongsKey
 import it.fast4x.rimusic.utils.isCompositionLaunched
 import it.fast4x.rimusic.utils.isDownloadedSong
+import it.fast4x.rimusic.utils.isNowPlaying
 import it.fast4x.rimusic.utils.manageDownload
 import it.fast4x.rimusic.utils.maxSongsInQueueKey
 import it.fast4x.rimusic.utils.onDeviceFolderSortByKey
@@ -127,11 +131,14 @@ import it.fast4x.rimusic.utils.showMyTopPlaylistKey
 import it.fast4x.rimusic.utils.showOnDevicePlaylistKey
 import it.fast4x.rimusic.utils.songSortByKey
 import it.fast4x.rimusic.utils.songSortOrderKey
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import me.knighthat.appContext
 import me.knighthat.colorPalette
 import me.knighthat.component.Enqueue
@@ -145,6 +152,7 @@ import me.knighthat.component.screen.HiddenSongs
 import me.knighthat.component.screen.PeriodSelector
 import me.knighthat.component.screen.randomSort
 import me.knighthat.component.tab.DelSongDialog
+import me.knighthat.component.tab.DeleteHiddenSongsDialog
 import me.knighthat.component.tab.ExportSongsToCSVDialog
 import me.knighthat.component.tab.HideSongDialog
 import me.knighthat.component.tab.ImportSongsFromCSV
@@ -190,6 +198,8 @@ fun HomeSongs(
     val selectedItems = remember { mutableListOf<SongEntity>() }
 
     fun getMediaItems() = selectedItems.ifEmpty { itemsOnDisplay }.map( SongEntity::asMediaItem )
+
+    var isLoading by remember { mutableStateOf( false ) }
 
     val parentalControlEnabled by rememberPreference(parentalControlEnabledKey, false)
     val disableScrollingText by rememberPreference(disableScrollingTextKey, false)
@@ -274,6 +284,7 @@ fun HomeSongs(
     val deleteDownloadsDialog = DelAllDownloadedDialog.init( ::getMediaItems )
     val deleteSongDialog =  DelSongDialog.init()
     val hideSongDialog = HideSongDialog.init()
+    val deleteHiddenSongs = DeleteHiddenSongsDialog.init()
 
     val locator = LocateComponent.init( lazyListState, ::getMediaItems )
 
@@ -347,7 +358,7 @@ fun HomeSongs(
     if (showDownloadedPlaylist) buttonsList +=
         BuiltInPlaylist.Downloaded to stringResource(R.string.downloaded)
     if (showMyTopPlaylist) buttonsList +=
-        BuiltInPlaylist.Top to String.format(stringResource(R.string.my_playlist_top),maxTopPlaylistItems.number)
+        BuiltInPlaylist.Top to stringResource(R.string.my_playlist_top,maxTopPlaylistItems.number)
     if (showOnDevicePlaylist) buttonsList +=
         BuiltInPlaylist.OnDevice to stringResource(R.string.on_device)
 
@@ -356,126 +367,150 @@ fun HomeSongs(
 
     // This phrase loads all songs across types into [itemsOffShelve]
     // No filtration applied to this stage, only sort
-    when( builtInPlaylist ) {
-        BuiltInPlaylist.OnDevice -> {
+    LaunchedEffect( builtInPlaylist, songSort.sortBy, songSort.sortOrder, hiddenSongs.isShown() ) {
+        if( builtInPlaylist == BuiltInPlaylist.OnDevice ) return@LaunchedEffect
 
-            var songsDevice by remember {
-                mutableStateOf(emptyList<OnDeviceSong>())
-            }
+        // This variable will be set to false after filtration stage is completed
+        isLoading = true
 
-            LaunchedEffect( onDeviceSort.sortBy, onDeviceSort.sortOrder, hasPermission, context ) {
-                if( !hasPermission ) return@LaunchedEffect
-
-                context.musicFilesAsFlow( onDeviceSort.sortBy, onDeviceSort.sortOrder, context )
-                    .collect {
-                        songsDevice = it.distinctBy( OnDeviceSong::id )
-                    }
-            }
-
-            if (showFolders) {
-                with( OnDeviceOrganize ) {
-                    val organized = organizeSongsIntoFolders( songsDevice )
-                    currentFolder = getFolderByPath( organized, currentFolderPath )
-
-                    items = sortSongs(
-                        deviceFolderSort.sortOrder,
-                        deviceFolderSort.sortBy,
-                        currentFolder?.songs
-                                            ?.map( OnDeviceSong::toSongEntity )
-                                            ?: emptyList()
-                    )
-
-                    folders = currentFolder?.subFolders?.toList() ?: emptyList()
-                    filteredFolders = folders
+        when( builtInPlaylist ) {
+            BuiltInPlaylist.All -> Database.songs( songSort.sortBy, songSort.sortOrder, hiddenSongs.isShown() )
+            BuiltInPlaylist.Favorites -> Database.songsFavorites( songSort.sortBy, songSort.sortOrder )
+            BuiltInPlaylist.Offline -> Database.songsOffline( songSort.sortBy, songSort.sortOrder )
+            BuiltInPlaylist.Downloaded -> Database.listAllSongsAsFlow().map { list ->
+                when ( songSort.sortBy ) {
+                    SongSortBy.Title -> list.sortedBy { it.song.title }
+                    SongSortBy.PlayTime -> list.sortedBy { it.song.totalPlayTimeMs }
+                    SongSortBy.Duration -> list.sortedBy { it.song.durationText }
+                    SongSortBy.Artist -> list.sortedBy { it.song.artistsText }
+                    SongSortBy.DateLiked -> list.sortedBy { it.song.likedAt }
+                    SongSortBy.AlbumName -> list.sortedBy { it.albumTitle }
+                    else -> list
+                }.run {
+                    if( songSort.sortOrder == SortOrder.Descending )
+                        reversed()
+                    else
+                        this
                 }
-            } else
-                items = songsDevice.map( OnDeviceSong::toSongEntity )
-        }
-
-        BuiltInPlaylist.All -> {
-            LaunchedEffect( songSort.sortBy, songSort.sortOrder, hiddenSongs.isShown() ) {
-                Database.songs(songSort.sortBy, songSort.sortOrder, hiddenSongs.isShown())
-                        .flowOn( Dispatchers.IO )
-                        .distinctUntilChanged()
-                        .collect{ items = it }
             }
-        }
-
-        else -> {
-            LaunchedEffect( songSort.sortBy, songSort.sortOrder ) {
-                when( builtInPlaylist ) {
-                    BuiltInPlaylist.Favorites -> Database.songsFavorites( songSort.sortBy, songSort.sortOrder )
-                    BuiltInPlaylist.Offline -> Database.songsOffline( songSort.sortBy, songSort.sortOrder )
-                    BuiltInPlaylist.Downloaded -> Database.listAllSongsAsFlow().map { list ->
-                        when ( songSort.sortBy ) {
-                            SongSortBy.Title -> list.sortedBy { it.song.title }
-                            SongSortBy.PlayTime -> list.sortedBy { it.song.totalPlayTimeMs }
-                            SongSortBy.Duration -> list.sortedBy { it.song.durationText }
-                            SongSortBy.Artist -> list.sortedBy { it.song.artistsText }
-                            SongSortBy.DateLiked -> list.sortedBy { it.song.likedAt }
-                            SongSortBy.AlbumName -> list.sortedBy { it.albumTitle }
-                            else -> list
-                        }.run {
-                            if( songSort.sortOrder == SortOrder.Descending )
-                                reversed()
-                            else
-                                this
-                        }
-                    }
-                    BuiltInPlaylist.Top -> {
-                        if (topPlaylists.period.duration == Duration.INFINITE)
-                            Database.songsEntityByPlayTimeWithLimitDesc(limit = maxTopPlaylistItems.number.toInt())
-                        else
-                            Database.trendingSongEntity(
-                                limit = maxTopPlaylistItems.number.toInt(),
-                                period = topPlaylists.period.duration.inWholeMilliseconds
-                            )
-                    }
-                    else -> flowOf()
-                }.flowOn( Dispatchers.IO ).distinctUntilChanged().collect { items = it }
+            BuiltInPlaylist.Top -> {
+                if (topPlaylists.period.duration == Duration.INFINITE)
+                    Database.songsEntityByPlayTimeWithLimitDesc(limit = maxTopPlaylistItems.number.toInt())
+                else
+                    Database.trendingSongEntity(
+                        limit = maxTopPlaylistItems.number.toInt(),
+                        period = topPlaylists.period.duration.inWholeMilliseconds
+                    )
             }
-        }
+            BuiltInPlaylist.OnDevice -> flowOf()
+
+        }.flowOn( Dispatchers.IO ).distinctUntilChanged().collect { items = it }
     }
+
+    var songsDevice by remember {
+        mutableStateOf(emptyList<OnDeviceSong>())
+    }
+    LaunchedEffect( builtInPlaylist, onDeviceSort.sortBy, onDeviceSort.sortOrder, hasPermission ) {
+        if( builtInPlaylist != BuiltInPlaylist.OnDevice ) return@LaunchedEffect
+
+        // This variable will be set to false after filtration stage is completed
+        isLoading = true
+
+        // [context] remains unchanged (because of **val**) during the lifecycle of this Composable
+        context.musicFilesAsFlow( onDeviceSort.sortBy, onDeviceSort.sortOrder, context )
+               .collect {
+                   songsDevice = it.distinctBy( OnDeviceSong::id )
+               }
+    }
+    if( builtInPlaylist == BuiltInPlaylist.OnDevice )
+        if (showFolders) {
+            with( OnDeviceOrganize ) {
+                val organized = organizeSongsIntoFolders( songsDevice )
+                currentFolder = getFolderByPath( organized, currentFolderPath )
+
+                items = sortSongs(
+                    deviceFolderSort.sortOrder,
+                    deviceFolderSort.sortBy,
+                    currentFolder?.songs
+                        ?.map( OnDeviceSong::toSongEntity )
+                        ?: emptyList()
+                )
+
+                folders = currentFolder?.subFolders?.toList() ?: emptyList()
+                filteredFolders = folders
+            }
+        } else
+            items = songsDevice.map( OnDeviceSong::toSongEntity )
     // This phrase will filter out songs depends on search inputs, and natural filter
     // parameters, such as get downloaded songs when [BuiltInPlaylist.Offline] is set.
-    LaunchedEffect( builtInPlaylist, items, search.input ) {
-        val naturalFilter: (SongEntity) -> Boolean =
-            when( builtInPlaylist ) {
-                BuiltInPlaylist.All -> { song ->
-                    !includeLocalSongs || !song.song.id.startsWith(LOCAL_KEY_PREFIX)
-                }
+    val naturalFilter: (SongEntity) -> Boolean =
+        when( builtInPlaylist ) {
+            BuiltInPlaylist.All -> { song ->
+                !includeLocalSongs || !song.song.id.startsWith(LOCAL_KEY_PREFIX)
+            }
 
-                BuiltInPlaylist.Offline -> { song ->
-                    song.contentLength?.let {
-                        binder?.cache?.isCached(song.song.id, 0, song.contentLength)
-                    } ?: false
-                }
+            BuiltInPlaylist.Offline -> { song ->
+                song.contentLength?.let {
+                    binder?.cache?.isCached(song.song.id, 0, song.contentLength)
+                } ?: false
+            }
 
-                BuiltInPlaylist.Downloaded -> { song ->
-                    val downloads = MyDownloadHelper.downloads.value
-                    downloads[song.song.id]?.state == Download.STATE_COMPLETED
-                }
+            BuiltInPlaylist.Downloaded -> { song ->
+                val downloads = MyDownloadHelper.downloads.value
+                downloads[song.song.id]?.state == Download.STATE_COMPLETED
+            }
 
-                BuiltInPlaylist.Top -> { songs ->
-                    if (excludeSongWithDurationLimit == DurationInMinutes.Disabled)
-                        true
-                    else
+            BuiltInPlaylist.Top -> { songs ->
+                if (excludeSongWithDurationLimit == DurationInMinutes.Disabled)
+                    true
+                else {
+                    println("HomeSongs durationTextToMillis: ${songs.song.durationText?.let {
+                        durationTextToMillis(
+                            it
+                        )
+                    }}")
+
+                    try {
                         songs.song.durationText?.let {
                             durationTextToMillis(it)
                         }!! < excludeSongWithDurationLimit.minutesInMilliSeconds
-                }
+                    } catch (e: Exception) {
+                        false
+                    }
 
-                else -> { _ -> true }
+                }
             }
 
-        itemsOnDisplay = items.filter( naturalFilter ).filter {
-            val containsTitle = it.song.title.contains( search.input, true )
-            val containsArtist = it.song.artistsText?.contains( search.input, true ) ?: false
-            val containsAlbum = it.albumTitle?.contains( search.input, true ) ?: false
-            val isExplicit = parentalControlEnabled && it.song.title.startsWith(EXPLICIT_PREFIX)
-
-            containsTitle || containsArtist || containsAlbum || isExplicit
+            else -> { _ -> true }
         }
+    LaunchedEffect( items, search.input ) {
+        // Don't set [isLoading] to true here, it'll make searching look weird
+
+        itemsOnDisplay = withContext( Dispatchers.Default ) {
+            items.distinctBy { it.song.id }
+                .filter( naturalFilter )
+                 .filter {
+                     // Without cleaning, user can search explicit songs with "e:"
+                     // I kinda want this to be a feature, but it seems unnecessary
+                     val containsTitle = it.song.cleanTitle().contains(search.input, true)
+                     val containsArtist = it.song.artistsText?.contains(search.input, true) ?: false
+                     val containsAlbum = it.albumTitle?.contains(search.input, true) ?: false
+                     val isExplicit = parentalControlEnabled && it.song.title.startsWith(EXPLICIT_PREFIX)
+
+                     containsTitle || containsArtist || containsAlbum || isExplicit
+                 }
+        }
+
+        /*
+            [LazyListState] will try to keep the visible song at the top
+            after search input has changed. This creates a weird effect
+            that fools user to believe search results haven't change.
+
+            To prevent it, always scroll the list to the top
+         */
+        lazyListState.scrollToItem( 0 )
+
+        isLoading = false
     }
     // Filter folder on the side
     LaunchedEffect( builtInPlaylist, folders, search.input ) {
@@ -491,6 +526,35 @@ fun HomeSongs(
     deleteDownloadsDialog.Render()
     deleteSongDialog.Render()
     hideSongDialog.Render()
+    deleteHiddenSongs.Render()
+
+    var showDeleteDialog by remember { mutableStateOf(false) }
+    var songRif by remember { mutableStateOf(Song(
+        id = "",
+        title = "",
+        durationText = null,
+        thumbnailUrl = null
+    )) }
+    if (showDeleteDialog) {
+        ConfirmationDialog(
+            text = stringResource(R.string.delete_song),
+            onDismiss = { showDeleteDialog = false },
+            onConfirm = {
+                Database.asyncTransaction {
+                    deleteSongFromPlaylists(songRif.id)
+                    deleteFormat(songRif.id)
+                    delete(songRif)
+                }
+                SmartMessage(
+                    message = appContext().resources.getString(R.string.deleted),
+                    context = appContext()
+                )
+                menuState.hide()
+                showDeleteDialog = false
+            }
+
+        )
+    }
 
     Box(
         modifier = Modifier
@@ -508,7 +572,7 @@ fun HomeSongs(
         Column( Modifier.fillMaxSize() ) {
             // Sticky tab's title
             TabHeader( R.string.songs ) {
-                HeaderInfo( items.size.toString(), R.drawable.musical_notes )
+                HeaderInfo( itemsOnDisplay.size.toString(), R.drawable.musical_notes )
             }
 
             // Sticky tab's tool bar
@@ -530,7 +594,7 @@ fun HomeSongs(
                     this.add( locator )
                     this.add( downloadAllDialog )
                     this.add( deleteDownloadsDialog )
-                    this.add( deleteSongDialog )
+                    //this.add( deleteSongDialog )
                     if (builtInPlaylist == BuiltInPlaylist.All)
                         this.add( hiddenSongs )
                     this.add( shuffle )
@@ -543,6 +607,7 @@ fun HomeSongs(
                     this.add( addToPlaylist )
                     this.add( exportDialog )
                     this.add( import )
+                    this.add( deleteHiddenSongs )
                 }
             )
 
@@ -569,8 +634,24 @@ fun HomeSongs(
 
             LazyColumn(
                 state = lazyListState,
-                contentPadding = PaddingValues( start = 8.dp, bottom = Dimensions.bottomSpacer )
+                contentPadding = PaddingValues( start = 8.dp, bottom = Dimensions.bottomSpacer ),
+                userScrollEnabled = !isLoading // Effectively disable scroll (drag gesture) while loading
             ) {
+
+                /*
+                    On slower phones, having to load a large database will create a
+                    subtle feeling of the app is not responding. This component
+                    creates fake song card that notifies user that songs are loading.
+                 */
+                if( isLoading ) {
+                    items(
+                        count = 20,
+                        key = { it }
+                    ) { SongItemPlaceholder( thumbnailSizeDp ) }
+
+                    return@LazyColumn
+                }
+
                 if( builtInPlaylist == BuiltInPlaylist.OnDevice && !hasPermission ) {
                     item( "OnDeviceSongsPermission" ) {
                         LaunchedEffect(Unit, relaunchPermission) { launcher.launch(permission) }
@@ -693,15 +774,15 @@ fun HomeSongs(
 
                         val isLocal by remember { derivedStateOf { mediaItem.isLocal } }
                         val isDownloaded = isLocal || isDownloadedSong( mediaItem.mediaId )
-
+                        var forceRecompose by remember { mutableStateOf(false) }
                         SongItem(
                             song = song.song,
                             onDownloadClick = {
                                 // Only allow action(s) on songs other than [BuiltInPlaylist.OnDevice]
                                 if( builtInPlaylist != BuiltInPlaylist.OnDevice ) {
                                     binder?.cache?.removeResource(song.song.asMediaItem.mediaId)
-                                    query {
-                                        Database.resetFormatContentLength(song.song.asMediaItem.mediaId)
+                                    CoroutineScope(Dispatchers.IO).launch {
+                                        Database.resetContentLength( song.asMediaItem.mediaId )
                                     }
                                     if (!isLocal)
                                         manageDownload(
@@ -747,7 +828,7 @@ fun HomeSongs(
                                     )
                                 }
 
-                                NowPlayingShow(song.asMediaItem.mediaId)
+                                NowPlayingSongIndicator(song.asMediaItem.mediaId, binder?.player)
                             },
                             trailingContent = {
                                 // It must watch for [selectedItems.size] for changes
@@ -783,21 +864,21 @@ fun HomeSongs(
                                                     hideSongDialog.onShortClick()
                                                 }
                                             } else null
-                                        val deleteFromDatabase =
-                                            if (builtInPlaylist != BuiltInPlaylist.OnDevice) {
-                                                {
-                                                    deleteSongDialog.song = Optional.of(song)
-                                                    deleteSongDialog.onShortClick()
-                                                }
-                                            } else null
+
 
                                         menuState.display {
                                             InHistoryMediaItemMenu(
                                                 navController = navController,
                                                 song = song.song,
-                                                onDismiss = menuState::hide,
+                                                onDismiss = {
+                                                    menuState.hide()
+                                                    forceRecompose = true
+                                                },
                                                 onHideFromDatabase = hideAction,
-                                                onDeleteFromDatabase = deleteFromDatabase,
+                                                onDeleteFromDatabase = {
+                                                    songRif = song.song
+                                                    showDeleteDialog = true
+                                                },
                                                 disableScrollingText = disableScrollingText
                                             )
                                         }
@@ -877,8 +958,10 @@ fun HomeSongs(
                                         )
                                     }
                                 )
-                                .animateItem(fadeInSpec = null, fadeOutSpec = null),
-                            disableScrollingText = disableScrollingText
+                                .animateItem(),
+                            disableScrollingText = disableScrollingText,
+                            isNowPlaying = binder?.player?.isNowPlaying(song.song.id) ?: false,
+                            forceRecompose = forceRecompose
                         )
                     }
                 }

@@ -32,7 +32,6 @@ import it.fast4x.rimusic.enums.SortOrder
 import it.fast4x.rimusic.models.Playlist
 import it.fast4x.rimusic.models.PlaylistPreview
 import it.fast4x.rimusic.models.SongPlaylistMap
-import it.fast4x.rimusic.transaction
 import it.fast4x.rimusic.ui.components.LocalMenuState
 import it.fast4x.rimusic.ui.components.MenuState
 import it.fast4x.rimusic.ui.components.themed.IconButton
@@ -91,7 +90,7 @@ class PlaylistsMenu private constructor(
     private fun onAdd( preview: PlaylistPreview ) {
         val startPos = preview.songCount
 
-        transaction {
+        Database.asyncTransaction {
             /*
                 Suspend this block until all songs are
                 inserted into database before going to
@@ -100,8 +99,8 @@ class PlaylistsMenu private constructor(
             runBlocking( Dispatchers.IO ) {
                 try {
                     mediaItems( preview ).forEachIndexed { index, mediaItem ->
-                        Database.insert(mediaItem)
-                        Database.insert(
+                        insert(mediaItem)
+                        insert(
                             SongPlaylistMap(
                                 songId = mediaItem.mediaId,
                                 playlistId = preview.playlist.id,
@@ -189,8 +188,8 @@ class PlaylistsMenu private constructor(
             override var value: String = ""
 
             override fun onSet( newValue: String ) {
-                transaction {
-                    val playlistId = Database.insert( Playlist(name = newValue) )
+                Database.asyncTransaction {
+                    val playlistId = insert( Playlist(name = newValue) )
                     onAdd(
                         PlaylistPreview(
                             Playlist(playlistId, newValue),

@@ -82,9 +82,7 @@ import it.fast4x.rimusic.enums.ThumbnailRoundness
 import it.fast4x.rimusic.enums.UiType
 import it.fast4x.rimusic.models.Playlist
 import it.fast4x.rimusic.models.SongPlaylistMap
-import it.fast4x.rimusic.query
 import it.fast4x.rimusic.service.isLocal
-import it.fast4x.rimusic.transaction
 import it.fast4x.rimusic.ui.components.LocalMenuState
 import it.fast4x.rimusic.ui.components.ShimmerHost
 import it.fast4x.rimusic.ui.components.SwipeablePlaylistItem
@@ -119,6 +117,7 @@ import it.fast4x.rimusic.utils.formatAsTime
 import it.fast4x.rimusic.utils.getDownloadState
 import it.fast4x.rimusic.utils.isDownloadedSong
 import it.fast4x.rimusic.utils.isLandscape
+import it.fast4x.rimusic.utils.isNowPlaying
 import it.fast4x.rimusic.utils.manageDownload
 import it.fast4x.rimusic.utils.medium
 import it.fast4x.rimusic.utils.parentalControlEnabledKey
@@ -265,21 +264,20 @@ fun PlaylistSongList(
             value = playlistPage?.title ?: "",
             placeholder = "https://........",
             setValue = { text ->
-                query {
-                    transaction {
-                        val playlistId = Database.insert(Playlist(name = text, browseId = browseId))
+                Database.asyncTransaction {
+                    val playlistId = insert(Playlist(name = text, browseId = browseId))
 
-                        playlistPage?.songsPage?.items
-                            ?.map(Innertube.SongItem::asMediaItem)
-                            ?.onEach(Database::insert)
-                            ?.mapIndexed { index, mediaItem ->
-                                SongPlaylistMap(
-                                    songId = mediaItem.mediaId,
-                                    playlistId = playlistId,
-                                    position = index
-                                )
-                            }?.let(Database::insertSongPlaylistMaps)
-                    }
+                    playlistPage?.songsPage?.items
+                                ?.map(Innertube.SongItem::asMediaItem)
+                                ?.onEach( ::insert )
+                                ?.mapIndexed { index, mediaItem ->
+                                    SongPlaylistMap(
+                                        songId = mediaItem.mediaId,
+                                        playlistId = playlistId,
+                                        position = index
+                                    )
+                                }
+                                ?.let( ::insertSongPlaylistMaps )
                 }
                 SmartMessage(context.resources.getString(R.string.done), PopupType.Success, context = context)
             }
@@ -458,8 +456,8 @@ fun PlaylistSongList(
                                             if (playlistPage?.songsPage?.items?.isNotEmpty() == true)
                                                 playlistPage?.songsPage?.items?.forEach {
                                                     binder?.cache?.removeResource(it.asMediaItem.mediaId)
-                                                    query {
-                                                        Database.resetFormatContentLength(it.asMediaItem.mediaId)
+                                                    CoroutineScope(Dispatchers.IO).launch {
+                                                        Database.resetContentLength( it.asMediaItem.mediaId )
                                                     }
                                                     manageDownload(
                                                         context = context,
@@ -486,8 +484,8 @@ fun PlaylistSongList(
                                             if (playlistPage?.songsPage?.items?.isNotEmpty() == true)
                                                 playlistPage?.songsPage?.items?.forEach {
                                                     binder?.cache?.removeResource(it.asMediaItem.mediaId)
-                                                    query {
-                                                        Database.resetFormatContentLength(it.asMediaItem.mediaId)
+                                                    CoroutineScope(Dispatchers.IO).launch {
+                                                        Database.resetContentLength( it.asMediaItem.mediaId )
                                                     }
                                                     manageDownload(
                                                         context = context,
@@ -758,12 +756,13 @@ fun PlaylistSongList(
                         val isLocal by remember { derivedStateOf { song.asMediaItem.isLocal } }
                         downloadState = getDownloadState(song.asMediaItem.mediaId)
                         val isDownloaded = if (!isLocal) isDownloadedSong(song.asMediaItem.mediaId) else true
+                        var forceRecompose by remember { mutableStateOf(false) }
                         SongItem(
                             song = song,
                             onDownloadClick = {
                                 binder?.cache?.removeResource(song.asMediaItem.mediaId)
-                                query {
-                                    Database.resetFormatContentLength(song.asMediaItem.mediaId)
+                                CoroutineScope(Dispatchers.IO).launch {
+                                    Database.resetContentLength( song.asMediaItem.mediaId )
                                 }
 
                                 if (!isLocal)
@@ -782,7 +781,10 @@ fun PlaylistSongList(
                                         menuState.display {
                                             NonQueuedMediaItemMenu(
                                                 navController = navController,
-                                                onDismiss = menuState::hide,
+                                                onDismiss = {
+                                                    menuState.hide()
+                                                    forceRecompose = true
+                                                },
                                                 mediaItem = song.asMediaItem,
                                                 disableScrollingText = disableScrollingText
                                             )
@@ -799,7 +801,9 @@ fun PlaylistSongList(
                                             }
                                     }
                                 ),
-                            disableScrollingText = disableScrollingText
+                            disableScrollingText = disableScrollingText,
+                            isNowPlaying = binder?.player?.isNowPlaying(song.key) ?: false,
+                            forceRecompose = forceRecompose
                         )
                     }
                 }

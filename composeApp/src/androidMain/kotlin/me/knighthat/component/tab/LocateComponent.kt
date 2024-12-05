@@ -62,7 +62,8 @@ class LocateComponent private constructor(
         binder?.player
               ?.currentMediaItem
               ?.let { mediaItem ->
-                  songs().indexOf( mediaItem ).let {
+                  println("LocateComponent.onShortClick songs ${songs().size} -> mediaItem ${mediaItem.mediaId}")
+                  songs().map { it.mediaId }.indexOf( mediaItem.mediaId ).let {
                       if( it == -1 )      // Playing song isn't inside [songs()]
                           SmartMessage(
                               // TODO Add this string to strings.xml

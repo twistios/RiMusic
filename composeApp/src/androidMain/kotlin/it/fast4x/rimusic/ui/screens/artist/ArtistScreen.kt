@@ -48,8 +48,6 @@ import it.fast4x.rimusic.enums.NavRoutes
 import it.fast4x.rimusic.enums.ThumbnailRoundness
 import it.fast4x.rimusic.enums.UiType
 import it.fast4x.rimusic.models.Artist
-import it.fast4x.rimusic.models.Song
-import it.fast4x.rimusic.query
 import it.fast4x.rimusic.ui.components.LocalMenuState
 import it.fast4x.rimusic.ui.components.Scaffold
 import it.fast4x.rimusic.ui.components.SwipeablePlaylistItem
@@ -57,6 +55,7 @@ import it.fast4x.rimusic.ui.components.themed.Header
 import it.fast4x.rimusic.ui.components.themed.HeaderIconButton
 import it.fast4x.rimusic.ui.components.themed.HeaderPlaceholder
 import it.fast4x.rimusic.ui.components.themed.NonQueuedMediaItemMenu
+import it.fast4x.rimusic.ui.components.themed.NowPlayingSongIndicator
 import it.fast4x.rimusic.ui.components.themed.SecondaryTextButton
 import it.fast4x.rimusic.ui.components.themed.SmartMessage
 import it.fast4x.rimusic.ui.components.themed.adaptiveThumbnailContent
@@ -71,13 +70,11 @@ import it.fast4x.rimusic.utils.addNext
 import it.fast4x.rimusic.utils.asMediaItem
 import it.fast4x.rimusic.utils.completed
 import it.fast4x.rimusic.utils.disableScrollingTextKey
-import it.fast4x.rimusic.utils.downloadedStateMedia
 import it.fast4x.rimusic.utils.enqueue
 import it.fast4x.rimusic.utils.forcePlay
-import it.fast4x.rimusic.utils.forcePlayAtIndex
-import it.fast4x.rimusic.utils.forcePlayFromBeginning
 import it.fast4x.rimusic.utils.getDownloadState
 import it.fast4x.rimusic.utils.isDownloadedSong
+import it.fast4x.rimusic.utils.isNowPlaying
 import it.fast4x.rimusic.utils.manageDownload
 import it.fast4x.rimusic.utils.parentalControlEnabledKey
 import it.fast4x.rimusic.utils.rememberPreference
@@ -209,10 +206,9 @@ fun ArtistScreen(
                                             val bookmarkedAt =
                                                 if (artist?.bookmarkedAt == null) System.currentTimeMillis() else null
 
-                                            query {
-                                                artist
-                                                    ?.copy(bookmarkedAt = bookmarkedAt)
-                                                    ?.let(Database::update)
+                                            Database.asyncTransaction {
+                                                artist?.copy( bookmarkedAt = bookmarkedAt )
+                                                      ?.let( ::update )
                                             }
                                         },
                                         alternative = artist?.bookmarkedAt == null
@@ -312,13 +308,12 @@ fun ArtistScreen(
                                     val bookmarkedAt =
                                         if (artist?.bookmarkedAt == null) System.currentTimeMillis() else null
 
-                                    query {
-                                        artist
-                                            ?.copy(bookmarkedAt = bookmarkedAt)
-                                            ?.let(Database::update)
+                                    Database.asyncTransaction {
+                                        artist?.copy( bookmarkedAt = bookmarkedAt )
+                                              ?.let( ::update )
                                     }
                                 },
-                                alternative = if (artist?.bookmarkedAt == null) true else false
+                                alternative = if (artist?.bookmarkedAt == null) true else false     // WHY??
                             )
 
                             /*
@@ -456,12 +451,13 @@ fun ArtistScreen(
                                         listMediaItems.add(song.asMediaItem)
                                         downloadState = getDownloadState(song.asMediaItem.mediaId)
                                         val isDownloaded = isDownloadedSong(song.asMediaItem.mediaId)
+                                        var forceRecompose by remember { mutableStateOf(false) }
                                         SongItem(
                                             song = song,
                                             onDownloadClick = {
                                                 binder?.cache?.removeResource(song.asMediaItem.mediaId)
-                                                query {
-                                                    Database.resetFormatContentLength(song.asMediaItem.mediaId)
+                                                CoroutineScope(Dispatchers.IO).launch {
+                                                    Database.resetContentLength( song.asMediaItem.mediaId )
                                                 }
 
                                                 manageDownload(
@@ -469,6 +465,9 @@ fun ArtistScreen(
                                                     mediaItem = song.asMediaItem,
                                                     downloadState = isDownloaded
                                                 )
+                                            },
+                                            thumbnailContent = {
+                                                NowPlayingSongIndicator(song.asMediaItem.mediaId, binder?.player)
                                             },
                                             downloadState = downloadState,
                                             thumbnailSizeDp = thumbnailSizeDp,
@@ -479,7 +478,10 @@ fun ArtistScreen(
                                                         menuState.display {
                                                             NonQueuedMediaItemMenu(
                                                                 navController = navController,
-                                                                onDismiss = menuState::hide,
+                                                                onDismiss = {
+                                                                    menuState.hide()
+                                                                    forceRecompose = true
+                                                                },
                                                                 mediaItem = song.asMediaItem,
                                                                 disableScrollingText = disableScrollingText
                                                             )
@@ -540,7 +542,9 @@ fun ArtistScreen(
 
                                                     }
                                                 ),
-                                            disableScrollingText = disableScrollingText
+                                            disableScrollingText = disableScrollingText,
+                                            isNowPlaying = binder?.player?.isNowPlaying(song.key) ?: false,
+                                            forceRecompose = forceRecompose
                                         )
                                     }
                                 },

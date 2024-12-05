@@ -41,13 +41,11 @@ import it.fast4x.rimusic.R
 import it.fast4x.rimusic.enums.NavigationBarPosition
 import it.fast4x.rimusic.enums.ThumbnailRoundness
 import it.fast4x.rimusic.models.DateAgo
-import it.fast4x.rimusic.models.Song
-import it.fast4x.rimusic.query
 import it.fast4x.rimusic.service.isLocal
 import it.fast4x.rimusic.ui.components.LocalMenuState
 import it.fast4x.rimusic.ui.components.themed.HeaderWithIcon
 import it.fast4x.rimusic.ui.components.themed.NonQueuedMediaItemMenuLibrary
-import it.fast4x.rimusic.ui.components.themed.NowPlayingShow
+import it.fast4x.rimusic.ui.components.themed.NowPlayingSongIndicator
 import it.fast4x.rimusic.ui.components.themed.Title
 import it.fast4x.rimusic.ui.items.SongItem
 import it.fast4x.rimusic.ui.styling.Dimensions
@@ -55,16 +53,18 @@ import it.fast4x.rimusic.ui.styling.favoritesOverlay
 import it.fast4x.rimusic.ui.styling.px
 import it.fast4x.rimusic.utils.asMediaItem
 import it.fast4x.rimusic.utils.disableScrollingTextKey
-import it.fast4x.rimusic.utils.downloadedStateMedia
 import it.fast4x.rimusic.utils.forcePlay
 import it.fast4x.rimusic.utils.getDownloadState
 import it.fast4x.rimusic.utils.isDownloadedSong
+import it.fast4x.rimusic.utils.isNowPlaying
 import it.fast4x.rimusic.utils.manageDownload
 import it.fast4x.rimusic.utils.parentalControlEnabledKey
 import it.fast4x.rimusic.utils.rememberPreference
 import it.fast4x.rimusic.utils.thumbnailRoundnessKey
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.launch
 import me.knighthat.colorPalette
 import java.time.DayOfWeek
 import java.time.Instant
@@ -215,17 +215,19 @@ fun HistoryList(
 
                     //BehindMotionSwipe(
                     //    content = {
-                            val isLocal by remember { derivedStateOf { event.song.asMediaItem.isLocal } }
-                            downloadState = getDownloadState(event.song.asMediaItem.mediaId)
-                            val isDownloaded =
-                                if (!isLocal) isDownloadedSong(event.song.asMediaItem.mediaId) else true
-                            val checkedState = rememberSaveable { mutableStateOf(false) }
-                            SongItem(
+                    val isLocal by remember { derivedStateOf { event.song.asMediaItem.isLocal } }
+                    downloadState = getDownloadState(event.song.asMediaItem.mediaId)
+                    val isDownloaded =
+                        if (!isLocal) isDownloadedSong(event.song.asMediaItem.mediaId) else true
+                    val checkedState = rememberSaveable { mutableStateOf(false) }
+                    var forceRecompose by remember { mutableStateOf(false) }
+
+                    SongItem(
                                 song = event.song,
                                 onDownloadClick = {
                                     binder?.cache?.removeResource(event.song.asMediaItem.mediaId)
-                                    query {
-                                        Database.resetFormatContentLength(event.song.asMediaItem.mediaId)
+                                    CoroutineScope(Dispatchers.IO).launch {
+                                        Database.resetContentLength( event.song.asMediaItem.mediaId )
                                     }
 
                                     if (!isLocal)
@@ -239,8 +241,7 @@ fun HistoryList(
                                 thumbnailSizeDp = thumbnailSizeDp,
                                 thumbnailSizePx = thumbnailSizePx,
                                 onThumbnailContent = {
-                                    if (nowPlayingItem > -1)
-                                        NowPlayingShow(event.song.asMediaItem.mediaId)
+                                        NowPlayingSongIndicator(event.song.asMediaItem.mediaId, binder?.player)
                                 },
                                 trailingContent = {
                                     if (selectItems)
@@ -267,7 +268,10 @@ fun HistoryList(
                                                 NonQueuedMediaItemMenuLibrary(
                                                     navController = navController,
                                                     mediaItem = event.song.asMediaItem,
-                                                    onDismiss = menuState::hide,
+                                                    onDismiss = {
+                                                        menuState.hide()
+                                                        forceRecompose = true
+                                                    },
                                                     disableScrollingText = disableScrollingText
                                                 )
                                             }
@@ -277,8 +281,10 @@ fun HistoryList(
                                         }
                                     )
                                     .background(color = colorPalette().background0)
-                                    .animateItemPlacement(),
-                                disableScrollingText = disableScrollingText
+                                    .animateItem(),
+                                disableScrollingText = disableScrollingText,
+                                isNowPlaying = binder?.player?.isNowPlaying(event.song.id) ?: false,
+                                forceRecompose = forceRecompose
                             )
                         /*
                         },

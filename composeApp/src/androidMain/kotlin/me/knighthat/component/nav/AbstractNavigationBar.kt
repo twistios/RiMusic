@@ -85,8 +85,9 @@ internal class NavigationButton(
     val destination: String = "",
     padding: Dp = 0.dp,
     size: Dp = 0.dp,
+    forceWidth: Dp = Dp.Unspecified,
     modifier: Modifier = Modifier
-): Button( iconId, color, padding, size, modifier ) {
+): Button( iconId, color, padding, size, forceWidth, modifier ) {
 
     fun clickEvent( event: (NavigationButton) -> Unit ) {
         modifier = modifier.clickable { event(this@NavigationButton) }

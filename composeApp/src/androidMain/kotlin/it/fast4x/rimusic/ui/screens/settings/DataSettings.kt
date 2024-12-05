@@ -45,9 +45,6 @@ import it.fast4x.rimusic.enums.ExoPlayerDiskCacheMaxSize
 import it.fast4x.rimusic.enums.ExoPlayerDiskDownloadCacheMaxSize
 import it.fast4x.rimusic.enums.NavigationBarPosition
 import it.fast4x.rimusic.enums.PopupType
-import it.fast4x.rimusic.internal
-import it.fast4x.rimusic.path
-import it.fast4x.rimusic.query
 import it.fast4x.rimusic.service.MyDownloadService
 import it.fast4x.rimusic.service.modern.PlayerServiceModern
 import it.fast4x.rimusic.ui.components.themed.ConfirmationDialog
@@ -70,7 +67,10 @@ import it.fast4x.rimusic.utils.intent
 import it.fast4x.rimusic.utils.pauseSearchHistoryKey
 import it.fast4x.rimusic.utils.rememberPreference
 import it.fast4x.rimusic.utils.semiBold
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.launch
 import me.knighthat.colorPalette
 import me.knighthat.typography
 import java.io.FileInputStream
@@ -144,12 +144,17 @@ fun DataSettings() {
         rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/vnd.sqlite3")) { uri ->
             if (uri == null) return@rememberLauncherForActivityResult
 
-            query {
+            /*
+                WAL [Database#checkpoint] shouldn't be running inside a `query` or `transaction` block
+                because it requires all commits to be finalized and written to
+                base file.
+             */
+            CoroutineScope( Dispatchers.IO ).launch {
                 Database.checkpoint()
 
                 context.applicationContext.contentResolver.openOutputStream(uri)
                     ?.use { outputStream ->
-                        FileInputStream(Database.internal.path).use { inputStream ->
+                        FileInputStream( Database.path() ).use { inputStream ->
                             inputStream.copyTo(outputStream)
                         }
                     }
@@ -162,13 +167,18 @@ fun DataSettings() {
         rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
             if (uri == null) return@rememberLauncherForActivityResult
 
-            query {
+            /*
+                WAL [Database#checkpoint] shouldn't be running inside a `query` or `transaction` block
+                because it requires all commits to be finalized and written to
+                base file.
+             */
+            CoroutineScope( Dispatchers.IO ).launch {
                 Database.checkpoint()
-                Database.internal.close()
+                Database.close()
 
                 context.applicationContext.contentResolver.openInputStream(uri)
                     ?.use { inputStream ->
-                        FileOutputStream(Database.internal.path).use { outputStream ->
+                        FileOutputStream( Database.path() ).use { outputStream ->
                             inputStream.copyTo(outputStream)
                         }
                     }
@@ -415,10 +425,8 @@ fun DataSettings() {
         }
 
         binder?.cache?.let { cache ->
-            val diskCacheSize by remember {
-                derivedStateOf {
+            val diskCacheSize = remember(cache) {
                     cache.cacheSpace
-                }
             }
 
 
@@ -499,10 +507,8 @@ fun DataSettings() {
         }
 
         binder?.downloadCache?.let { downloadCache ->
-            val diskDownloadCacheSize by remember {
-                derivedStateOf {
+            val diskDownloadCacheSize = remember(downloadCache) {
                     downloadCache.cacheSpace
-                }
             }
 
             EnumValueSelectorSettingsEntry(
@@ -646,7 +652,7 @@ fun DataSettings() {
                 stringResource(R.string.history_is_empty)
             },
             isEnabled = queriesCount > 0,
-            onClick = { query(Database::clearQueries) }
+            onClick = { Database.asyncTransaction( Database::clearQueries ) }
         )
         SettingsGroupSpacer(
             modifier = Modifier.height(Dimensions.bottomSpacer)

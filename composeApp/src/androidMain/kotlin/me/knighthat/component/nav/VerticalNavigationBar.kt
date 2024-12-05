@@ -121,7 +121,7 @@ class VerticalNavigationBar(
                                 rotationZ = if (isLandscape) 0f else -90f
                             }
                 }
-            val button = Button( iconId, textColor, 0.dp, 0.dp, buttonModifier )
+            val button = Button( iconId, textColor, 0.dp, 0.dp, Dp.Unspecified, buttonModifier )
             val contentModifier = Modifier.clip( RoundedCornerShape(24.dp) )
                                           .clickable( onClick = { onTabChanged(index) } )
                                           .padding( vertical = 8.dp )
@@ -243,21 +243,23 @@ class VerticalNavigationBar(
 
             // Only show search icon when UI is ViMusic and
             // setting is turned on
-            if( UiType.ViMusic.isCurrent() && showSearchIconInNav() ) {
+
+            if( UiType.ViMusic.isCurrent() ) {
                 val iconSize: Dp =
                     if( isLandscape )
                         Dimensions.navigationRailWidthLandscape
                     else
                         Dimensions.navigationRailWidth
                 //val iconHeight: Dp = Dimensions.halfheaderHeight
+                if ( showSearchIconInNav() )
+                    Box(
+                        contentAlignment = Alignment.TopCenter,
+                        modifier = Modifier.size(iconSize),
+                        content = {
+                            SearchButton().Draw()
+                        }
+                    )
 
-                Box(
-                    contentAlignment = Alignment.TopCenter,
-                    modifier = Modifier.size(iconSize),
-                    content = {
-                        SearchButton().Draw()
-                    }
-                )
                 Box(
                     contentAlignment = Alignment.TopCenter,
                     modifier = Modifier.size(iconSize),

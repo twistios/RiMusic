@@ -23,7 +23,7 @@ enum class PlayerTimelineType {
             PinBar -> stringResource(R.string.pin_bar)
             FakeAudioBar -> stringResource(R.string.fake_audio_bar)
             ThinBar -> stringResource(R.string.thin_bar)
-            ColoredBar -> "Colored bar"
+            ColoredBar -> stringResource(R.string.colored_bar)
         }
 
 }

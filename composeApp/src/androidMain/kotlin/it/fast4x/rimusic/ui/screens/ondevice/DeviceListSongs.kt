@@ -90,7 +90,6 @@ import it.fast4x.rimusic.models.OnDeviceSong
 import it.fast4x.rimusic.models.SongEntity
 import it.fast4x.rimusic.models.SongPlaylistMap
 import it.fast4x.rimusic.service.LOCAL_KEY_PREFIX
-import it.fast4x.rimusic.transaction
 import it.fast4x.rimusic.ui.components.LocalMenuState
 import it.fast4x.rimusic.ui.components.themed.FloatingActionsContainerWithScrollToTop
 import it.fast4x.rimusic.ui.components.themed.FolderItemMenu
@@ -99,7 +98,7 @@ import it.fast4x.rimusic.ui.components.themed.HeaderWithIcon
 import it.fast4x.rimusic.ui.components.themed.IconButton
 import it.fast4x.rimusic.ui.components.themed.IconInfo
 import it.fast4x.rimusic.ui.components.themed.InHistoryMediaItemMenu
-import it.fast4x.rimusic.ui.components.themed.NowPlayingShow
+import it.fast4x.rimusic.ui.components.themed.NowPlayingSongIndicator
 import it.fast4x.rimusic.ui.components.themed.PlaylistsItemMenu
 import it.fast4x.rimusic.ui.components.themed.SecondaryTextButton
 import it.fast4x.rimusic.ui.components.themed.SmartMessage
@@ -125,6 +124,7 @@ import it.fast4x.rimusic.utils.hasPermission
 import it.fast4x.rimusic.utils.isAtLeastAndroid10
 import it.fast4x.rimusic.utils.isAtLeastAndroid11
 import it.fast4x.rimusic.utils.isCompositionLaunched
+import it.fast4x.rimusic.utils.isNowPlaying
 import it.fast4x.rimusic.utils.onDeviceFolderSortByKey
 import it.fast4x.rimusic.utils.onDeviceSongSortByKey
 import it.fast4x.rimusic.utils.rememberPreference
@@ -699,9 +699,9 @@ fun DeviceListSongs(
                                         //Log.d("mediaItem", "next initial pos ${position}")
                                         if (listMediaItems.isEmpty()) {
                                             filteredSongs.forEachIndexed { index, song ->
-                                                transaction {
-                                                    Database.insert(song.asMediaItem)
-                                                    Database.insert(
+                                                Database.asyncTransaction {
+                                                    insert(song.asMediaItem)
+                                                    insert(
                                                         SongPlaylistMap(
                                                             songId = song.asMediaItem.mediaId,
                                                             playlistId = playlistPreview.playlist.id,
@@ -714,9 +714,9 @@ fun DeviceListSongs(
                                         } else {
                                             listMediaItems.forEachIndexed { index, song ->
                                                 //Log.d("mediaItemMaxPos", position.toString())
-                                                transaction {
-                                                    Database.insert(song)
-                                                    Database.insert(
+                                                Database.asyncTransaction {
+                                                    insert(song)
+                                                    insert(
                                                         SongPlaylistMap(
                                                             songId = song.mediaId,
                                                             playlistId = playlistPreview.playlist.id,
@@ -897,6 +897,8 @@ fun DeviceListSongs(
                 key = { index, _ -> Random.nextLong().toString() },
                 contentType = { _, song -> song },
             ) { index, song ->
+
+                var forceRecompose by remember { mutableStateOf(false) }
                 SongItem(
                     song = song.song,
                     onDownloadClick = {
@@ -906,8 +908,7 @@ fun DeviceListSongs(
                     thumbnailSizeDp = thumbnailSizeDp,
                     thumbnailSizePx = thumbnailSize,
                     onThumbnailContent = {
-                        if (nowPlayingItem > -1)
-                            NowPlayingShow(song.asMediaItem.mediaId)
+                            NowPlayingSongIndicator(song.asMediaItem.mediaId, binder?.player)
                     },
                     trailingContent = {
                         val checkedState = rememberSaveable { mutableStateOf(false) }
@@ -937,7 +938,10 @@ fun DeviceListSongs(
                                         DeviceLists.LocalSongs -> InHistoryMediaItemMenu(
                                             navController = navController,
                                             song = song.song,
-                                            onDismiss = menuState::hide,
+                                            onDismiss = {
+                                                menuState.hide()
+                                                forceRecompose = true
+                                            },
                                             disableScrollingText = disableScrollingText
                                         )
                                     }
@@ -955,8 +959,10 @@ fun DeviceListSongs(
                                 }
                             }
                         )
-                        .animateItemPlacement(),
-                    disableScrollingText = disableScrollingText
+                        .animateItem(),
+                    disableScrollingText = disableScrollingText,
+                    isNowPlaying = binder?.player?.isNowPlaying(song.song.id) ?: false,
+                    forceRecompose = forceRecompose
                 )
             }
         }

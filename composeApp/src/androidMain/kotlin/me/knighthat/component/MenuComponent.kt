@@ -9,7 +9,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.media3.common.MediaItem
 import it.fast4x.rimusic.Database
 import it.fast4x.rimusic.R
-import it.fast4x.rimusic.transaction
 import it.fast4x.rimusic.ui.components.LocalMenuState
 import it.fast4x.rimusic.ui.components.MenuState
 import it.fast4x.rimusic.ui.components.themed.SmartMessage
@@ -103,9 +102,9 @@ fun LikeSongs(
         get() = stringResource( messageId )
 
     override fun onShortClick() {
-        transaction {
+        Database.asyncTransaction {
             mediaItems().forEach {
-                Database.like( it.mediaId, System.currentTimeMillis() )
+                like( it.mediaId, System.currentTimeMillis() )
             }
 
             runBlocking( Dispatchers.Main ) {
@@ -188,7 +187,7 @@ fun ResetThumbnail(
 
     val menuState: MenuState = LocalMenuState.current
     override val iconId: Int = R.drawable.image
-    override val messageId: Int = R.string.edit_thumbnail
+    override val messageId: Int = R.string.reset_thumbnail
     override val menuIconTitle: String
         @Composable
         get() = stringResource( messageId )

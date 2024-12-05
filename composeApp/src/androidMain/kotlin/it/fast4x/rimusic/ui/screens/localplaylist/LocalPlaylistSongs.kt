@@ -6,7 +6,6 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -59,7 +58,6 @@ import androidx.navigation.NavController
 import com.github.doyaaaaaken.kotlincsv.client.KotlinCsvExperimental
 import it.fast4x.compose.persist.persist
 import it.fast4x.compose.persist.persistList
-import it.fast4x.compose.reordering.animateItemPlacement
 import it.fast4x.compose.reordering.draggedItem
 import it.fast4x.compose.reordering.rememberReorderingState
 import it.fast4x.compose.reordering.reorder
@@ -84,9 +82,7 @@ import it.fast4x.rimusic.enums.UiType
 import it.fast4x.rimusic.models.PlaylistPreview
 import it.fast4x.rimusic.models.SongEntity
 import it.fast4x.rimusic.models.SongPlaylistMap
-import it.fast4x.rimusic.query
 import it.fast4x.rimusic.service.isLocal
-import it.fast4x.rimusic.transaction
 import it.fast4x.rimusic.ui.components.LocalMenuState
 import it.fast4x.rimusic.ui.components.SwipeableQueueItem
 import it.fast4x.rimusic.ui.components.themed.FloatingActionsContainerWithScrollToTop
@@ -95,7 +91,7 @@ import it.fast4x.rimusic.ui.components.themed.HeaderWithIcon
 import it.fast4x.rimusic.ui.components.themed.IconButton
 import it.fast4x.rimusic.ui.components.themed.IconInfo
 import it.fast4x.rimusic.ui.components.themed.InPlaylistMediaItemMenu
-import it.fast4x.rimusic.ui.components.themed.NowPlayingShow
+import it.fast4x.rimusic.ui.components.themed.NowPlayingSongIndicator
 import it.fast4x.rimusic.ui.components.themed.Playlist
 import it.fast4x.rimusic.ui.components.themed.SmartMessage
 import it.fast4x.rimusic.ui.items.SongItem
@@ -125,6 +121,7 @@ import it.fast4x.rimusic.utils.getPipedSession
 import it.fast4x.rimusic.utils.getTitleMonthlyPlaylist
 import it.fast4x.rimusic.utils.isDownloadedSong
 import it.fast4x.rimusic.utils.isLandscape
+import it.fast4x.rimusic.utils.isNowPlaying
 import it.fast4x.rimusic.utils.isPipedEnabledKey
 import it.fast4x.rimusic.utils.isRecommendationEnabledKey
 import it.fast4x.rimusic.utils.manageDownload
@@ -132,12 +129,12 @@ import it.fast4x.rimusic.utils.parentalControlEnabledKey
 import it.fast4x.rimusic.utils.recommendationsNumberKey
 import it.fast4x.rimusic.utils.rememberPreference
 import it.fast4x.rimusic.utils.removeFromPipedPlaylist
-import it.fast4x.rimusic.utils.resetFormatContentLength
 import it.fast4x.rimusic.utils.saveImageToInternalStorage
 import it.fast4x.rimusic.utils.semiBold
 import it.fast4x.rimusic.utils.showFloatingIconKey
 import it.fast4x.rimusic.utils.syncSongsInPipedPlaylist
 import it.fast4x.rimusic.utils.thumbnailRoundnessKey
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flowOf
@@ -225,8 +222,8 @@ fun LocalPlaylistSongs(
     val renameDialog = RenameDialog.init( pipedSession, coroutineScope, { isPipedEnabled }, playlistName, { playlistPreview } )
     val exportDialog = ExportSongsToCSVDialog.init( playlistName, ::getMediaItems )
     val deleteDialog = DeletePlaylist {
-        transaction {
-            playlistPreview?.playlist?.let(Database::delete)
+        Database.asyncTransaction {
+            playlistPreview?.playlist?.let( ::delete )
         }
 
         if (
@@ -323,7 +320,7 @@ fun LocalPlaylistSongs(
                     true
                 )
             ) {
-                transaction {
+                Database.asyncTransaction {
                     runBlocking(Dispatchers.IO) {
                         withContext(Dispatchers.IO) {
                             Innertube.playlistPage(
@@ -408,24 +405,29 @@ fun LocalPlaylistSongs(
             else
                 true
         }.filter {
-            val containsName = it.song.title.contains(search.input, true)
+            // Without cleaning, user can search explicit songs with "e:"
+            // I kinda want this to be a feature, but it seems unnecessary
+            val containsName = it.song.cleanTitle().contains(search.input, true)
             val containsArtist = it.song.artistsText?.contains(search.input, true) ?: false
             val containsAlbum = it.albumTitle?.contains(search.input, true) ?: false
 
             containsName || containsArtist || containsAlbum
         }.let { itemsOnDisplay = it }
+
+        /*
+            [LazyListState] will try to keep the visible song at the top
+            after search input has changed. This creates a weird effect
+            that fools user to believe search results haven't change.
+
+            To prevent it, always scroll the list to the top
+         */
+        lazyListState.scrollToItem( 0 )
     }
     LaunchedEffect(Unit) {
         Database.singlePlaylistPreview( playlistId )
                 .flowOn( Dispatchers.IO )
                 .distinctUntilChanged()
                 .collect { playlistPreview = it }
-
-        val thumbnailName = "thumbnail/playlist_${playlistId}"
-        val presentThumbnailUrl: String? = checkFileExists(context, thumbnailName)
-        if (presentThumbnailUrl != null) {
-            thumbnailUrl.value = presentThumbnailUrl
-        }
     }
     LaunchedEffect( playlistPreview?.playlist?.name ) {
         renameDialog.playlistName = playlistPreview?.playlist?.name?.let { name ->
@@ -435,6 +437,12 @@ fun LocalPlaylistSongs(
                 name.substringAfter( PINNED_PREFIX )
                     .substringAfter( PIPED_PREFIX )
         } ?: "Unknown"
+
+        val thumbnailName = "thumbnail/playlist_${playlistId}"
+        val presentThumbnailUrl: String? = checkFileExists(context, thumbnailName)
+        if (presentThumbnailUrl != null) {
+            thumbnailUrl.value = presentThumbnailUrl
+        }
     }
 
     //**** SMART RECOMMENDATION
@@ -477,8 +485,8 @@ fun LocalPlaylistSongs(
         key = items,
         onDragEnd = { fromIndex, toIndex ->
             //Log.d("mediaItem","reoder playlist $playlistId, from $fromIndex, to $toIndex")
-            query {
-                Database.move(playlistId, fromIndex, toIndex)
+            Database.asyncTransaction {
+                move(playlistId, fromIndex, toIndex)
             }
         },
         extraItemCount = 1
@@ -499,9 +507,9 @@ fun LocalPlaylistSongs(
 
     val rippleIndication = ripple(bounded = false)
 
-    var nowPlayingItem by remember {
-        mutableStateOf(-1)
-    }
+//    var nowPlayingItem by remember {
+//        mutableStateOf(-1)
+//    }
 
     val playlistNotMonthlyType =
         playlistPreview?.playlist?.name?.startsWith(MONTHLY_PREFIX, 0, true) == false
@@ -700,7 +708,7 @@ fun LocalPlaylistSongs(
                 }
 
                 itemsIndexed(
-                    items = itemsOnDisplay,
+                    items = itemsOnDisplay.filter { it.song.id.isNotBlank() },
                     key = { _, song -> song.song.id },
                     contentType = { _, song -> song },
                 ) { index, song ->
@@ -720,11 +728,14 @@ fun LocalPlaylistSongs(
                                 trailingContent = {},
                                 onThumbnailContent = {},
                                 modifier = Modifier
-                                    .clickable {
-                                        binder?.stopRadio()
-                                        binder?.player?.forcePlay(it)
-                                    },
-                                disableScrollingText = disableScrollingText
+                                    .combinedClickable (
+                                        onClick = {
+                                            binder?.stopRadio()
+                                            binder?.player?.forcePlay(it)
+                                        }
+                                    ),
+                                disableScrollingText = disableScrollingText,
+                                isNowPlaying = binder?.player?.isNowPlaying(it.mediaId) ?: false
                             )
                         }
                     }
@@ -773,16 +784,10 @@ fun LocalPlaylistSongs(
                         SwipeableQueueItem(
                             mediaItem = song.asMediaItem,
                             onSwipeToLeft = {
-                                transaction {
-                                    Database.move(playlistId, positionInPlaylist, Int.MAX_VALUE)
-                                    Database.delete(
-                                        SongPlaylistMap(
-                                            song.song.id,
-                                            playlistId,
-                                            Int.MAX_VALUE
-                                        )
-                                    )
+                                Database.asyncTransaction {
+                                    deleteSongFromPlaylist(song.song.id, playlistId)
                                 }
+
 
                                 if (playlistPreview?.playlist?.name?.startsWith(PIPED_PREFIX) == true && isPipedEnabled && pipedSession.token.isNotEmpty()) {
                                     Timber.d("MediaItemMenu LocalPlaylistSongs onSwipeToLeft browseId ${playlistPreview!!.playlist.browseId}")
@@ -813,8 +818,9 @@ fun LocalPlaylistSongs(
                                 song = song.song,
                                 onDownloadClick = {
                                     binder?.cache?.removeResource(song.asMediaItem.mediaId)
-
-                                    resetFormatContentLength(song.asMediaItem.mediaId)
+                                    CoroutineScope(Dispatchers.IO).launch {
+                                        Database.resetContentLength( song.asMediaItem.mediaId )
+                                    }
 
                                     if (!isLocal) {
                                         manageDownload(
@@ -877,8 +883,8 @@ fun LocalPlaylistSongs(
                                         )
                                     }
 
-                                    if (nowPlayingItem > -1)
-                                        NowPlayingShow(song.asMediaItem.mediaId)
+
+                                        NowPlayingSongIndicator(song.asMediaItem.mediaId, binder?.player)
                                 },
                                 modifier = Modifier
                                     .combinedClickable(
@@ -911,10 +917,10 @@ fun LocalPlaylistSongs(
                                             search.onItemSelected()
                                         }
                                     )
-                                    .animateItemPlacement(reorderingState)
                                     .background(color = colorPalette().background0)
                                     .zIndex(2f),
-                                disableScrollingText = disableScrollingText
+                                disableScrollingText = disableScrollingText,
+                                isNowPlaying = binder?.player?.isNowPlaying(song.song.id) ?: false
                             )
                         }
                     }

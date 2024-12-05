@@ -9,7 +9,6 @@ import androidx.media3.common.util.UnstableApi
 import it.fast4x.rimusic.Database
 import it.fast4x.rimusic.LocalPlayerServiceBinder
 import it.fast4x.rimusic.R
-import it.fast4x.rimusic.query
 import it.fast4x.rimusic.service.modern.PlayerServiceModern
 import it.fast4x.rimusic.ui.components.LocalMenuState
 import it.fast4x.rimusic.ui.components.MenuState
@@ -39,13 +38,13 @@ class HideSongDialog private constructor(
 
     override fun onConfirm() {
         song.ifPresent {
-            query {
+            Database.asyncTransaction {
                 menuState.hide()
                 binder?.cache?.removeResource(it.song.id)
                 binder?.downloadCache?.removeResource(it.song.id)
-                Database.resetFormatContentLength(it.song.id)
-                Database.deleteFormat(it.song.id)
-                Database.incrementTotalPlayTimeMs(
+                resetFormatContentLength(it.song.id)
+                deleteFormat(it.song.id)
+                incrementTotalPlayTimeMs(
                     it.song.id,
                     -it.song.totalPlayTimeMs
                 )

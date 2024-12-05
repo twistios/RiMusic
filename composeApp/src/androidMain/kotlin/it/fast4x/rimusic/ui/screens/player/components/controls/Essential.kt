@@ -50,7 +50,9 @@ import androidx.compose.ui.unit.dp
 import androidx.media3.common.util.UnstableApi
 import androidx.navigation.NavController
 import it.fast4x.rimusic.Database
+import it.fast4x.rimusic.EXPLICIT_PREFIX
 import it.fast4x.rimusic.R
+import it.fast4x.rimusic.cleanPrefix
 import it.fast4x.rimusic.enums.ButtonState
 import it.fast4x.rimusic.enums.ColorPaletteMode
 import it.fast4x.rimusic.enums.ColorPaletteName
@@ -58,27 +60,26 @@ import it.fast4x.rimusic.enums.NavRoutes
 import it.fast4x.rimusic.enums.PlayerBackgroundColors
 import it.fast4x.rimusic.enums.PlayerControlsType
 import it.fast4x.rimusic.enums.PlayerPlayButtonType
+import it.fast4x.rimusic.enums.QueueLoopType
 import it.fast4x.rimusic.models.Info
 import it.fast4x.rimusic.models.Song
 import it.fast4x.rimusic.models.ui.UiMedia
-import it.fast4x.rimusic.query
+import it.fast4x.rimusic.service.modern.PlayerServiceModern
 import it.fast4x.rimusic.ui.components.themed.IconButton
 import it.fast4x.rimusic.ui.components.themed.SelectorArtistsDialog
-import it.fast4x.rimusic.EXPLICIT_PREFIX
 import it.fast4x.rimusic.ui.screens.player.bounceClick
 import it.fast4x.rimusic.ui.styling.favoritesIcon
 import it.fast4x.rimusic.utils.bold
 import it.fast4x.rimusic.utils.buttonStateKey
-import it.fast4x.rimusic.cleanPrefix
-import it.fast4x.rimusic.enums.QueueLoopType
-import it.fast4x.rimusic.service.modern.PlayerServiceModern
 import it.fast4x.rimusic.utils.colorPaletteModeKey
 import it.fast4x.rimusic.utils.colorPaletteNameKey
 import it.fast4x.rimusic.utils.effectRotationKey
 import it.fast4x.rimusic.utils.getIconQueueLoopState
 import it.fast4x.rimusic.utils.getLikeState
 import it.fast4x.rimusic.utils.getUnlikedIcon
+import it.fast4x.rimusic.utils.jumpPreviousKey
 import it.fast4x.rimusic.utils.playNext
+import it.fast4x.rimusic.utils.playPrevious
 import it.fast4x.rimusic.utils.playerBackgroundColorsKey
 import it.fast4x.rimusic.utils.playerControlsTypeKey
 import it.fast4x.rimusic.utils.queueLoopTypeKey
@@ -203,17 +204,12 @@ fun InfoAlbumAndArtistEssential(
                      //icon = if (likedAt == null) getUnlikedIcon() else getLikedIcon(),
                      onClick = {
                          val currentMediaItem = binder.player.currentMediaItem
-                         query {
-                             if (Database.like(
-                                     mediaId,
-                                     //if (likedAt == null) System.currentTimeMillis() else null
-                                     setLikeState(likedAt)
-                                 ) == 0
-                             ) {
+                         Database.asyncTransaction {
+                             if ( like( mediaId, setLikeState(likedAt) ) == 0 ) {
                                  currentMediaItem
                                      ?.takeIf { it.mediaId == mediaId }
                                      ?.let {
-                                         Database.insert(currentMediaItem, Song::toggleLike)
+                                         insert(currentMediaItem, Song::toggleLike)
                                      }
                              }
                          }
@@ -346,23 +342,20 @@ fun ControlsEssential(
 
     var queueLoopType by rememberPreference(queueLoopTypeKey, defaultValue = QueueLoopType.Default)
     val playerBackgroundColors by rememberPreference(playerBackgroundColorsKey,PlayerBackgroundColors.BlurredCoverColor)
+    var jumpPrevious by rememberPreference(jumpPreviousKey,"3")
+
     Box {
         IconButton(
             color = colorPalette().favoritesIcon,
             icon = getLikeState(mediaId),
             onClick = {
                 val currentMediaItem = binder.player.currentMediaItem
-                query {
-                    if (Database.like(
-                            mediaId,
-                            setLikeState(likedAt)
-                        ) == 0
-                    ) {
+                Database.asyncTransaction {
+                    if ( like( mediaId, setLikeState(likedAt) ) == 0 ) {
                         currentMediaItem
                             ?.takeIf { it.mediaId == mediaId }
                             ?.let {
-                                Database.insert(currentMediaItem, Song::toggleLike)
-
+                                insert(currentMediaItem, Song::toggleLike)
                             }
                     }
                 }
@@ -394,7 +387,11 @@ fun ControlsEssential(
                 indication = ripple(bounded = false),
                 interactionSource = remember { MutableInteractionSource() },
                 onClick = {
-                    binder.player.seekToPrevious()
+                    if (jumpPrevious == "") jumpPrevious = "0"
+                    if(!binder.player.hasPreviousMediaItem() || (jumpPrevious != "0" && binder.player.currentPosition > jumpPrevious.toInt()*1000)){
+                        binder.player.seekTo(0)
+                    }
+                    else binder.player.playPrevious()
                     if (effectRotationEnabled) isRotated = !isRotated
                 },
                 onLongClick = {

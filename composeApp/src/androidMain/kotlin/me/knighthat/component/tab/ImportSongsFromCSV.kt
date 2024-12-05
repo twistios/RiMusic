@@ -8,10 +8,10 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.res.stringResource
 import com.github.doyaaaaaken.kotlincsv.dsl.csvReader
+import it.fast4x.rimusic.Database
 import it.fast4x.rimusic.R
 import it.fast4x.rimusic.enums.PopupType
 import it.fast4x.rimusic.models.Song
-import it.fast4x.rimusic.transaction
 import it.fast4x.rimusic.ui.components.themed.SmartMessage
 import me.knighthat.appContext
 import me.knighthat.component.tab.toolbar.Descriptive
@@ -35,14 +35,14 @@ class ImportSongsFromCSV private constructor(
                                 readAllWithHeaderAsSequence().forEachIndexed { index, row: Map<String, String> ->
                                     println("mediaItem index song $index")
 
-                                    transaction {
+                                    Database.asyncTransaction {
                                         beforeTransaction( index, row )
                                         /**/
                                         val mediaId = row["MediaId"]
                                         val title = row["Title"]
 
                                         if( mediaId == null || title == null)
-                                            return@transaction
+                                            return@asyncTransaction
 
                                         val song = Song (
                                             id = mediaId,

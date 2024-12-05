@@ -11,15 +11,11 @@ import it.fast4x.rimusic.LocalPlayerServiceBinder
 import it.fast4x.rimusic.R
 import it.fast4x.rimusic.models.SongEntity
 import it.fast4x.rimusic.service.modern.PlayerServiceModern
-import it.fast4x.rimusic.transaction
 import it.fast4x.rimusic.ui.components.LocalMenuState
 import it.fast4x.rimusic.ui.components.MenuState
 import it.fast4x.rimusic.ui.components.themed.SmartMessage
 import me.knighthat.appContext
 import me.knighthat.component.DeleteDialog
-import me.knighthat.component.tab.toolbar.ConfirmDialog
-import me.knighthat.component.tab.toolbar.Descriptive
-import me.knighthat.component.tab.toolbar.MenuIcon
 import java.util.Optional
 
 @UnstableApi
@@ -53,14 +49,16 @@ open class DelSongDialog protected constructor(
     }
 
     override fun onConfirm() {
+        println("Deleting song ${song}")
         song.ifPresent {
-            transaction {
+            println("Deleting song ${it.song.title}")
+            Database.asyncTransaction {
                 menuState.hide()
                 binder?.cache?.removeResource(it.song.id)
                 binder?.downloadCache?.removeResource(it.song.id)
-                Database.delete(it.song)
-                Database.deleteSongFromPlaylists(it.song.id)
-                Database.deleteFormat(it.song.id)
+                deleteSongFromPlaylists(it.song.id)
+                deleteFormat(it.song.id)
+                delete(it.song)
             }
             SmartMessage(
                 message = appContext().resources.getString(R.string.deleted),

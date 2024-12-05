@@ -161,6 +161,7 @@ WARNING, the custom version is not an official release, download only if invited
 - [sharunkumar](https://github.com/sharunkumar/sharunkumar)
 - [SuhasDissa](https://github.com/SuhasDissa)
 - [twistios](https://github.com/twistios)
+- [wispl](https://github.com/wispl)
 
 
 ## 🫂 Acknowledgments
