@@ -85,11 +85,13 @@ import it.fast4x.rimusic.utils.positionAndDurationState
 import it.fast4x.rimusic.utils.rememberPreference
 import it.fast4x.rimusic.utils.semiBold
 import it.fast4x.rimusic.utils.thumbnail
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import me.knighthat.colorPalette
-import me.knighthat.typography
+import it.fast4x.rimusic.colorPalette
+import it.fast4x.rimusic.typography
 
 @OptIn(UnstableApi::class)
 @Composable
@@ -400,7 +402,9 @@ fun MediaItemGridMenu (
                     ?.toString(),
                 onDownloadClick = {
                     binder?.cache?.removeResource(mediaItem.mediaId)
-                    Database.resetContentLength( mediaItem.mediaId )
+                    CoroutineScope(Dispatchers.IO).launch {
+                        Database.deleteFormat( mediaItem.mediaId )
+                    }
                     if (!isLocal)
                         manageDownload(
                             context = context,

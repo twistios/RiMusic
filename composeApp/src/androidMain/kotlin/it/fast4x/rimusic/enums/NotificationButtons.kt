@@ -1,13 +1,11 @@
 package it.fast4x.rimusic.enums
 
-import android.graphics.drawable.Drawable
+import android.app.PendingIntent
 import androidx.annotation.OptIn
-import androidx.appcompat.content.res.AppCompatResources
 import androidx.media3.common.Player.REPEAT_MODE_ALL
 import androidx.media3.common.Player.REPEAT_MODE_OFF
 import androidx.media3.common.Player.REPEAT_MODE_ONE
 import androidx.media3.common.util.UnstableApi
-import androidx.media3.exoplayer.offline.Download
 import androidx.media3.session.SessionCommand
 import it.fast4x.rimusic.R
 import it.fast4x.rimusic.service.modern.MediaSessionConstants.CommandSearch
@@ -16,7 +14,8 @@ import it.fast4x.rimusic.service.modern.MediaSessionConstants.CommandToggleDownl
 import it.fast4x.rimusic.service.modern.MediaSessionConstants.CommandToggleLike
 import it.fast4x.rimusic.service.modern.MediaSessionConstants.CommandToggleRepeatMode
 import it.fast4x.rimusic.service.modern.MediaSessionConstants.CommandToggleShuffle
-import me.knighthat.appContext
+import it.fast4x.rimusic.service.modern.PlayerServiceModern
+import it.fast4x.rimusic.appContext
 
 enum class NotificationButtons {
     Download,
@@ -34,6 +33,17 @@ enum class NotificationButtons {
         Shuffle -> CommandToggleShuffle
         Radio -> CommandStartRadio
         Search -> CommandSearch
+    }
+
+    val pendingIntent: PendingIntent
+    @OptIn(UnstableApi::class)
+    get() = when (this) {
+        Download -> PlayerServiceModern.Action.download.pendingIntent
+        Favorites -> PlayerServiceModern.Action.like.pendingIntent
+        Repeat -> PlayerServiceModern.Action.repeat.pendingIntent
+        Shuffle -> PlayerServiceModern.Action.shuffle.pendingIntent
+        Radio -> PlayerServiceModern.Action.playradio.pendingIntent
+        Search -> PlayerServiceModern.Action.search.pendingIntent
     }
 
     val displayName: String

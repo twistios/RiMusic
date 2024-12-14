@@ -125,8 +125,8 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import me.knighthat.colorPalette
-import me.knighthat.typography
+import it.fast4x.rimusic.colorPalette
+import it.fast4x.rimusic.typography
 import timber.log.Timber
 
 
@@ -402,7 +402,9 @@ fun Podcast(
                                             if (podcastPage?.listEpisode?.isNotEmpty() == true)
                                                 podcastPage?.listEpisode?.forEach {
                                                     binder?.cache?.removeResource(it.asMediaItem.mediaId)
-                                                    Database.resetContentLength( it.asMediaItem.mediaId )
+                                                    CoroutineScope(Dispatchers.IO).launch {
+                                                        Database.deleteFormat( it.asMediaItem.mediaId )
+                                                    }
                                                     manageDownload(
                                                         context = context,
                                                         mediaItem = it.asMediaItem,
@@ -428,7 +430,9 @@ fun Podcast(
                                             if (podcastPage?.listEpisode?.isNotEmpty() == true)
                                                 podcastPage?.listEpisode?.forEach {
                                                     binder?.cache?.removeResource(it.asMediaItem.mediaId)
-                                                    Database.resetContentLength( it.asMediaItem.mediaId )
+                                                    CoroutineScope(Dispatchers.IO).launch {
+                                                        Database.deleteFormat( it.asMediaItem.mediaId )
+                                                    }
                                                     manageDownload(
                                                         context = context,
                                                         mediaItem = it.asMediaItem,
@@ -714,7 +718,9 @@ fun Podcast(
                             song = song.asMediaItem,
                             onDownloadClick = {
                                 binder?.cache?.removeResource(song.asMediaItem.mediaId)
-                                Database.resetContentLength( song.asMediaItem.mediaId )
+                                CoroutineScope(Dispatchers.IO).launch {
+                                    Database.deleteFormat( song.asMediaItem.mediaId )
+                                }
 
                                 if (!isLocal)
                                     manageDownload(
@@ -733,8 +739,8 @@ fun Podcast(
                                             NonQueuedMediaItemMenu(
                                                 navController = navController,
                                                 onDismiss = {
-                                                    forceRecompose = true
                                                     menuState.hide()
+                                                    forceRecompose = true
                                                 },
                                                 mediaItem = song.asMediaItem,
                                                 disableScrollingText = disableScrollingText

@@ -82,6 +82,12 @@ fun Player.playVideo(mediaItem: MediaItem) {
     pause()
 }
 
+fun Player.playAtIndex(mediaItemIndex: Int) {
+    seekTo(mediaItemIndex, C.TIME_UNSET)
+    prepare()
+    playWhenReady = true
+}
+
 @SuppressLint("Range")
 @UnstableApi
 fun Player.forcePlayAtIndex(mediaItems: List<MediaItem>, mediaItemIndex: Int) {

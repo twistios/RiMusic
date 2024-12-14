@@ -1,5 +1,6 @@
 package it.fast4x.rimusic
 
+import android.annotation.SuppressLint
 import android.app.Activity
 import android.app.ActivityManager
 import android.content.ComponentName
@@ -230,10 +231,8 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
-import me.knighthat.colorPalette
 import me.knighthat.invidious.Invidious
 import me.knighthat.piped.Piped
-import me.knighthat.thumbnailShape
 import okhttp3.Call
 import okhttp3.Callback
 import okhttp3.OkHttpClient
@@ -281,7 +280,6 @@ class MainActivity :
     private var currentAcceleration = 0f
     private var lastAcceleration = 0f
     private var shakeCounter = 0
-    private var appRunningInBackground: Boolean = false
 
     private var _monet: MonetCompat? by mutableStateOf(null)
     private val monet get() = _monet ?: throw MonetActivityAccessException()
@@ -411,6 +409,7 @@ class MainActivity :
         content()
     }
 
+    @SuppressLint("UnusedBoxWithConstraintsScope")
     @OptIn(
         ExperimentalTextApi::class,
         ExperimentalFoundationApi::class, ExperimentalAnimationApi::class,
@@ -1065,7 +1064,7 @@ class MainActivity :
                             )
 
                             checkIfAppIsRunningInBackground()
-                            if (appRunningInBackground) showPlayer = false
+                            // if (appRunningInBackground) showPlayer = false
 
 
                             val thumbnailRoundness by rememberPreference(
@@ -1469,6 +1468,8 @@ class MainActivity :
 
 
 }
+
+var appRunningInBackground: Boolean = false
 
 val LocalPlayerServiceBinder = staticCompositionLocalOf<PlayerServiceModern.Binder?> { null }
 

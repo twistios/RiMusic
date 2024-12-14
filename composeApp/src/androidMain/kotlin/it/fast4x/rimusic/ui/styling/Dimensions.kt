@@ -23,6 +23,7 @@ object Dimensions {
     val bottomSpacer = 100.dp
     val fadeSpacingTop = 30.dp
     val fadeSpacingBottom = 64.dp
+    val musicAnimationHeight = 20.dp
 
 
     object thumbnails {

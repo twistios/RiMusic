@@ -33,7 +33,7 @@ import it.fast4x.rimusic.ui.components.themed.Title
 import it.fast4x.rimusic.ui.items.VideoItem
 import it.fast4x.rimusic.ui.items.VideoItemPlaceholder
 import it.fast4x.rimusic.ui.screens.searchresult.ItemsPage
-import me.knighthat.colorPalette
+import it.fast4x.rimusic.colorPalette
 
 @ExperimentalAnimationApi
 @ExperimentalTextApi

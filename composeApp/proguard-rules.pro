@@ -20,15 +20,15 @@
     kotlinx.serialization.KSerializer serializer(...);
 }
 
-
--keepattributes RuntimeVisibleAnnotations,AnnotationDefault
-
 -keep public class * extends android.app.Activity
 -keep public class * extends android.app.Service
 
+-keepattributes RuntimeVisibleAnnotations,AnnotationDefault
 -keepattributes SourceFile,LineNumberTable
 # rename the source files to something meaningless, but it must be retained
--renamesourcefileattribute SourceFile
+#-renamesourcefileattribute SourceFile
+
+
 
 -dontwarn org.bouncycastle.jsse.BCSSLParameters
 -dontwarn org.bouncycastle.jsse.BCSSLSocket

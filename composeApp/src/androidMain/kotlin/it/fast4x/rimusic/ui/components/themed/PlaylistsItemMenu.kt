@@ -11,6 +11,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -28,6 +29,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.layout.onPlaced
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.ExperimentalTextApi
@@ -40,6 +42,7 @@ import it.fast4x.rimusic.MONTHLY_PREFIX
 import it.fast4x.rimusic.PINNED_PREFIX
 import it.fast4x.rimusic.PIPED_PREFIX
 import it.fast4x.rimusic.R
+import it.fast4x.rimusic.cleanPrefix
 import it.fast4x.rimusic.enums.MenuStyle
 import it.fast4x.rimusic.enums.NavRoutes
 import it.fast4x.rimusic.enums.PlaylistSortBy
@@ -55,8 +58,8 @@ import it.fast4x.rimusic.utils.playlistSortOrderKey
 import it.fast4x.rimusic.utils.rememberPreference
 import it.fast4x.rimusic.utils.semiBold
 import kotlinx.coroutines.Dispatchers
-import me.knighthat.colorPalette
-import me.knighthat.typography
+import it.fast4x.rimusic.colorPalette
+import it.fast4x.rimusic.typography
 
 @ExperimentalTextApi
 @SuppressLint("SuspiciousIndentation")
@@ -195,10 +198,12 @@ fun PlaylistsItemMenu(
                 BackHandler {
                     isViewingPlaylists = false
                 }
-
+                val density = LocalDensity.current
                 Menu(
                     modifier = modifier
-                        .requiredHeight(height)
+                        .fillMaxHeight()
+                        //.requiredHeight(height)
+                        //.onPlaced { height = with(density) { it.size.height.toDp()+100.dp } }
                 ) {
                     Row(
                         horizontalArrangement = Arrangement.SpaceBetween,
@@ -236,9 +241,7 @@ fun PlaylistsItemMenu(
                             pinnedPlaylists.forEach { playlistPreview ->
                                 MenuEntry(
                                     icon = R.drawable.add_in_playlist,
-                                    text = playlistPreview.playlist.name.substringAfter(
-                                        PINNED_PREFIX
-                                    ),
+                                    text = cleanPrefix(playlistPreview.playlist.name),
                                     secondaryText = "${playlistPreview.songCount} " + stringResource(
                                         R.string.songs
                                     ),
@@ -282,7 +285,7 @@ fun PlaylistsItemMenu(
                             unpinnedPlaylists.forEach { playlistPreview ->
                                 MenuEntry(
                                     icon = R.drawable.add_in_playlist,
-                                    text = playlistPreview.playlist.name,
+                                    text = cleanPrefix(playlistPreview.playlist.name),
                                     secondaryText = "${playlistPreview.songCount} " + stringResource(
                                         R.string.songs
                                     ),
@@ -325,12 +328,15 @@ fun PlaylistsItemMenu(
                     }
                 }
             } else {
+                val density = LocalDensity.current
                 Menu(
                     modifier = modifier
-                        //.onPlaced { height = with(density) { it.size.height.toDp() } }
-                        .onPlaced {
-                            height = it.size.height.dp * 0.5f
-                        }
+                        .fillMaxHeight()
+                        //.onPlaced { height = with(density) { it.size.height.toDp()+100.dp } }
+
+//                        .onPlaced {
+//                            height = it.size.height.dp * 0.5f
+//                        }
                 ) {
                     val thumbnailSizeDp = Dimensions.thumbnails.song + 20.dp
                     val thumbnailSizePx = thumbnailSizeDp.px

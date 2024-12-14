@@ -29,8 +29,8 @@ import androidx.compose.ui.unit.dp
 import it.fast4x.rimusic.R
 import it.fast4x.rimusic.utils.semiBold
 import it.fast4x.rimusic.utils.textCopyFromClipboard
-import me.knighthat.colorPalette
-import me.knighthat.typography
+import it.fast4x.rimusic.colorPalette
+import it.fast4x.rimusic.typography
 
 @Composable
 inline fun InputTextField(

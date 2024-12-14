@@ -54,8 +54,7 @@ import it.fast4x.rimusic.ui.components.themed.SmartMessage
 import it.fast4x.rimusic.ui.components.themed.TextPlaceholder
 import it.fast4x.rimusic.ui.styling.favoritesIcon
 import it.fast4x.rimusic.ui.styling.shimmer
-import it.fast4x.rimusic.cleanPrefix
-import it.fast4x.rimusic.service.isLocal
+import it.fast4x.rimusic.ui.components.themed.NowPlayingSongIndicator
 import it.fast4x.rimusic.ui.styling.LocalAppearance
 import it.fast4x.rimusic.ui.styling.favoritesOverlay
 import it.fast4x.rimusic.utils.asMediaItem
@@ -73,10 +72,10 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import me.knighthat.colorPalette
-import me.knighthat.extra.shimmerEffect
-import me.knighthat.thumbnailShape
-import me.knighthat.typography
+import it.fast4x.rimusic.colorPalette
+import it.fast4x.rimusic.utils.shimmerEffect
+import it.fast4x.rimusic.thumbnailShape
+import it.fast4x.rimusic.typography
 
 
 @UnstableApi
@@ -200,6 +199,8 @@ fun SongItem(
     isNowPlaying: Boolean = false,
     forceRecompose: Boolean = false
 ) {
+    val binder = LocalPlayerServiceBinder.current
+
     SongItem(
         thumbnailSizeDp = thumbnailSizeDp,
         thumbnailContent = {
@@ -213,6 +214,11 @@ fun SongItem(
             )
 
             onThumbnailContent?.invoke(this)
+
+            NowPlayingSongIndicator(
+                mediaId = mediaItem.mediaId,
+                player = binder?.player
+            )
         },
         modifier = modifier,
         trailingContent = trailingContent,
@@ -346,7 +352,7 @@ fun SongItem(
         mutableIntStateOf(0)
     }
     if (playlistindicator)
-        LaunchedEffect(Unit, mediaItem.mediaId, forceRecompose) {
+        LaunchedEffect(Unit, forceRecompose) {
             withContext(Dispatchers.IO) {
                 songPlaylist = Database.songUsedInPlaylists(mediaItem.mediaId)
             }

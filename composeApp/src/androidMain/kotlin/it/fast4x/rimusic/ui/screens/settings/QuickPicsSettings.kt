@@ -41,7 +41,7 @@ import it.fast4x.rimusic.utils.showRelatedAlbumsKey
 import it.fast4x.rimusic.utils.showSimilarArtistsKey
 import it.fast4x.rimusic.utils.showTipsKey
 import kotlinx.coroutines.flow.distinctUntilChanged
-import me.knighthat.colorPalette
+import it.fast4x.rimusic.colorPalette
 
 @ExperimentalAnimationApi
 @UnstableApi

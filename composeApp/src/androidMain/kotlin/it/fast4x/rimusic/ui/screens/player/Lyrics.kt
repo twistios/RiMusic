@@ -145,9 +145,9 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import me.bush.translator.Language
 import me.bush.translator.Translator
-import me.knighthat.colorPalette
-import me.knighthat.thumbnailShape
-import me.knighthat.typography
+import it.fast4x.rimusic.colorPalette
+import it.fast4x.rimusic.thumbnailShape
+import it.fast4x.rimusic.typography
 import timber.log.Timber
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
@@ -159,7 +159,6 @@ fun Lyrics(
     mediaId: String,
     isDisplayed: Boolean,
     onDismiss: () -> Unit,
-    onMaximize: () -> Unit,
     size: Dp,
     mediaMetadataProvider: () -> MediaMetadata,
     durationProvider: () -> Long,
@@ -1741,17 +1740,6 @@ fun Lyrics(
                             .size(30.dp)
                     )
 
-//                if (showlyricsthumbnail)
-//                    IconButton(
-//                        icon = R.drawable.minmax,
-//                        color = DefaultDarkColorPalette.text,
-//                        enabled = true,
-//                        onClick = onMaximize,
-//                        modifier = Modifier
-//                            .padding(all = 8.dp)
-//                            .align(Alignment.BottomStart)
-//                            .size(20.dp)
-//                    )
                 if (showlyricsthumbnail)
                     IconButton(
                         icon = R.drawable.text,

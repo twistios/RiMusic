@@ -4,7 +4,6 @@ import android.os.Build
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.basicMarquee
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.isSystemInDarkTheme
@@ -82,12 +81,15 @@ import it.fast4x.rimusic.utils.rememberPreference
 import it.fast4x.rimusic.utils.semiBold
 import it.fast4x.rimusic.utils.setLikeState
 import it.fast4x.rimusic.utils.showthumbnailKey
+import it.fast4x.rimusic.utils.textCopyToClipboard
 import it.fast4x.rimusic.utils.textoutlineKey
-import me.knighthat.colorPalette
-import me.knighthat.typography
+import it.fast4x.rimusic.appContext
+import it.fast4x.rimusic.colorPalette
+import it.fast4x.rimusic.typography
 
 
-@androidx.annotation.OptIn(UnstableApi::class)
+@UnstableApi
+@ExperimentalFoundationApi
 @Composable
 fun InfoAlbumAndArtistModern(
     binder: PlayerServiceModern.Binder,
@@ -149,13 +151,21 @@ fun InfoAlbumAndArtistModern(
             }
 
             var modifierTitle = Modifier
-                .clickable {
-                    if (albumId != null) {
-                        navController.navigate(route = "${NavRoutes.album.name}/${albumId}")
-                        //layoutState.collapseSoft()
-                        onCollapse()
+                .combinedClickable (
+                    indication = ripple(bounded = true),
+                    interactionSource = remember { MutableInteractionSource() },
+                    onClick = {
+                        if (albumId != null) {
+                            navController.navigate(route = "${NavRoutes.album.name}/${albumId}")
+                            onCollapse()
+                        }
+                    },
+                    onLongClick = {
+                        textCopyToClipboard(cleanPrefix(title ?: ""), context = appContext())
                     }
-                }
+                )
+
+
             val textoutline by rememberPreference(textoutlineKey, false)
 
             if (!disableScrollingText) modifierTitle = modifierTitle.basicMarquee()
@@ -179,7 +189,9 @@ fun InfoAlbumAndArtistModern(
                     text = cleanPrefix(title ?: ""),
                     style = TextStyle(
                         color = if (albumId == null)
-                            if (showthumbnail) colorPalette().textDisabled else if (colorPaletteMode == ColorPaletteMode.Light) colorPalette().textDisabled.copy(0.35f).compositeOver(Color.Black) else colorPalette().textDisabled.copy(0.35f).compositeOver(Color.White)
+                            /*if (showthumbnail) colorPalette().textDisabled else if (colorPaletteMode == ColorPaletteMode.Light) colorPalette().textDisabled.copy(0.35f).compositeOver(Color.Black) else colorPalette().textDisabled.copy(0.35f).compositeOver(Color.White)
+                        else colorPalette().text,*/
+                            if (colorPaletteMode == ColorPaletteMode.Light || (colorPaletteMode == ColorPaletteMode.System && (!isSystemInDarkTheme()))) colorPalette().textDisabled.copy(0.35f).compositeOver(Color.Black) else colorPalette().textDisabled.copy(0.35f).compositeOver(Color.White)
                         else colorPalette().text,
                         fontStyle = typography().l.bold.fontStyle,
                         fontWeight = typography().l.bold.fontWeight,
@@ -300,15 +312,22 @@ fun InfoAlbumAndArtistModern(
         }
 
         var modifierArtist = Modifier
-            .clickable {
-                if (artistIds?.isNotEmpty() == true && artistIds.size > 1)
-                    showSelectDialog = true
-                if (artistIds?.isNotEmpty() == true && artistIds.size == 1) {
-                    navController.navigate(route = "${NavRoutes.artist.name}/${artistIds[0].id}")
-                    //layoutState.collapseSoft()
-                    onCollapse()
+            .combinedClickable (
+                indication = ripple(bounded = true),
+                interactionSource = remember { MutableInteractionSource() },
+                onClick = {
+                    if (artistIds?.isNotEmpty() == true && artistIds.size > 1)
+                        showSelectDialog = true
+                    if (artistIds?.isNotEmpty() == true && artistIds.size == 1) {
+                        navController.navigate(route = "${NavRoutes.artist.name}/${artistIds[0].id}")
+                        onCollapse()
+                    }
+                },
+                onLongClick = {
+                    textCopyToClipboard(artist ?: "", context = appContext())
                 }
-            }
+            )
+
         var textoutline by rememberPreference(textoutlineKey, false)
         if (!disableScrollingText) modifierArtist = modifierArtist.basicMarquee()
         Box(
@@ -318,7 +337,9 @@ fun InfoAlbumAndArtistModern(
                 text = artist ?: "",
                 style = TextStyle(
                     color = if (albumId == null)
-                        if (showthumbnail) colorPalette().textDisabled else if (colorPaletteMode == ColorPaletteMode.Light) colorPalette().textDisabled.copy(0.35f).compositeOver(Color.Black) else colorPalette().textDisabled.copy(0.35f).compositeOver(Color.White)
+                        /*if (showthumbnail) colorPalette().textDisabled else if (colorPaletteMode == ColorPaletteMode.Light) colorPalette().textDisabled.copy(0.35f).compositeOver(Color.Black) else colorPalette().textDisabled.copy(0.35f).compositeOver(Color.White)
+                    else colorPalette().text,*/
+                        if (colorPaletteMode == ColorPaletteMode.Light || (colorPaletteMode == ColorPaletteMode.System && (!isSystemInDarkTheme()))) colorPalette().textDisabled.copy(0.35f).compositeOver(Color.Black) else colorPalette().textDisabled.copy(0.35f).compositeOver(Color.White)
                     else colorPalette().text,
                     fontStyle = typography().m.bold.fontStyle,
                     fontSize = typography().m.bold.fontSize,

@@ -7,6 +7,7 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -40,11 +41,11 @@ import kotlinx.coroutines.launch
 fun MusicAnimation(
     color: Color,
     modifier: Modifier = Modifier,
-    barWidth: Dp = 4.dp,
-    cornerRadius: Dp = 16.dp,
+    barWidth: Dp = 6.dp,
+    cornerRadius: Dp = 8.dp,
     show: Boolean = true
 ) {
-    if (!show) return
+    //if (!show) return
 
     val binder = LocalPlayerServiceBinder.current
     var isPlayRunning by remember { mutableStateOf(binder?.player?.isPlaying) }
@@ -163,7 +164,7 @@ fun MusicAnimation(
 
     AnimatedVisibility(isPlayRunning == true) {
         Row(
-            horizontalArrangement = Arrangement.spacedBy(4.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalAlignment = Alignment.Bottom,
             modifier = modifier
         ) {
@@ -176,7 +177,7 @@ fun MusicAnimation(
                     when (nowPlayingIndicator) {
                         MusicAnimationType.Bubbles -> drawCircle(
                             color = color,
-                            radius = animatable.value * (size.height/2)
+                            radius = animatable.value * (size.height/3)
                         )
                         MusicAnimationType.Bars -> drawRoundRect(
                             color = color,

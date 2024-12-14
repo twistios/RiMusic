@@ -131,8 +131,8 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import me.knighthat.colorPalette
-import me.knighthat.typography
+import it.fast4x.rimusic.colorPalette
+import it.fast4x.rimusic.typography
 import timber.log.Timber
 
 
@@ -456,7 +456,9 @@ fun PlaylistSongList(
                                             if (playlistPage?.songsPage?.items?.isNotEmpty() == true)
                                                 playlistPage?.songsPage?.items?.forEach {
                                                     binder?.cache?.removeResource(it.asMediaItem.mediaId)
-                                                    Database.resetContentLength( it.asMediaItem.mediaId )
+                                                    CoroutineScope(Dispatchers.IO).launch {
+                                                        Database.deleteFormat( it.asMediaItem.mediaId )
+                                                    }
                                                     manageDownload(
                                                         context = context,
                                                         mediaItem = it.asMediaItem,
@@ -482,7 +484,9 @@ fun PlaylistSongList(
                                             if (playlistPage?.songsPage?.items?.isNotEmpty() == true)
                                                 playlistPage?.songsPage?.items?.forEach {
                                                     binder?.cache?.removeResource(it.asMediaItem.mediaId)
-                                                    Database.resetContentLength( it.asMediaItem.mediaId )
+                                                    CoroutineScope(Dispatchers.IO).launch {
+                                                        Database.deleteFormat( it.asMediaItem.mediaId )
+                                                    }
                                                     manageDownload(
                                                         context = context,
                                                         mediaItem = it.asMediaItem,
@@ -757,7 +761,9 @@ fun PlaylistSongList(
                             song = song,
                             onDownloadClick = {
                                 binder?.cache?.removeResource(song.asMediaItem.mediaId)
-                                Database.resetContentLength( song.asMediaItem.mediaId )
+                                CoroutineScope(Dispatchers.IO).launch {
+                                    Database.deleteFormat( song.asMediaItem.mediaId )
+                                }
 
                                 if (!isLocal)
                                     manageDownload(
@@ -776,8 +782,8 @@ fun PlaylistSongList(
                                             NonQueuedMediaItemMenu(
                                                 navController = navController,
                                                 onDismiss = {
-                                                    forceRecompose = true
                                                     menuState.hide()
+                                                    forceRecompose = true
                                                 },
                                                 mediaItem = song.asMediaItem,
                                                 disableScrollingText = disableScrollingText

@@ -1,7 +1,7 @@
 
 [versions]
-compose-compiler = "1.5.15"
-compose-plugin = "1.6.11"
+#compose-compiler = "1.5.15"
+compose-plugin = "1.7.1"
 #junit = "4.13.2"
 agp = "8.7.2"
 kotlin = "2.0.21"

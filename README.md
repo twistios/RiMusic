@@ -3,6 +3,10 @@
   <p><b>RiMusic</b> is a <b>multilingual</b> Android application for streaming music from YouTube Music.</p>
   <p>It began as an <b>extension</b> of <b>ViMusic</b>, then acquired its own identity.</p>
 <p><b>It allowing the user to customize it at will.</b></p>
+
+  <a href="https://github.com/fast4x/RiMusic/releases"><img src="https://img.shields.io/github/downloads/fast4x/RiMusic/total?label=Total%20Downloads"></a>
+  <a href="https://github.com/fast4x/RiMusic/releases/latest"><img src="https://img.shields.io/github/downloads/fast4x/RiMusic/latest/total?label=Downloads%20of%20latest%20Release"></a>
+  <a href="https://github.com/fast4x/RiMusic/releases/latest"><img src="https://img.shields.io/github/v/release/fast4x/RiMusic?label=Release"></a>
 </div>
 
 ## ✨ Features
@@ -66,7 +70,7 @@
 - **Estonian** thanks to [beez276](https://crowdin.com/profile/beez276)
 - **Filipino** thanks to [Clyde-Timonera](https://github.com/Clyde-Timonera)
 - **Finnish:** thanks to [Smk90](https://crowdin.com/profile/smk90) and [rikalaj](https://crowdin.com/profile/rikalaj)
-- **French:** thanks to [esophagusdecency](https://crowdin.com/profile/esophagusdecency) and [Mickael81](https://github.com/Mickael81) and [NEVARLeVrai](https://github.com/NEVARLeVrai)
+- **French:** thanks to [Mickael81](https://crowdin.com/profile/mickael81) and [esophagusdecency](https://crowdin.com/profile/esophagusdecency) and [Mickael81](https://github.com/Mickael81) and [NEVARLeVrai](https://github.com/NEVARLeVrai)
 - **Galician:** thanks to [zordor](https://crowdin.com/profile/zordor) and [ninjum](https://crowdin.com/profile/ninjum)
 - **German:** thanks to [twistqj](https://crowdin.com/profile/twistqj) and [nitro4542](https://crowdin.com/profile/nitro4542) and [twistios](https://crowdin.com/profile/twistios) and [Edward Schreiber](https://crowdin.com/profile/eddisch2010) and [materialred](https://crowdin.com/profile/materialred) and [OlimitLolli](https://crowdin.com/profile/OlimitLolli) and [Lolozweipunktnull](https://crowdin.com/profile/Lolozweipunktnull) and [Seryoga1984](https://crowdin.com/profile/Seryoga1984) and [Conk](https://crowdin.com/profile/conk) and [siggi1984](https://github.com/siggi1984)
 - **Greek:** thanks to [Marinkas](https://github.com/Marinkas)
@@ -79,7 +83,7 @@
 - **Japanese:** thanks to [maboroshin](https://crowdin.com/profile/maboroshin) and [Mid_Vur_Shaan](https://crowdin.com/profile/Mid_Vur_Shaan)
 - **Malayalam** thanks to [XDreamist](https://crowdin.com/profile/xdreamist)
 - **Korean:** thanks to [ZeroZero00](https://crowdin.com/profile/ZeroZero00) and [TsyQax](https://crowdin.com/profile/TsyQax)
-- **Norwegian:** thanks to [Xyrcon](https://crowdin.com/profile/xyrcon) and [xyrcon](https://crowdin.com/profile/xyrcon)
+- **Norwegian:** thanks to [Xyrcon](https://crowdin.com/profile/xyrcon)
 - **Odia:** thanks to [redpanda9348](https://crowdin.com/profile/redpanda9348) and [Get100percent](https://github.com/Get100percent)
 - **Persian:** thanks to [CUMOON](https://github.com/CUMOON)
 - **Polish:** thanks to [Krzysztof](https://crowdin.com/profile/scrummybingus) and [severitysingular](https://crowdin.com/profile/severitysingular) and [Zduniusz](https://crowdin.com/profile/zduniusz) and [AntoniNowak](https://crowdin.com/profile/AntoniNowak) and [roklc](https://github.com/roklc) and [Adam Kop](https://crowdin.com/profile/damianadam000)
@@ -88,7 +92,7 @@
 - **Romanian:** thanks to [OrangeZXZ](https://github.com/OrangeZxZ)
 - **Russian:** thanks to [Edward Schreiber](https://crowdin.com/profile/eddisch2010) and [Michael Müller](https://crowdin.com/profile/xqzme1337) and [HighMode](https://crowdin.com/profile/highmode) and [koliwan](https://crowdin.com/profile/koliwan) and [Nebula-Mechanica](https://crowdin.com/profile/Nebula-Mechanica) and [Alnoer](https://crowdin.com/profile/Alnoer) and [kptmx](https://crowdin.com/profile/kptmx) and [Crayz310](https://github.com/Crayz310) and [Vladimir](https://crowdin.com/profile/vladimir15426) and [@siggi1984](https://github.com/siggi1984)
 - **Serbian (Cyrillic, Latin)** thanks to [IvanMaksimovic77](https://github.com/IvanMaksimovic77)
-- **Spanish:** thanks to [Alejandro Moctezuma](https://crowdin.com/profile/alejandromoc) and [Juan Ignacio Tejera](https://crowdin.com/profile/originaljuani) and [iOSStarWorld](https://crowdin.com/profile/iosstarworld) and [Corotyest](https://crowdin.com/profile/corotyest) and [DanielSevillano](https://github.com/DanielSevillano) and [Fabian Urra](https://crowdin.com/profile/nsagcl)
+- **Spanish:** thanks to [MS-PC](https://crowdin.com/profile/ms-pc) and [Alejandro Moctezuma](https://crowdin.com/profile/alejandromoc) and [Juan Ignacio Tejera](https://crowdin.com/profile/originaljuani) and [iOSStarWorld](https://crowdin.com/profile/iosstarworld) and [Corotyest](https://crowdin.com/profile/corotyest) and [DanielSevillano](https://github.com/DanielSevillano) and [Fabian Urra](https://crowdin.com/profile/nsagcl)
 - **Sinhala:** thanks to [VINULA2007](https://crowdin.com/profile/VINULA2007)
 - **Swedish:** thanks to [sebbe.ekman](https://crowdin.com/profile/sebbe.ekman) and [Dženan](https://crowdin.com/profile/Dženan)
 - **Tamil** thanks to [Vignesh-p-s](https://crowdin.com/profile/vignesh-p-s)
@@ -148,6 +152,7 @@ WARNING, the custom version is not an official release, download only if invited
 - [sharunkumar](https://github.com/sharunkumar/sharunkumar)
 - [SuhasDissa](https://github.com/SuhasDissa)
 - [twistios](https://github.com/twistios)
+- [wispl](https://github.com/wispl)
 
 
 ## 🫂 Acknowledgments

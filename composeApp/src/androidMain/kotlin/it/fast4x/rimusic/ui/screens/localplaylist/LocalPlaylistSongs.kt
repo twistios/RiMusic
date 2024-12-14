@@ -73,6 +73,7 @@ import it.fast4x.rimusic.MONTHLY_PREFIX
 import it.fast4x.rimusic.PINNED_PREFIX
 import it.fast4x.rimusic.PIPED_PREFIX
 import it.fast4x.rimusic.R
+import it.fast4x.rimusic.cleanPrefix
 import it.fast4x.rimusic.enums.NavigationBarPosition
 import it.fast4x.rimusic.enums.PlaylistSongSortBy
 import it.fast4x.rimusic.enums.PopupType
@@ -134,6 +135,7 @@ import it.fast4x.rimusic.utils.semiBold
 import it.fast4x.rimusic.utils.showFloatingIconKey
 import it.fast4x.rimusic.utils.syncSongsInPipedPlaylist
 import it.fast4x.rimusic.utils.thumbnailRoundnessKey
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flowOf
@@ -141,34 +143,34 @@ import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
-import me.knighthat.appContext
-import me.knighthat.colorPalette
-import me.knighthat.component.Enqueue
-import me.knighthat.component.ItemSelector
-import me.knighthat.component.LikeSongs
-import me.knighthat.component.ListenOnYouTube
-import me.knighthat.component.PlayNext
-import me.knighthat.component.PlaylistsMenu
-import me.knighthat.component.ResetThumbnail
-import me.knighthat.component.Search
-import me.knighthat.component.Synchronize
-import me.knighthat.component.ThumbnailPicker
-import me.knighthat.component.header.TabToolBar
-import me.knighthat.component.screen.DeletePlaylist
-import me.knighthat.component.screen.PlaylistSongsSort
-import me.knighthat.component.screen.PositionLock
-import me.knighthat.component.screen.RenameDialog
-import me.knighthat.component.screen.Reposition
-import me.knighthat.component.screen.pin
-import me.knighthat.component.tab.ExportSongsToCSVDialog
-import me.knighthat.component.tab.LocateComponent
-import me.knighthat.component.tab.toolbar.Button
-import me.knighthat.component.tab.toolbar.DelAllDownloadedDialog
-import me.knighthat.component.tab.toolbar.Dialog
-import me.knighthat.component.tab.toolbar.DownloadAllDialog
-import me.knighthat.component.tab.toolbar.SongsShuffle
-import me.knighthat.thumbnailShape
-import me.knighthat.typography
+import it.fast4x.rimusic.appContext
+import it.fast4x.rimusic.colorPalette
+import it.fast4x.rimusic.ui.components.themed.Enqueue
+import it.fast4x.rimusic.ui.components.themed.ItemSelector
+import it.fast4x.rimusic.ui.components.themed.LikeSongs
+import it.fast4x.rimusic.ui.components.themed.ListenOnYouTube
+import it.fast4x.rimusic.ui.components.themed.PlayNext
+import it.fast4x.rimusic.ui.components.themed.PlaylistsMenu
+import it.fast4x.rimusic.ui.components.themed.ResetThumbnail
+import it.fast4x.rimusic.ui.components.themed.Search
+import it.fast4x.rimusic.ui.components.themed.Synchronize
+import it.fast4x.rimusic.ui.components.themed.ThumbnailPicker
+import it.fast4x.rimusic.ui.components.navigation.header.TabToolBar
+import it.fast4x.rimusic.utils.DeletePlaylist
+import it.fast4x.rimusic.utils.PlaylistSongsSort
+import it.fast4x.rimusic.utils.PositionLock
+import it.fast4x.rimusic.utils.RenameDialog
+import it.fast4x.rimusic.utils.Reposition
+import it.fast4x.rimusic.utils.pin
+import it.fast4x.rimusic.ui.components.tab.ExportSongsToCSVDialog
+import it.fast4x.rimusic.ui.components.tab.LocateComponent
+import it.fast4x.rimusic.ui.components.tab.toolbar.Button
+import it.fast4x.rimusic.ui.components.tab.toolbar.DelAllDownloadedDialog
+import it.fast4x.rimusic.ui.components.tab.toolbar.Dialog
+import it.fast4x.rimusic.ui.components.tab.toolbar.DownloadAllDialog
+import it.fast4x.rimusic.ui.components.tab.toolbar.SongsShuffle
+import it.fast4x.rimusic.thumbnailShape
+import it.fast4x.rimusic.typography
 import timber.log.Timber
 import java.util.UUID
 
@@ -398,29 +400,22 @@ fun LocalPlaylistSongs(
                 .collect { items = it }
     }
     LaunchedEffect( items, search.input, parentalControlEnabled ) {
-        items.filter {
-            if( parentalControlEnabled )
-                !it.song.title.startsWith(EXPLICIT_PREFIX)
-            else
-                true
-        }.filter {
-            // Without cleaning, user can search explicit songs with "e:"
-            // I kinda want this to be a feature, but it seems unnecessary
-            val containsName = it.song.cleanTitle().contains(search.input, true)
-            val containsArtist = it.song.artistsText?.contains(search.input, true) ?: false
-            val containsAlbum = it.albumTitle?.contains(search.input, true) ?: false
+        items
+            .distinctBy { it.song.id }
+            .filter {
+                if( parentalControlEnabled )
+                    !it.song.title.startsWith(EXPLICIT_PREFIX)
+                else
+                    true
+            }.filter {
+                // Without cleaning, user can search explicit songs with "e:"
+                // I kinda want this to be a feature, but it seems unnecessary
+                val containsName = it.song.cleanTitle().contains(search.input, true)
+                val containsArtist = it.song.artistsText?.contains(search.input, true) ?: false
+                val containsAlbum = it.albumTitle?.contains(search.input, true) ?: false
 
-            containsName || containsArtist || containsAlbum
-        }.let { itemsOnDisplay = it }
-
-        /*
-            [LazyListState] will try to keep the visible song at the top
-            after search input has changed. This creates a weird effect
-            that fools user to believe search results haven't change.
-
-            To prevent it, always scroll the list to the top
-         */
-        lazyListState.scrollToItem( 0 )
+                containsName || containsArtist || containsAlbum
+            }.let { itemsOnDisplay = it }
     }
     LaunchedEffect(Unit) {
         Database.singlePlaylistPreview( playlistId )
@@ -506,9 +501,9 @@ fun LocalPlaylistSongs(
 
     val rippleIndication = ripple(bounded = false)
 
-    var nowPlayingItem by remember {
-        mutableStateOf(-1)
-    }
+//    var nowPlayingItem by remember {
+//        mutableStateOf(-1)
+//    }
 
     val playlistNotMonthlyType =
         playlistPreview?.playlist?.name?.startsWith(MONTHLY_PREFIX, 0, true) == false
@@ -551,8 +546,7 @@ fun LocalPlaylistSongs(
                     ) {
 
                         HeaderWithIcon(
-                            //title = playlistPreview?.playlist?.name?.substringAfter(PINNED_PREFIX) ?: "Unknown",
-                            title = playlistName.value,
+                            title = cleanPrefix(playlistName.value),
                             iconId = R.drawable.playlist,
                             enabled = true,
                             showIcon = false,
@@ -817,7 +811,9 @@ fun LocalPlaylistSongs(
                                 song = song.song,
                                 onDownloadClick = {
                                     binder?.cache?.removeResource(song.asMediaItem.mediaId)
-                                    Database.resetContentLength( song.asMediaItem.mediaId )
+                                    CoroutineScope(Dispatchers.IO).launch {
+                                        Database.deleteFormat( song.asMediaItem.mediaId )
+                                    }
 
                                     if (!isLocal) {
                                         manageDownload(
@@ -881,7 +877,7 @@ fun LocalPlaylistSongs(
                                     }
 
 
-                                        NowPlayingSongIndicator(song.asMediaItem.mediaId)
+                                        NowPlayingSongIndicator(song.asMediaItem.mediaId, binder?.player)
                                 },
                                 modifier = Modifier
                                     .combinedClickable(

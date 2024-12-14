@@ -146,8 +146,8 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.isActive
-import me.knighthat.colorPalette
-import me.knighthat.typography
+import it.fast4x.rimusic.colorPalette
+import it.fast4x.rimusic.typography
 import timber.log.Timber
 import kotlin.random.Random
 import kotlin.time.Duration.Companion.milliseconds
@@ -908,7 +908,7 @@ fun DeviceListSongs(
                     thumbnailSizeDp = thumbnailSizeDp,
                     thumbnailSizePx = thumbnailSize,
                     onThumbnailContent = {
-                            NowPlayingSongIndicator(song.asMediaItem.mediaId)
+                            NowPlayingSongIndicator(song.asMediaItem.mediaId, binder?.player)
                     },
                     trailingContent = {
                         val checkedState = rememberSaveable { mutableStateOf(false) }
@@ -939,8 +939,8 @@ fun DeviceListSongs(
                                             navController = navController,
                                             song = song.song,
                                             onDismiss = {
-                                                forceRecompose = true
                                                 menuState.hide()
+                                                forceRecompose = true
                                             },
                                             disableScrollingText = disableScrollingText
                                         )

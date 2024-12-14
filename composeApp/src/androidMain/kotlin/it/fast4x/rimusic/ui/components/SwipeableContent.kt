@@ -36,7 +36,7 @@ import it.fast4x.rimusic.utils.isSwipeToActionEnabledKey
 import it.fast4x.rimusic.utils.mediaItemToggleLike
 import it.fast4x.rimusic.utils.rememberPreference
 import kotlinx.coroutines.flow.distinctUntilChanged
-import me.knighthat.colorPalette
+import it.fast4x.rimusic.colorPalette
 
 @Composable
 fun SwipeableContent(

@@ -78,7 +78,6 @@ import it.fast4x.rimusic.utils.backgroundProgressKey
 import it.fast4x.rimusic.cleanPrefix
 import it.fast4x.rimusic.service.modern.PlayerServiceModern
 import it.fast4x.rimusic.ui.components.themed.NowPlayingSongIndicator
-import it.fast4x.rimusic.utils.asMediaItem
 import it.fast4x.rimusic.utils.conditional
 import it.fast4x.rimusic.utils.disableClosingPlayerSwipingDownKey
 import it.fast4x.rimusic.utils.disableScrollingTextKey
@@ -96,9 +95,9 @@ import it.fast4x.rimusic.utils.semiBold
 import it.fast4x.rimusic.utils.shouldBePlaying
 import it.fast4x.rimusic.utils.thumbnail
 import kotlinx.coroutines.flow.distinctUntilChanged
-import me.knighthat.colorPalette
-import me.knighthat.thumbnailShape
-import me.knighthat.typography
+import it.fast4x.rimusic.colorPalette
+import it.fast4x.rimusic.thumbnailShape
+import it.fast4x.rimusic.typography
 import kotlin.math.absoluteValue
 
 @androidx.annotation.OptIn(UnstableApi::class)
@@ -328,7 +327,7 @@ fun MiniPlayer(
                         .clip(thumbnailShape())
                         .size(48.dp)
                 )
-                NowPlayingSongIndicator(mediaItem.mediaId)
+                NowPlayingSongIndicator(mediaItem.mediaId, binder.player)
             }
 
             Column(

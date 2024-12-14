@@ -63,9 +63,12 @@ import it.fast4x.rimusic.utils.manageDownload
 import it.fast4x.rimusic.utils.medium
 import it.fast4x.rimusic.utils.rememberPreference
 import it.fast4x.rimusic.utils.thumbnailRoundnessKey
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
-import me.knighthat.colorPalette
-import me.knighthat.typography
+import kotlinx.coroutines.launch
+import it.fast4x.rimusic.colorPalette
+import it.fast4x.rimusic.typography
 
 @ExperimentalTextApi
 @SuppressLint("SuspiciousIndentation")
@@ -259,7 +262,9 @@ fun LocalSongSearch(
                     song = song,
                     onDownloadClick = {
                         binder?.cache?.removeResource(song.asMediaItem.mediaId)
-                        Database.resetContentLength( song.asMediaItem.mediaId )
+                        CoroutineScope(Dispatchers.IO).launch {
+                            Database.deleteFormat( song.asMediaItem.mediaId )
+                        }
 
                         if (!isLocal)
                         manageDownload(

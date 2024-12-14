@@ -37,7 +37,7 @@ data class PlayerResponse(
     @Serializable
     data class StreamingData(
         val expiresInSeconds: Long?,
-        private val adaptiveFormats: List<AdaptiveFormat>,
+        val adaptiveFormats: List<AdaptiveFormat>,
     ): MediaFormatContainer<StreamingData.AdaptiveFormat> {
 
         override val formats: SortedSet<AdaptiveFormat> =

@@ -814,4 +814,15 @@
     <string name="jump_previous_blank">Lascia vuoto o 0 per il pulsante precedente per riprodurre sempre il brano precedente</string>
     <string name="delete_hidden_songs">Vuoi davvero eliminare tutti i brani nascosti dal database? Questa azione è irreversibile.</string>
     <string name="delete_hidden_songs_message">Elimina brani nascosti</string>
+    <string name="cover_type_vinyl">Vinile</string>
+    <string name="cover_type_cd">CD</string>
+    <string name="cover_type_cd_with_cover">CD con copertina</string>
+    <string name="wallpaper">Sfondo</string>
+    <string name="enable_wallpaper">Abilita sfondo</string>
+    <string name="set_cover_thumbnail_as_wallpaper">Imposta la miniatura della copertina come sfondo</string>
+    <string name="notification_type">Notification type</string>
+    <string name="notification_type_default">Default</string>
+    <string name="notification_type_advanced">Advanced</string>
+    <string name="notification_type_info">The way the player is handled in the notification area and lockscreen.</string>
+    <string name="action_bar_show_start_radio_button">Start radio button</string>
 </resources>

@@ -45,8 +45,8 @@ import it.fast4x.rimusic.enums.UiType
 import it.fast4x.rimusic.utils.playerPositionKey
 import it.fast4x.rimusic.utils.rememberPreference
 import it.fast4x.rimusic.utils.transitionEffectKey
-import me.knighthat.colorPalette
-import me.knighthat.component.header.AppHeader
+import it.fast4x.rimusic.colorPalette
+import it.fast4x.rimusic.ui.components.navigation.header.AppHeader
 
 @OptIn(KotlinCsvExperimental::class)
 @ExperimentalMaterialApi

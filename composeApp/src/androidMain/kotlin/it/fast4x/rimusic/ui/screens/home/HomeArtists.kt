@@ -16,7 +16,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
@@ -54,15 +53,15 @@ import it.fast4x.rimusic.utils.disableScrollingTextKey
 import it.fast4x.rimusic.utils.rememberPreference
 import it.fast4x.rimusic.utils.showFloatingIconKey
 import kotlinx.coroutines.flow.map
-import me.knighthat.colorPalette
-import me.knighthat.component.Search
-import me.knighthat.component.header.TabToolBar
-import me.knighthat.component.tab.ItemSize
-import me.knighthat.component.tab.Sort
-import me.knighthat.component.tab.TabHeader
-import me.knighthat.component.tab.toolbar.Randomizer
-import me.knighthat.component.tab.toolbar.SongsShuffle
-import me.knighthat.preference.Preference.HOME_ARTIST_ITEM_SIZE
+import it.fast4x.rimusic.colorPalette
+import it.fast4x.rimusic.ui.components.themed.Search
+import it.fast4x.rimusic.ui.components.navigation.header.TabToolBar
+import it.fast4x.rimusic.ui.components.tab.ItemSize
+import it.fast4x.rimusic.ui.components.tab.Sort
+import it.fast4x.rimusic.ui.components.tab.TabHeader
+import it.fast4x.rimusic.ui.components.tab.toolbar.Randomizer
+import it.fast4x.rimusic.ui.components.tab.toolbar.SongsShuffle
+import it.fast4x.rimusic.utils.Preference.HOME_ARTIST_ITEM_SIZE
 
 @ExperimentalMaterial3Api
 @UnstableApi

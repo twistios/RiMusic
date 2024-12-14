@@ -814,4 +814,15 @@
     <string name="jump_previous_blank">Əvvəlki Mahnını Kəsintisiz Oynatmaq üçün Əvvəlki Düyməyə Boş və ya 0 qoyun</string>
     <string name="delete_hidden_songs">Həqiqətən məlumat bazasından bütün gizli mahnıları silmək istəyirsiniz? Bu fəaliyyət geri dəyişmir.</string>
     <string name="delete_hidden_songs_message">Gizli mahnıları sil</string>
+    <string name="cover_type_vinyl">Vinyl</string>
+    <string name="cover_type_cd">Disk</string>
+    <string name="cover_type_cd_with_cover">Cildli Disk</string>
+    <string name="wallpaper">Divar kağızı</string>
+    <string name="enable_wallpaper">Divar kağızın aktiv et</string>
+    <string name="set_cover_thumbnail_as_wallpaper">Cild miniatürün divar kağızı kimi yerləşdir</string>
+    <string name="notification_type">Notification type</string>
+    <string name="notification_type_default">Default</string>
+    <string name="notification_type_advanced">Advanced</string>
+    <string name="notification_type_info">The way the player is handled in the notification area and lockscreen.</string>
+    <string name="action_bar_show_start_radio_button">Start radio button</string>
 </resources>

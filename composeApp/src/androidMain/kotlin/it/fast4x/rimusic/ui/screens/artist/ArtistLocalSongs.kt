@@ -58,7 +58,10 @@ import it.fast4x.rimusic.utils.isNowPlaying
 import it.fast4x.rimusic.utils.manageDownload
 import it.fast4x.rimusic.utils.rememberPreference
 import it.fast4x.rimusic.utils.showFloatingIconKey
-import me.knighthat.colorPalette
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import it.fast4x.rimusic.colorPalette
 
 @OptIn(ExperimentalMaterial3Api::class)
 @ExperimentalTextApi
@@ -177,7 +180,9 @@ fun ArtistLocalSongs(
                                         if (songs?.isNotEmpty() == true)
                                             songs?.forEach {
                                                 binder?.cache?.removeResource(it.asMediaItem.mediaId)
-                                                Database.resetContentLength( it.asMediaItem.mediaId )
+                                                CoroutineScope(Dispatchers.IO).launch {
+                                                    Database.deleteFormat( it.asMediaItem.mediaId )
+                                                }
                                                 manageDownload(
                                                     context = context,
                                                     mediaItem = it.asMediaItem,
@@ -213,7 +218,9 @@ fun ArtistLocalSongs(
                                         if (songs?.isNotEmpty() == true)
                                             songs?.forEach {
                                                 binder?.cache?.removeResource(it.asMediaItem.mediaId)
-                                                Database.resetContentLength( it.asMediaItem.mediaId )
+                                                CoroutineScope(Dispatchers.IO).launch {
+                                                    Database.deleteFormat( it.asMediaItem.mediaId )
+                                                }
                                                 manageDownload(
                                                     context = context,
                                                     mediaItem = it.asMediaItem,
@@ -279,7 +286,9 @@ fun ArtistLocalSongs(
                             song = song,
                             onDownloadClick = {
                                 binder?.cache?.removeResource(song.asMediaItem.mediaId)
-                                Database.resetContentLength( song.asMediaItem.mediaId )
+                                CoroutineScope(Dispatchers.IO).launch {
+                                    Database.deleteFormat( song.asMediaItem.mediaId )
+                                }
 
                                 manageDownload(
                                     context = context,

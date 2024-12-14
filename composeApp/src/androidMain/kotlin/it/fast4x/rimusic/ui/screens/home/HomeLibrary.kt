@@ -70,19 +70,19 @@ import it.fast4x.rimusic.utils.showMonthlyPlaylistsKey
 import it.fast4x.rimusic.utils.showPinnedPlaylistsKey
 import it.fast4x.rimusic.utils.showPipedPlaylistsKey
 import kotlinx.coroutines.flow.map
-import me.knighthat.colorPalette
-import me.knighthat.component.IDialog
-import me.knighthat.component.Search
-import me.knighthat.component.header.TabToolBar
-import me.knighthat.component.screen.playlistSync
-import me.knighthat.component.tab.ImportSongsFromCSV
-import me.knighthat.component.tab.ItemSize
-import me.knighthat.component.tab.Sort
-import me.knighthat.component.tab.TabHeader
-import me.knighthat.component.tab.toolbar.Descriptive
-import me.knighthat.component.tab.toolbar.MenuIcon
-import me.knighthat.component.tab.toolbar.SongsShuffle
-import me.knighthat.preference.Preference.HOME_LIBRARY_ITEM_SIZE
+import it.fast4x.rimusic.colorPalette
+import it.fast4x.rimusic.ui.components.themed.IDialog
+import it.fast4x.rimusic.ui.components.themed.Search
+import it.fast4x.rimusic.ui.components.navigation.header.TabToolBar
+import it.fast4x.rimusic.utils.playlistSync
+import it.fast4x.rimusic.ui.components.tab.ImportSongsFromCSV
+import it.fast4x.rimusic.ui.components.tab.ItemSize
+import it.fast4x.rimusic.ui.components.tab.Sort
+import it.fast4x.rimusic.ui.components.tab.TabHeader
+import it.fast4x.rimusic.ui.components.tab.toolbar.Descriptive
+import it.fast4x.rimusic.ui.components.tab.toolbar.MenuIcon
+import it.fast4x.rimusic.ui.components.tab.toolbar.SongsShuffle
+import it.fast4x.rimusic.utils.Preference.HOME_LIBRARY_ITEM_SIZE
 
 
 @ExperimentalMaterial3Api
@@ -186,6 +186,8 @@ fun HomeLibrary(
                 }!!
         },
         afterTransaction = { index, song ->
+            if (song.id.isBlank()) return@init
+
             Database.insert(song)
             Database.insert(
                 SongPlaylistMap(

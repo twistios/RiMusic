@@ -61,9 +61,11 @@ import it.fast4x.rimusic.utils.manageDownload
 import it.fast4x.rimusic.utils.parentalControlEnabledKey
 import it.fast4x.rimusic.utils.rememberPreference
 import it.fast4x.rimusic.utils.thumbnailRoundnessKey
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.map
-import me.knighthat.colorPalette
+import kotlinx.coroutines.launch
+import it.fast4x.rimusic.colorPalette
 import java.time.DayOfWeek
 import java.time.Instant
 import java.time.LocalDate
@@ -224,7 +226,9 @@ fun HistoryList(
                                 song = event.song,
                                 onDownloadClick = {
                                     binder?.cache?.removeResource(event.song.asMediaItem.mediaId)
-                                    Database.resetContentLength( event.song.asMediaItem.mediaId )
+                                    CoroutineScope(Dispatchers.IO).launch {
+                                        Database.deleteFormat( event.song.asMediaItem.mediaId )
+                                    }
 
                                     if (!isLocal)
                                         manageDownload(
@@ -237,7 +241,7 @@ fun HistoryList(
                                 thumbnailSizeDp = thumbnailSizeDp,
                                 thumbnailSizePx = thumbnailSizePx,
                                 onThumbnailContent = {
-                                        NowPlayingSongIndicator(event.song.asMediaItem.mediaId)
+                                        NowPlayingSongIndicator(event.song.asMediaItem.mediaId, binder?.player)
                                 },
                                 trailingContent = {
                                     if (selectItems)
@@ -265,8 +269,8 @@ fun HistoryList(
                                                     navController = navController,
                                                     mediaItem = event.song.asMediaItem,
                                                     onDismiss = {
-                                                        forceRecompose = true
                                                         menuState.hide()
+                                                        forceRecompose = true
                                                     },
                                                     disableScrollingText = disableScrollingText
                                                 )

@@ -26,7 +26,6 @@ import androidx.compose.ui.unit.dp
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.offline.Download
 import androidx.navigation.NavController
-import it.fast4x.compose.persist.PersistMapCleanup
 import it.fast4x.compose.persist.persist
 import it.fast4x.innertube.Innertube
 import it.fast4x.innertube.models.bodies.BrowseBody
@@ -81,7 +80,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import me.knighthat.Skeleton
+import it.fast4x.rimusic.ui.components.Skeleton
 
 @ExperimentalMaterialApi
 @ExperimentalTextApi
@@ -94,7 +93,8 @@ import me.knighthat.Skeleton
 fun SearchResultScreen(
     navController: NavController,
     miniPlayer: @Composable () -> Unit = {},
-    query: String, onSearchAgain: () -> Unit
+    query: String,
+    onSearchAgain: () -> Unit
 ) {
     val context = LocalContext.current
     val binder = LocalPlayerServiceBinder.current
@@ -112,7 +112,7 @@ fun SearchResultScreen(
 
     val disableScrollingText by rememberPreference(disableScrollingTextKey, false)
 
-    PersistMapCleanup(tagPrefix = "searchResults/$query/")
+    //PersistMapCleanup(tagPrefix = "searchResults/$query/")
 
             val headerContent: @Composable (textButton: (@Composable () -> Unit)?) -> Unit = {
                 Title(
@@ -217,7 +217,9 @@ fun SearchResultScreen(
                                             song = song,
                                             onDownloadClick = {
                                                 localBinder?.cache?.removeResource(song.asMediaItem.mediaId)
-                                                Database.resetContentLength( song.asMediaItem.mediaId )
+                                                CoroutineScope(Dispatchers.IO).launch {
+                                                    Database.deleteFormat( song.asMediaItem.mediaId )
+                                                }
 
                                                 manageDownload(
                                                     context = context,
@@ -226,7 +228,7 @@ fun SearchResultScreen(
                                                 )
                                             },
                                             thumbnailContent = {
-                                                NowPlayingSongIndicator(song.asMediaItem.mediaId)
+                                                NowPlayingSongIndicator(song.asMediaItem.mediaId, binder?.player)
                                             },
                                             downloadState = downloadState,
                                             thumbnailSizePx = thumbnailSizePx,
@@ -238,8 +240,8 @@ fun SearchResultScreen(
                                                             NonQueuedMediaItemMenu(
                                                                 navController = navController,
                                                                 onDismiss = {
-                                                                    forceRecompose = true
                                                                     menuState.hide()
+                                                                    forceRecompose = true
                                                                 },
                                                                 mediaItem = song.asMediaItem,
                                                                 disableScrollingText = disableScrollingText
@@ -252,6 +254,7 @@ fun SearchResultScreen(
                                                     onClick = {
                                                         localBinder?.stopRadio()
                                                         localBinder?.player?.forcePlay(song.asMediaItem)
+                                                        forceRecompose = true
                                                         localBinder?.setupRadio(song.info?.endpoint)
                                                     }
                                                 ),

@@ -63,13 +63,15 @@ import it.fast4x.rimusic.ui.screens.mood.MoodsPageScreen
 import it.fast4x.rimusic.ui.screens.newreleases.NewreleasesScreen
 import it.fast4x.rimusic.ui.screens.ondevice.DeviceListSongsScreen
 import it.fast4x.rimusic.ui.screens.player.Player
-import it.fast4x.rimusic.ui.screens.player.QueueModern
+import it.fast4x.rimusic.ui.screens.player.Queue
 import it.fast4x.rimusic.ui.screens.playlist.PlaylistScreen
 import it.fast4x.rimusic.ui.screens.podcast.PodcastScreen
 import it.fast4x.rimusic.ui.screens.search.SearchScreen
 import it.fast4x.rimusic.ui.screens.searchresult.SearchResultScreen
 import it.fast4x.rimusic.ui.screens.settings.SettingsScreen
 import it.fast4x.rimusic.ui.screens.statistics.StatisticsScreen
+import it.fast4x.rimusic.utils.clearPreference
+import it.fast4x.rimusic.utils.homeScreenTabIndexKey
 import it.fast4x.rimusic.utils.pauseSearchHistoryKey
 import it.fast4x.rimusic.utils.preferences
 import it.fast4x.rimusic.utils.rememberPreference
@@ -129,6 +131,10 @@ fun AppNavigation(
             content()
         }
     }
+
+    // Clearing homeScreenTabIndex in opening app.
+    val context = LocalContext.current
+    clearPreference(context, homeScreenTabIndexKey)
 
     NavHost(
         navController = navController,
@@ -211,9 +217,10 @@ fun AppNavigation(
 
         composable(route = NavRoutes.queue.name) {
             modalBottomSheetPage {
-                QueueModern(
+                Queue(
                     navController = navController,
                     onDismiss = {},
+                    onDiscoverClick = {}
                 )
             }
         }

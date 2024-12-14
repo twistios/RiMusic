@@ -11,6 +11,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -54,10 +55,10 @@ import it.fast4x.rimusic.ui.components.themed.ValueSelectorDialog
 import it.fast4x.rimusic.utils.color
 import it.fast4x.rimusic.utils.secondary
 import it.fast4x.rimusic.utils.semiBold
-import me.knighthat.Skeleton
-import me.knighthat.colorPalette
-import me.knighthat.component.IDialog
-import me.knighthat.typography
+import it.fast4x.rimusic.ui.components.Skeleton
+import it.fast4x.rimusic.colorPalette
+import it.fast4x.rimusic.ui.components.themed.IDialog
+import it.fast4x.rimusic.typography
 
 @ExperimentalMaterialApi
 @ExperimentalTextApi
@@ -245,8 +246,9 @@ fun SettingsEntry(
         modifier = modifier
             .clickable(enabled = isEnabled, onClick = onClick)
             .alpha(if (isEnabled) 1f else 0.5f)
-            .padding(start = 16.dp)
-            .padding(all = 16.dp)
+            //.padding(start = 16.dp)
+            //.padding(all = 16.dp)
+            .padding(all = 12.dp)
             .fillMaxWidth()
     ) {
         Column(
@@ -290,7 +292,7 @@ fun SettingsTopDescription(
         text = text,
         style = typography().xs.secondary,
         modifier = modifier
-            .padding(start = 16.dp)
+            .padding(start = 12.dp)
             .padding(horizontal = 16.dp, vertical = 8.dp)
     )
 }
@@ -306,8 +308,8 @@ fun SettingsDescription(
         style = if (important) typography().xxs.semiBold.color(colorPalette().red)
         else typography().xxs.secondary,
         modifier = modifier
-            .padding(start = 16.dp)
-            .padding(horizontal = 16.dp)
+            .padding(start = 12.dp)
+            //.padding(horizontal = 12.dp)
             .padding(bottom = 8.dp)
     )
 }
@@ -321,8 +323,8 @@ fun ImportantSettingsDescription(
         text = text,
         style = typography().xxs.semiBold.color(colorPalette().red),
         modifier = modifier
-            .padding(start = 16.dp)
-            .padding(horizontal = 16.dp, vertical = 8.dp)
+            .padding(start = 12.dp)
+            .padding(vertical = 8.dp)
     )
 }
 
@@ -335,8 +337,8 @@ fun SettingsEntryGroupText(
         text = title.uppercase(),
         style = typography().xs.semiBold.copy(colorPalette().accent),
         modifier = modifier
-            .padding(start = 16.dp)
-            .padding(horizontal = 16.dp)
+            .padding(start = 12.dp)
+            //.padding(horizontal = 12.dp)
     )
 }
 
@@ -526,4 +528,28 @@ fun SliderSettingsEntry(
             .padding(vertical = 16.dp)
             .fillMaxWidth()
     )
+}
+
+@Composable
+fun SettingsGroup(
+    title: String? = null,
+    modifier: Modifier = Modifier,
+    description: String? = null,
+    important: Boolean = false,
+    content: @Composable ColumnScope.() -> Unit
+) = Column(modifier = modifier) {
+    if (title != null) {
+        SettingsEntryGroupText(title = title)
+    }
+
+    description?.let { description ->
+        SettingsDescription(
+            text = description,
+            important = important
+        )
+    }
+
+    content()
+
+    SettingsGroupSpacer()
 }

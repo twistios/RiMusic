@@ -56,6 +56,7 @@ import it.fast4x.rimusic.enums.MiniPlayerType
 import it.fast4x.rimusic.enums.MusicAnimationType
 import it.fast4x.rimusic.enums.NavigationBarPosition
 import it.fast4x.rimusic.enums.NavigationBarType
+import it.fast4x.rimusic.enums.NotificationType
 import it.fast4x.rimusic.enums.PauseBetweenSongs
 import it.fast4x.rimusic.enums.PipModule
 import it.fast4x.rimusic.enums.PlayerBackgroundColors
@@ -154,6 +155,7 @@ import it.fast4x.rimusic.utils.miniPlayerTypeKey
 import it.fast4x.rimusic.utils.minimumSilenceDurationKey
 import it.fast4x.rimusic.utils.navigationBarPositionKey
 import it.fast4x.rimusic.utils.navigationBarTypeKey
+import it.fast4x.rimusic.utils.notificationTypeKey
 import it.fast4x.rimusic.utils.nowPlayingIndicatorKey
 import it.fast4x.rimusic.utils.pauseBetweenSongsKey
 import it.fast4x.rimusic.utils.pauseListenHistoryKey
@@ -221,9 +223,9 @@ import it.fast4x.rimusic.utils.useSystemFontKey
 import it.fast4x.rimusic.utils.useVolumeKeysToChangeSongKey
 import it.fast4x.rimusic.utils.visualizerEnabledKey
 import it.fast4x.rimusic.utils.volumeNormalizationKey
-import me.knighthat.colorPalette
-import me.knighthat.component.Search
-import me.knighthat.typography
+import it.fast4x.rimusic.colorPalette
+import it.fast4x.rimusic.ui.components.themed.Search
+import it.fast4x.rimusic.typography
 
 @Composable
 fun DefaultUiSettings() {
@@ -496,7 +498,7 @@ fun DefaultUiSettings() {
     swipeUpQueue = true
     var showButtonPlayerAddToPlaylist by rememberPreference(showButtonPlayerAddToPlaylistKey, true)
     showButtonPlayerAddToPlaylist = true
-    var showButtonPlayerArrow by rememberPreference(showButtonPlayerArrowKey, false)
+    var showButtonPlayerArrow by rememberPreference(showButtonPlayerArrowKey, true)
     showButtonPlayerArrow = false
     var showButtonPlayerDownload by rememberPreference(showButtonPlayerDownloadKey, true)
     showButtonPlayerDownload = true
@@ -724,7 +726,7 @@ fun UiSettings(
     var tapqueue by rememberPreference(tapqueueKey, true)
     var swipeUpQueue by rememberPreference(swipeUpQueueKey, true)
     var showButtonPlayerAddToPlaylist by rememberPreference(showButtonPlayerAddToPlaylistKey, true)
-    var showButtonPlayerArrow by rememberPreference(showButtonPlayerArrowKey, false)
+    var showButtonPlayerArrow by rememberPreference(showButtonPlayerArrowKey, true)
     var showButtonPlayerDownload by rememberPreference(showButtonPlayerDownloadKey, true)
     var showButtonPlayerLoop by rememberPreference(showButtonPlayerLoopKey, true)
     var showButtonPlayerLyrics by rememberPreference(showButtonPlayerLyricsKey, true)
@@ -752,6 +754,7 @@ fun UiSettings(
     var enablePictureInPictureAuto by rememberPreference(enablePictureInPictureAutoKey, false)
     var pipModule by rememberPreference(pipModuleKey, PipModule.Cover)
     var jumpPrevious by rememberPreference(jumpPreviousKey,"3")
+    var notificationType by rememberPreference(notificationTypeKey, NotificationType.Default)
 
     Column(
         modifier = Modifier
@@ -848,6 +851,21 @@ fun UiSettings(
         SettingsGroupSpacer()
         SettingsEntryGroupText(stringResource(R.string.player))
 
+        if (search.input.isBlank() || stringResource(R.string.notification_type).contains(search.input,true)) {
+            EnumValueSelectorSettingsEntry(
+                title = stringResource(R.string.notification_type),
+                selectedValue = notificationType,
+                onValueSelected = {
+                    notificationType = it
+                },
+                valueText = {
+                    it.textName
+                }
+            )
+            SettingsDescription(text = stringResource(R.string.notification_type_info))
+            ImportantSettingsDescription(text = stringResource(R.string.restarting_rimusic_is_required))
+        }
+
         if (search.input.isBlank() || stringResource(R.string.audio_quality_format).contains(search.input,true)) {
             EnumValueSelectorSettingsEntry(
                 title = stringResource(R.string.audio_quality_format),
@@ -870,32 +888,19 @@ fun UiSettings(
 
         }
 
-        if (search.input.isBlank() || stringResource(R.string.player_pause_listen_history).contains(search.input,true)) {
-            SwitchSettingEntry(
-                title = stringResource(R.string.player_pause_listen_history),
-                text = stringResource(R.string.player_pause_listen_history_info),
-                isChecked = pauseListenHistory,
-                onCheckedChange = {
-                    pauseListenHistory = it
-                    restartService = true
-                }
-            )
-            RestartPlayerService(restartService, onRestart = { restartService = false } )
-        }
-
         if (search.input.isBlank() || stringResource(R.string.jump_previous).contains(search.input,true)) {
             BasicText(
                 text = stringResource(R.string.jump_previous),
                 style = typography().xs.semiBold.copy(color = colorPalette().text),
                 modifier = Modifier
-                    .padding(start = 16.dp)
-                    .padding(all = 16.dp)
+                    .padding(start = 12.dp)
+                    //.padding(all = 12.dp)
             )
             BasicText(
                 text = stringResource(R.string.jump_previous_blank),
                 style = typography().xxs.semiBold.copy(color = colorPalette().textDisabled),
                 modifier = Modifier
-                    .padding(start = 32.dp)
+                    .padding(start = 12.dp)
             )
             TextField(
                 value = jumpPrevious,
@@ -907,8 +912,8 @@ fun UiSettings(
                 singleLine = true,
                 colors = TextFieldDefaults.textFieldColors(textColor = colorPalette().text, unfocusedIndicatorColor = colorPalette().text),
                 modifier = Modifier
-                    .padding(start = 16.dp)
-                    .padding(all = 16.dp)
+                    .padding(start = 12.dp)
+                    //.padding(all = 12.dp)
             )
         }
 
@@ -972,6 +977,19 @@ fun UiSettings(
                     }
                 }
             )
+
+        if (search.input.isBlank() || stringResource(R.string.player_pause_listen_history).contains(search.input,true)) {
+            SwitchSettingEntry(
+                title = stringResource(R.string.player_pause_listen_history),
+                text = stringResource(R.string.player_pause_listen_history_info),
+                isChecked = pauseListenHistory,
+                onCheckedChange = {
+                    pauseListenHistory = it
+                    restartService = true
+                }
+            )
+            RestartPlayerService(restartService, onRestart = { restartService = false } )
+        }
 
         if (search.input.isBlank() || stringResource(R.string.player_pause_on_volume_zero).contains(search.input,true))
             SwitchSettingEntry(

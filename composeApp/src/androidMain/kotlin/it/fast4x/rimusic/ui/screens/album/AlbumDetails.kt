@@ -126,12 +126,14 @@ import it.fast4x.rimusic.utils.resize
 import it.fast4x.rimusic.utils.secondary
 import it.fast4x.rimusic.utils.semiBold
 import it.fast4x.rimusic.utils.showFloatingIconKey
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import me.bush.translator.Language
 import me.bush.translator.Translator
-import me.knighthat.colorPalette
-import me.knighthat.typography
+import it.fast4x.rimusic.colorPalette
+import it.fast4x.rimusic.typography
 import timber.log.Timber
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -327,7 +329,9 @@ fun AlbumDetails(
                     if (songs.isNotEmpty() == true)
                         songs.forEach {
                             binder?.cache?.removeResource(it.asMediaItem.mediaId)
-                            Database.resetContentLength( it.asMediaItem.mediaId )
+                            CoroutineScope(Dispatchers.IO).launch {
+                                Database.deleteFormat( it.asMediaItem.mediaId )
+                            }
                             manageDownload(
                                 context = context,
                                 mediaItem = it.asMediaItem,
@@ -338,7 +342,9 @@ fun AlbumDetails(
                     runCatching {
                         listMediaItems.forEach {
                             binder?.cache?.removeResource(it.mediaId)
-                            Database.resetContentLength( it.mediaId )
+                            CoroutineScope(Dispatchers.IO).launch {
+                                Database.deleteFormat( it.mediaId )
+                            }
                             manageDownload(
                                 context = context,
                                 mediaItem = it,
@@ -366,7 +372,9 @@ fun AlbumDetails(
                     if (songs.isNotEmpty() == true)
                         songs.forEach {
                             binder?.cache?.removeResource(it.asMediaItem.mediaId)
-                            Database.resetContentLength( it.asMediaItem.mediaId )
+                            CoroutineScope(Dispatchers.IO).launch {
+                                Database.deleteFormat( it.asMediaItem.mediaId )
+                            }
                             manageDownload(
                                 context = context,
                                 mediaItem = it.asMediaItem,
@@ -377,7 +385,9 @@ fun AlbumDetails(
                     runCatching {
                         listMediaItems.forEach {
                             binder?.cache?.removeResource(it.mediaId)
-                            Database.resetContentLength( it.mediaId )
+                            CoroutineScope(Dispatchers.IO).launch {
+                                Database.deleteFormat( it.mediaId )
+                            }
                             manageDownload(
                                 context = context,
                                 mediaItem = it,
@@ -431,8 +441,8 @@ fun AlbumDetails(
     LayoutWithAdaptiveThumbnail(thumbnailContent = thumbnailContent) {
         Box(
             modifier = Modifier
-                .background(colorPalette()
-.background0)
+                .background(
+                    colorPalette().background0)
                 //.fillMaxSize()
                 .fillMaxHeight()
                 //.fillMaxWidth(if (navigationBarPosition == NavigationBarPosition.Left) 1f else contentWidth)
@@ -444,8 +454,8 @@ fun AlbumDetails(
                 //contentPadding = LocalPlayerAwareWindowInsets.current
                 //    .only(WindowInsetsSides.Vertical + WindowInsetsSides.End).asPaddingValues(),
                 modifier = Modifier
-                    .background(colorPalette()
-.background0)
+                    .background(
+                        colorPalette().background0)
                     .fillMaxSize()
             ) {
                 item(
@@ -493,32 +503,9 @@ fun AlbumDetails(
                                 //.padding(bottom = 20.dp)
                             )
 
-                            /*
-                            BasicText(
-                                text = albumPage?.year ?: "",
-                                style = typography().xs.medium,
-                                maxLines = 1,
-                                modifier = Modifier
-                                    //.padding(top = 10.dp)
-                                    .align(Alignment.BottomStart)
-                            )
-
-                            BasicText(
-                                text = songs.size.toString() + " "
-                                        + stringResource(R.string.songs)
-                                        + " - " + formatAsTime(totalPlayTimes),
-                                style = typography().xs.medium,
-                                maxLines = 1,
-                                modifier = Modifier
-                                    //.padding(top = 10.dp)
-                                    .align(Alignment.BottomEnd)
-                            )
-                             */
-
                             HeaderIconButton(
                                 icon = R.drawable.share_social,
-                                color = colorPalette()
-.text,
+                                color = colorPalette().text,
                                 iconSize = 24.dp,
                                 modifier = Modifier
                                     .align(Alignment.TopEnd)
@@ -906,7 +893,10 @@ fun AlbumDetails(
                             downloadState = downloadState,
                             onDownloadClick = {
                                 binder?.cache?.removeResource(song.asMediaItem.mediaId)
-                                Database.resetContentLength( song.asMediaItem.mediaId )
+                                Database.asyncTransaction {
+                                    deleteFormat( song.asMediaItem.mediaId )
+                                }
+
                                 if (!isLocal)
                                     manageDownload(
                                         context = context,
@@ -928,7 +918,8 @@ fun AlbumDetails(
                              */
                                 BasicText(
                                     text = "${index + 1}",
-                                    style = typography().s.semiBold.center.color(colorPalette()
+                                    style = typography().s.semiBold.center.color(
+                                        colorPalette()
 .textDisabled),
                                     maxLines = 1,
                                     overflow = TextOverflow.Ellipsis,
@@ -938,7 +929,7 @@ fun AlbumDetails(
                                 )
 
 
-                                    NowPlayingSongIndicator(song.asMediaItem.mediaId)
+                                    NowPlayingSongIndicator(song.asMediaItem.mediaId, binder?.player)
                             },
                             modifier = Modifier
                                 .combinedClickable(
@@ -947,13 +938,13 @@ fun AlbumDetails(
                                             NonQueuedMediaItemMenu(
                                                 navController = navController,
                                                 onDismiss = {
-                                                    forceRecompose = true
                                                     menuState.hide()
+                                                    forceRecompose = true
                                                 },
                                                 mediaItem = song.asMediaItem,
                                                 disableScrollingText = disableScrollingText
                                             )
-                                        };
+                                        }
                                         hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
                                     },
                                     onClick = {
@@ -1143,7 +1134,8 @@ fun AlbumDetails(
                         if (attributionsIndex != -1) {
                             BasicText(
                                 text = stringResource(R.string.from_wikipedia_cca),
-                                style = typography().xxs.color(colorPalette()
+                                style = typography().xxs.color(
+                                    colorPalette()
 .textDisabled).align(
                                     TextAlign.Start
                                 ),

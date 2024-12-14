@@ -14,6 +14,7 @@ import androidx.compose.ui.unit.Dp
 import coil.compose.AsyncImage
 import it.fast4x.compose.persist.persistList
 import it.fast4x.rimusic.Database
+import it.fast4x.rimusic.cleanPrefix
 import it.fast4x.rimusic.models.PlaylistPreview
 import it.fast4x.rimusic.models.Song
 import it.fast4x.rimusic.ui.items.PlaylistItem
@@ -81,7 +82,7 @@ fun Playlist(
             }
         },
         songCount = playlist.songCount,
-        name = playlist.playlist.name,
+        name = cleanPrefix(playlist.playlist.name),
         channelName = null,
         thumbnailSizeDp = thumbnailSizeDp,
         modifier = modifier,

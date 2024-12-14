@@ -51,8 +51,8 @@ import it.fast4x.rimusic.utils.playlistSortByKey
 import it.fast4x.rimusic.utils.playlistSortOrderKey
 import it.fast4x.rimusic.utils.rememberPreference
 import it.fast4x.rimusic.utils.showSearchTabKey
-import me.knighthat.colorPalette
-import me.knighthat.thumbnailShape
+import it.fast4x.rimusic.colorPalette
+import it.fast4x.rimusic.thumbnailShape
 
 @SuppressLint("SuspiciousIndentation")
 @ExperimentalAnimationApi

@@ -21,7 +21,7 @@ import it.fast4x.rimusic.service.UnplayableException
 import it.fast4x.rimusic.service.isLocal
 import it.fast4x.rimusic.utils.enableYouTubeLoginKey
 import it.fast4x.rimusic.utils.preferences
-import me.knighthat.appContext
+import it.fast4x.rimusic.appContext
 import me.knighthat.invidious.Invidious
 import me.knighthat.invidious.request.player
 import me.knighthat.piped.Piped

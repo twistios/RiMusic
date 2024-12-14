@@ -96,11 +96,13 @@ import it.fast4x.rimusic.utils.showStatsListeningTimeKey
 import it.fast4x.rimusic.utils.statisticsCategoryKey
 import it.fast4x.rimusic.utils.thumbnail
 import it.fast4x.rimusic.utils.thumbnailRoundnessKey
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
-import me.knighthat.colorPalette
-import me.knighthat.typography
+import kotlinx.coroutines.launch
+import it.fast4x.rimusic.colorPalette
+import it.fast4x.rimusic.typography
 import timber.log.Timber
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.days
@@ -340,7 +342,9 @@ fun StatisticsPage(
                             song = songs.get(it).asMediaItem,
                             onDownloadClick = {
                                 binder?.cache?.removeResource(songs.get(it).asMediaItem.mediaId)
-                                Database.resetContentLength( songs[it].asMediaItem.mediaId )
+                                CoroutineScope(Dispatchers.IO).launch {
+                                    Database.deleteFormat( songs.get(it).asMediaItem.mediaId )
+                                }
                                 manageDownload(
                                     context = context,
                                     mediaItem = songs.get(it).asMediaItem,
@@ -369,8 +373,8 @@ fun StatisticsPage(
                                                 navController = navController,
                                                 mediaItem = songs.get(it).asMediaItem,
                                                 onDismiss = {
-                                                    forceRecompose = true
                                                     menuState.hide()
+                                                    forceRecompose = true
                                                 },
                                                 disableScrollingText = disableScrollingText
                                             )

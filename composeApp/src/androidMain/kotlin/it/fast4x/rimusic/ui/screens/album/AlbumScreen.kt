@@ -83,8 +83,8 @@ import it.fast4x.rimusic.utils.transitionEffectKey
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.withContext
-import me.knighthat.colorPalette
-import me.knighthat.component.header.AppHeader
+import it.fast4x.rimusic.colorPalette
+import it.fast4x.rimusic.ui.components.navigation.header.AppHeader
 
 
 @ExperimentalMaterialApi

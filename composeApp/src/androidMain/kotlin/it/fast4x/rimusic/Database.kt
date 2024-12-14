@@ -60,7 +60,7 @@ import it.fast4x.rimusic.models.SortedSongPlaylistMap
 import it.fast4x.rimusic.service.LOCAL_KEY_PREFIX
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
-import me.knighthat.appContext
+import org.intellij.lang.annotations.MagicConstant
 
 
 @Dao
@@ -104,24 +104,12 @@ interface Database {
     @RewriteQueriesToDropUnusedColumns
     fun topSongs(count: Int = 10): Flow<List<Song>>
 
-    @SuppressWarnings(RoomWarnings.QUERY_MISMATCH)
-    @Transaction
-    @Query("SELECT * FROM Song")
-    fun listAllSongsAsFlow(): Flow<List<SongEntity>>
-
     @Transaction
     @Query("SELECT count(playlistId) FROM SongPlaylistMap WHERE songId = :id")
     fun songUsedInPlaylists(id: String): Int
 
-    @Transaction
-    @Query("SELECT * FROM Song")
-    fun listAllSongs(): List<Song>
-
     @Query("SELECT COUNT(1) FROM Song WHERE likedAt IS NOT NULL")
     fun likedSongsCount(): Flow<Int>
-
-    @Query("SELECT COUNT(1) FROM Song INNER JOIN Format ON id = songId WHERE contentLength IS NOT NULL AND totalPlayTimeMs > 0")
-    fun cachedSongsCount(): Flow<Int>
 
     @Query("SELECT COUNT(1) FROM Song WHERE id LIKE '$LOCAL_KEY_PREFIX%'")
     fun onDeviceSongsCount(): Flow<Int>
@@ -239,129 +227,139 @@ interface Database {
     @RewriteQueriesToDropUnusedColumns
     fun songsOnDevice(): Flow<List<Song>>
 
+    @SuppressWarnings(RoomWarnings.QUERY_MISMATCH)
     @Transaction
     @Query("SELECT * FROM Song WHERE id LIKE '$LOCAL_KEY_PREFIX%'")
     @RewriteQueriesToDropUnusedColumns
     fun songsEntityOnDevice(): Flow<List<SongEntity>>
 
-    @SuppressWarnings(RoomWarnings.QUERY_MISMATCH)
-    @Transaction
-    @Query("SELECT * FROM Song WHERE likedAt IS NOT NULL ORDER BY artistsText")
-    @RewriteQueriesToDropUnusedColumns
-    fun songsFavoritesByArtistAsc(): Flow<List<SongEntity>>
+    @Query("""
+        SELECT DISTINCT Song.*, Format.contentLength, Album.title
+        FROM Song 
+        LEFT JOIN SongAlbumMap ON Song.id = SongAlbumMap.songId 
+        LEFT JOIN Album ON Album.id = SongAlbumMap.albumId 
+        LEFT JOIN Format ON Format.songId = Song.id
+        WHERE Song.likedAt IS NOT NULL 
+        ORDER BY artistsText
+    """)
+    fun sortFavoriteSongsByArtist(): Flow<List<SongEntity>>
 
-    @SuppressWarnings(RoomWarnings.QUERY_MISMATCH)
-    @Transaction
-    @Query("SELECT * FROM Song WHERE likedAt IS NOT NULL ORDER BY artistsText DESC")
-    @RewriteQueriesToDropUnusedColumns
-    fun songsFavoritesByArtistDesc(): Flow<List<SongEntity>>
+    @Query("""
+        SELECT DISTINCT Song.*, Format.contentLength, Album.title
+        FROM Song 
+        LEFT JOIN SongAlbumMap ON Song.id = SongAlbumMap.songId 
+        LEFT JOIN Album ON Album.id = SongAlbumMap.albumId 
+        LEFT JOIN Format ON Format.songId = Song.id
+        WHERE Song.likedAt IS NOT NULL 
+        ORDER BY totalPlayTimeMs
+    """)
+    fun sortFavoriteSongsByPlayTime(): Flow<List<SongEntity>>
 
-    @SuppressWarnings(RoomWarnings.QUERY_MISMATCH)
-    @Transaction
-    @Query("SELECT * FROM Song WHERE likedAt IS NOT NULL ORDER BY totalPlayTimeMs")
-    @RewriteQueriesToDropUnusedColumns
-    fun songsFavoritesByPlayTimeAsc(): Flow<List<SongEntity>>
+    @Query("""
+        SELECT DISTINCT Song.*, Format.contentLength, Album.title
+        FROM Song 
+        LEFT JOIN SongAlbumMap ON Song.id = SongAlbumMap.songId 
+        LEFT JOIN Album ON Album.id = SongAlbumMap.albumId 
+        LEFT JOIN Format ON Format.songId = Song.id
+        WHERE Song.likedAt IS NOT NULL 
+        ORDER BY 
+            CASE
+                WHEN Song.title LIKE "$EXPLICIT_PREFIX%" THEN SUBSTR(Song.title, LENGTH('$EXPLICIT_PREFIX') + 1)
+                ELSE Song.title
+            END
+        COLLATE NOCASE
+    """)
+    fun sortFavoriteSongsByTitle(): Flow<List<SongEntity>>
 
-    @SuppressWarnings(RoomWarnings.QUERY_MISMATCH)
-    @Transaction
-    @Query("SELECT * FROM Song WHERE likedAt IS NOT NULL ORDER BY totalPlayTimeMs DESC")
-    @RewriteQueriesToDropUnusedColumns
-    fun songsFavoritesByPlayTimeDesc(): Flow<List<SongEntity>>
+    @Query("""
+        SELECT DISTINCT Song.*, Format.contentLength, Album.title
+        FROM Song 
+        LEFT JOIN SongAlbumMap ON Song.id = SongAlbumMap.songId 
+        LEFT JOIN Album ON Album.id = SongAlbumMap.albumId 
+        LEFT JOIN Format ON Format.songId = Song.id
+        WHERE Song.likedAt IS NOT NULL 
+        ORDER BY Song.ROWID
+    """)
+    fun sortFavoriteSongsByRowId(): Flow<List<SongEntity>>
 
-    @SuppressWarnings(RoomWarnings.QUERY_MISMATCH)
-    @Transaction
-    @Query("SELECT * FROM Song WHERE likedAt IS NOT NULL ORDER BY title COLLATE NOCASE ASC")
-    @RewriteQueriesToDropUnusedColumns
-    fun songsFavoritesByTitleAsc(): Flow<List<SongEntity>>
+    @Query("""
+        SELECT DISTINCT Song.*, Format.contentLength, Album.title
+        FROM Song 
+        LEFT JOIN SongAlbumMap ON Song.id = SongAlbumMap.songId 
+        LEFT JOIN Album ON Album.id = SongAlbumMap.albumId 
+        LEFT JOIN Format ON Format.songId = Song.id
+        WHERE Song.likedAt IS NOT NULL 
+        ORDER BY likedAt
+    """)
+    fun sortFavoriteSongsByLikedAt(): Flow<List<SongEntity>>
 
-    @SuppressWarnings(RoomWarnings.QUERY_MISMATCH)
-    @Transaction
-    @Query("SELECT * FROM Song WHERE likedAt IS NOT NULL ORDER BY title COLLATE NOCASE DESC")
-    @RewriteQueriesToDropUnusedColumns
-    fun songsFavoritesByTitleDesc(): Flow<List<SongEntity>>
+    @Query("""
+        SELECT DISTINCT Song.*, Format.contentLength, Album.title
+        FROM Song 
+        LEFT JOIN SongAlbumMap ON Song.id = SongAlbumMap.songId 
+        LEFT JOIN Album ON Album.id = SongAlbumMap.albumId 
+        LEFT JOIN Format ON Format.songId = Song.id
+        LEFT JOIN Event E ON E.songId = Song.id 
+        WHERE Song.likedAt IS NOT NULL 
+        ORDER BY E.timestamp
+    """)
+    fun sortFavoriteSongsByDatePlayed(): Flow<List<SongEntity>>
 
-    @SuppressWarnings(RoomWarnings.QUERY_MISMATCH)
-    @Transaction
-    @Query("SELECT * FROM Song WHERE likedAt IS NOT NULL ORDER BY ROWID")
-    @RewriteQueriesToDropUnusedColumns
-    fun songsFavoritesByRowIdAsc(): Flow<List<SongEntity>>
+    @Query("""
+        SELECT DISTINCT Song.*, Format.contentLength, Album.title
+        FROM Song 
+        LEFT JOIN SongAlbumMap ON Song.id = SongAlbumMap.songId 
+        LEFT JOIN Album ON Album.id = SongAlbumMap.albumId 
+        LEFT JOIN Format ON Format.songId = Song.id
+        WHERE Song.likedAt IS NOT NULL 
+        ORDER BY durationText
+    """)
+    fun sortFavoriteSongsByDuration(): Flow<List<SongEntity>>
 
-    @SuppressWarnings(RoomWarnings.QUERY_MISMATCH)
-    @Transaction
-    @Query("SELECT * FROM Song WHERE likedAt IS NOT NULL ORDER BY ROWID DESC")
-    @RewriteQueriesToDropUnusedColumns
-    fun songsFavoritesByRowIdDesc(): Flow<List<SongEntity>>
+    @Query("""
+        SELECT DISTINCT Song.*, Format.contentLength, Album.title
+        FROM Song
+        LEFT JOIN SongAlbumMap ON Song.id = SongAlbumMap.songId 
+        LEFT JOIN Album ON Album.id = SongAlbumMap.albumId 
+        LEFT JOIN Format ON Format.songId = Song.id
+        WHERE Song.likedAt IS NOT NULL 
+        ORDER BY Album.title
+    """)
+    fun sortFavoriteSongsByAlbum(): Flow<List<SongEntity>>
 
-    @SuppressWarnings(RoomWarnings.QUERY_MISMATCH)
-    @Transaction
-    @Query("SELECT * FROM Song WHERE likedAt IS NOT NULL ORDER BY likedAt")
-    @RewriteQueriesToDropUnusedColumns
-    fun songsFavoritesByLikedAtAsc(): Flow<List<SongEntity>>
-
-    @SuppressWarnings(RoomWarnings.QUERY_MISMATCH)
-    @Transaction
-    @Query("SELECT * FROM Song WHERE likedAt IS NOT NULL ORDER BY likedAt DESC")
-    @RewriteQueriesToDropUnusedColumns
-    fun songsFavoritesByLikedAtDesc(): Flow<List<SongEntity>>
-
-    @SuppressWarnings(RoomWarnings.QUERY_MISMATCH)
-    @Transaction
-    @Query("SELECT DISTINCT S.* FROM Song S LEFT JOIN Event E ON E.songId=S.id " +
-            "WHERE likedAt IS NOT NULL " +
-            "ORDER BY E.timestamp DESC")
-    fun songsFavoritesByDatePlayedDesc(): Flow<List<SongEntity>>
-
-    @SuppressWarnings(RoomWarnings.QUERY_MISMATCH)
-    @Transaction
-    @Query("SELECT DISTINCT S.* FROM Song S LEFT JOIN Event E ON E.songId=S.id " +
-            "WHERE likedAt IS NOT NULL " +
-            "ORDER BY E.timestamp")
-    fun songsFavoritesByDatePlayedAsc(): Flow<List<SongEntity>>
-
-    @SuppressWarnings(RoomWarnings.QUERY_MISMATCH)
-    @Transaction
-    @Query("SELECT * FROM Song WHERE likedAt IS NOT NULL ORDER BY durationText")
-    @RewriteQueriesToDropUnusedColumns
-    fun songsFavoritesByDurationAsc(): Flow<List<SongEntity>>
-
-    @SuppressWarnings(RoomWarnings.QUERY_MISMATCH)
-    @Transaction
-    @Query("SELECT * FROM Song WHERE likedAt IS NOT NULL ORDER BY durationText DESC")
-    @RewriteQueriesToDropUnusedColumns
-    fun songsFavoritesByDurationDesc(): Flow<List<SongEntity>>
-
-    fun songsFavorites(sortBy: SongSortBy, sortOrder: SortOrder): Flow<List<SongEntity>> {
-        return when (sortBy) {
-            SongSortBy.PlayTime -> when (sortOrder) {
-                SortOrder.Ascending -> songsFavoritesByPlayTimeAsc()
-                SortOrder.Descending -> songsFavoritesByPlayTimeDesc()
-            }
-            SongSortBy.Title, SongSortBy.AlbumName -> when (sortOrder) {
-                SortOrder.Ascending -> songsFavoritesByTitleAsc()
-                SortOrder.Descending -> songsFavoritesByTitleDesc()
-            }
-            SongSortBy.DateLiked -> when (sortOrder) {
-                SortOrder.Ascending -> songsFavoritesByLikedAtAsc()
-                SortOrder.Descending -> songsFavoritesByLikedAtDesc()
-            }
-            SongSortBy.DatePlayed -> when (sortOrder) {
-                SortOrder.Ascending -> songsFavoritesByDatePlayedAsc()
-                SortOrder.Descending -> songsFavoritesByDatePlayedDesc()
-            }
-            SongSortBy.DateAdded -> when (sortOrder) {
-                SortOrder.Ascending -> songsFavoritesByRowIdAsc()
-                SortOrder.Descending -> songsFavoritesByRowIdDesc()
-            }
-            SongSortBy.Artist -> when (sortOrder) {
-                SortOrder.Ascending -> songsFavoritesByArtistAsc()
-                SortOrder.Descending -> songsFavoritesByArtistDesc()
-            }
-            SongSortBy.Duration -> when (sortOrder) {
-                SortOrder.Ascending -> songsFavoritesByDurationAsc()
-                SortOrder.Descending -> songsFavoritesByDurationDesc()
-            }
-        }
-    }
+    /**
+     * Fetch all songs that are liked by the user
+     * from the database and sort them according to
+     * [sortBy] and [sortOrder].
+     *
+     * [sortBy] sorts all based on each song's property
+     * such as [SongSortBy.Title], [SongSortBy.PlayTime], etc.
+     * While [sortOrder] arranges order of sorted songs
+     * to follow alphabetical order A to Z, or numerical order 0 to 9, etc.
+     *
+     *
+     * @param sortBy which song's property is used to sort
+     * @param sortOrder what order should results be in
+     *
+     * @return a **SORTED** list of [SongEntity]'s that are continuously
+     * updated to reflect changes within the database - wrapped by [Flow]
+     *
+     * @see SongSortBy
+     * @see SortOrder
+     */
+    fun listFavoriteSongs(
+        sortBy: SongSortBy,
+        sortOrder: SortOrder
+    ): Flow<List<SongEntity>> = when (sortBy) {
+        SongSortBy.PlayTime -> sortFavoriteSongsByPlayTime()
+        SongSortBy.Title -> sortFavoriteSongsByTitle()
+        SongSortBy.DateAdded -> sortFavoriteSongsByRowId()
+        SongSortBy.DatePlayed -> sortFavoriteSongsByDatePlayed()
+        SongSortBy.DateLiked -> sortFavoriteSongsByLikedAt()
+        SongSortBy.Artist -> sortFavoriteSongsByArtist()
+        SongSortBy.Duration -> sortFavoriteSongsByDuration()
+        SongSortBy.AlbumName -> sortFavoriteSongsByAlbum()
+    }.map(sortOrder::applyTo)
 
     @Query("SELECT thumbnailUrl FROM Song WHERE likedAt IS NOT NULL AND id NOT LIKE '$LOCAL_KEY_PREFIX%'  LIMIT 4")
     fun preferitesThumbnailUrls(): Flow<List<String?>>
@@ -370,145 +368,309 @@ interface Database {
     @Query("SELECT Song.*, contentLength FROM Song LEFT JOIN Format ON id = songId WHERE songId = :songId")
     fun songCached(songId: String): Flow<SongWithContentLength?>
 
-    @SuppressWarnings(RoomWarnings.QUERY_MISMATCH)
-    @Transaction
-    @Query("SELECT Song.*, contentLength FROM Song INNER JOIN Format ON id = songId WHERE contentLength IS NOT NULL AND totalPlayTimeMs > 0 ORDER BY totalPlayTimeMs")
-    fun songsOfflineByPlayTimeAsc(): Flow<List<SongEntity>>
+    @Query("""
+        SELECT DISTINCT Song.*, Format.contentLength, Album.title
+        FROM Song 
+        LEFT JOIN SongAlbumMap ON Song.id = SongAlbumMap.songId 
+        LEFT JOIN Album ON Album.id = SongAlbumMap.albumId 
+        LEFT JOIN Format ON Format.songId = Song.id
+        WHERE Format.contentLength IS NOT NULL AND Song.totalPlayTimeMs > 0
+        ORDER BY totalPlayTimeMs
+    """)
+    fun sortOfflineSongsByPlayTime(): Flow<List<SongEntity>>
 
-    @SuppressWarnings(RoomWarnings.QUERY_MISMATCH)
-    @Transaction
-    @Query("SELECT Song.*, contentLength FROM Song INNER JOIN Format ON id = songId WHERE contentLength IS NOT NULL AND totalPlayTimeMs > 0 ORDER BY totalPlayTimeMs DESC")
-    fun songsOfflineByPlayTimeDesc(): Flow<List<SongEntity>>
+    @Query("""
+        SELECT DISTINCT Song.*, Format.contentLength, Album.title
+        FROM Song 
+        LEFT JOIN SongAlbumMap ON Song.id = SongAlbumMap.songId 
+        LEFT JOIN Album ON Album.id = SongAlbumMap.albumId 
+        LEFT JOIN Format ON Format.songId = Song.id
+        WHERE Format.contentLength IS NOT NULL AND Song.totalPlayTimeMs > 0
+        ORDER BY 
+            CASE
+                WHEN Song.title LIKE "$EXPLICIT_PREFIX%" THEN SUBSTR(Song.title, LENGTH('$EXPLICIT_PREFIX') + 1)
+                ELSE Song.title
+            END
+        COLLATE NOCASE
+    """)
+    fun sortOfflineSongsByTitle(): Flow<List<SongEntity>>
 
-    @SuppressWarnings(RoomWarnings.QUERY_MISMATCH)
-    @Transaction
-    @Query("SELECT Song.*, contentLength FROM Song INNER JOIN Format ON id = songId WHERE contentLength IS NOT NULL AND totalPlayTimeMs > 0 ORDER BY Song.title")
-    fun songsOfflineByTitleAsc(): Flow<List<SongEntity>>
+    @Query("""
+        SELECT DISTINCT Song.*, Format.contentLength, Album.title
+        FROM Song 
+        LEFT JOIN SongAlbumMap ON Song.id = SongAlbumMap.songId 
+        LEFT JOIN Album ON Album.id = SongAlbumMap.albumId 
+        LEFT JOIN Format ON Format.songId = Song.id
+        WHERE Format.contentLength IS NOT NULL AND Song.totalPlayTimeMs > 0
+        ORDER BY Song.ROWID
+    """)
+    fun sortOfflineSongsByRowId(): Flow<List<SongEntity>>
 
-    @SuppressWarnings(RoomWarnings.QUERY_MISMATCH)
-    @Transaction
-    @Query("SELECT Song.*, contentLength FROM Song INNER JOIN Format ON id = songId WHERE contentLength IS NOT NULL AND totalPlayTimeMs > 0 ORDER BY Song.title DESC")
-    fun songsOfflineByTitleDesc(): Flow<List<SongEntity>>
+    @Query("""
+        SELECT DISTINCT Song.*, Format.contentLength, Album.title
+        FROM Song 
+        LEFT JOIN SongAlbumMap ON Song.id = SongAlbumMap.songId 
+        LEFT JOIN Album ON Album.id = SongAlbumMap.albumId 
+        LEFT JOIN Format ON Format.songId = Song.id
+        WHERE Format.contentLength IS NOT NULL AND Song.totalPlayTimeMs > 0
+        ORDER BY Song.likedAt
+    """)
+    fun sortOfflineSongsByLikedAt(): Flow<List<SongEntity>>
 
-    @SuppressWarnings(RoomWarnings.QUERY_MISMATCH)
-    @Transaction
-    @Query("SELECT Song.*, contentLength FROM Song INNER JOIN Format ON id = songId WHERE contentLength IS NOT NULL AND totalPlayTimeMs > 0 ORDER BY Song.ROWID")
-    fun songsOfflineByRowIdAsc(): Flow<List<SongEntity>>
+    @Query("""
+        SELECT DISTINCT Song.*, Format.contentLength, Album.title
+        FROM Song 
+        LEFT JOIN SongAlbumMap ON Song.id = SongAlbumMap.songId 
+        LEFT JOIN Album ON Album.id = SongAlbumMap.albumId 
+        LEFT JOIN Format ON Format.songId = Song.id
+        WHERE Format.contentLength IS NOT NULL AND Song.totalPlayTimeMs > 0
+        ORDER BY Song.artistsText
+    """)
+    fun sortOfflineSongsByArtist(): Flow<List<SongEntity>>
 
-    @SuppressWarnings(RoomWarnings.QUERY_MISMATCH)
-    @Transaction
-    @Query("SELECT Song.*, contentLength FROM Song INNER JOIN Format ON id = songId WHERE contentLength IS NOT NULL AND totalPlayTimeMs > 0 ORDER BY Song.ROWID DESC")
-    fun songsOfflineByRowIdDesc(): Flow<List<SongEntity>>
+    @Query("""
+        SELECT DISTINCT Song.*, Format.contentLength, Album.title
+        FROM Song 
+        LEFT JOIN SongAlbumMap ON Song.id = SongAlbumMap.songId 
+        LEFT JOIN Album ON Album.id = SongAlbumMap.albumId 
+        LEFT JOIN Format ON Format.songId = Song.id
+        WHERE Format.contentLength IS NOT NULL AND Song.totalPlayTimeMs > 0
+        ORDER BY Song.durationText
+    """)
+    fun sortOfflineSongsByDuration(): Flow<List<SongEntity>>
 
-    @SuppressWarnings(RoomWarnings.QUERY_MISMATCH)
-    @Transaction
-    @Query("SELECT Song.*, contentLength FROM Song INNER JOIN Format ON id = songId WHERE contentLength IS NOT NULL AND totalPlayTimeMs > 0 ORDER BY Song.likedAt")
-    fun songsOfflineByLikedAtAsc(): Flow<List<SongEntity>>
+    @Query("""
+        SELECT DISTINCT Song.*, Format.contentLength, Album.title
+        FROM Song 
+        LEFT JOIN Event E ON E.songId=Song.id 
+        LEFT JOIN SongAlbumMap ON Song.id = SongAlbumMap.songId 
+        LEFT JOIN Album ON Album.id = SongAlbumMap.albumId 
+        LEFT JOIN Format ON Format.songId = Song.id
+        WHERE Format.contentLength IS NOT NULL AND Song.totalPlayTimeMs > 0
+        ORDER BY E.timestamp
+    """)
+    fun sortOfflineSongsByDatePlayed(): Flow<List<SongEntity>>
 
-    @SuppressWarnings(RoomWarnings.QUERY_MISMATCH)
-    @Transaction
-    @Query("SELECT Song.*, contentLength FROM Song INNER JOIN Format ON id = songId WHERE contentLength IS NOT NULL AND totalPlayTimeMs > 0 ORDER BY Song.likedAt DESC")
-    fun songsOfflineByLikedAtDesc(): Flow<List<SongEntity>>
+    @Query("""
+        SELECT DISTINCT Song.*, Format.contentLength, Album.title
+        FROM Song 
+        LEFT JOIN SongAlbumMap ON Song.id = SongAlbumMap.songId 
+        LEFT JOIN Album ON Album.id = SongAlbumMap.albumId 
+        LEFT JOIN Format ON Format.songId = Song.id
+        WHERE Format.contentLength IS NOT NULL AND Song.totalPlayTimeMs > 0
+        ORDER BY Album.title COLLATE NOCASE
+    """)
+    fun sortOfflineSongsByAlbum(): Flow<List<SongEntity>>
 
-    @SuppressWarnings(RoomWarnings.QUERY_MISMATCH)
-    @Transaction
-    @Query("SELECT Song.*, contentLength FROM Song INNER JOIN Format ON id = songId WHERE contentLength IS NOT NULL AND totalPlayTimeMs > 0 ORDER BY Song.artistsText")
-    fun songsOfflineByArtistAsc(): Flow<List<SongEntity>>
+    /**
+     * Fetch all songs from that are cached the database
+     * and sort them according to [sortBy] and [sortOrder].
+     *
+     * [sortBy] sorts all based on each song's property
+     * such as [SongSortBy.Title], [SongSortBy.PlayTime], etc.
+     * While [sortOrder] arranges order of sorted songs
+     * to follow alphabetical order A to Z, or numerical order 0 to 9, etc.
+     *
+     * @param sortBy which song's property is used to sort
+     * @param sortOrder what order should results be in
+     *
+     * @return a **SORTED** list of [SongEntity]'s that are continuously
+     * updated to reflect changes within the database - wrapped by [Flow]
+     *
+     * @see SongSortBy
+     * @see SortOrder
+     */
+    fun listOfflineSongs(
+        sortBy: SongSortBy,
+        sortOrder: SortOrder
+    ): Flow<List<SongEntity>> = when (sortBy) {
+        SongSortBy.PlayTime -> sortOfflineSongsByPlayTime()
+        SongSortBy.Title -> sortOfflineSongsByTitle()
+        SongSortBy.DateAdded -> sortOfflineSongsByRowId()
+        SongSortBy.DatePlayed -> sortOfflineSongsByDatePlayed()
+        SongSortBy.DateLiked -> sortOfflineSongsByLikedAt()
+        SongSortBy.Artist -> sortOfflineSongsByArtist()
+        SongSortBy.Duration -> sortOfflineSongsByDuration()
+        SongSortBy.AlbumName -> sortOfflineSongsByAlbum()
+    }.map( sortOrder::applyTo )
 
-    @SuppressWarnings(RoomWarnings.QUERY_MISMATCH)
-    @Transaction
-    @Query("SELECT Song.*, contentLength FROM Song INNER JOIN Format ON id = songId WHERE contentLength IS NOT NULL AND totalPlayTimeMs > 0 ORDER BY Song.artistsText DESC")
-    fun songsOfflineByArtistDesc(): Flow<List<SongEntity>>
+    @Query("""
+        SELECT DISTINCT Song.*, Format.contentLength, Album.title
+        FROM Song 
+        LEFT JOIN SongAlbumMap ON Song.id = SongAlbumMap.songId 
+        LEFT JOIN Album ON Album.id = SongAlbumMap.albumId 
+        LEFT JOIN Format ON Format.songId = Song.id
+        WHERE Song.totalPlayTimeMs >= :showHidden 
+        ORDER BY Song.ROWID
+    """)
+    fun sortAllSongsByRowId(
+        @MagicConstant(intValues = [-1, 0]) showHidden: Int
+    ): Flow<List<SongEntity>>
 
-    @SuppressWarnings(RoomWarnings.QUERY_MISMATCH)
-    @Transaction
-    @Query("SELECT Song.*, contentLength FROM Song INNER JOIN Format ON id = songId WHERE contentLength IS NOT NULL AND totalPlayTimeMs > 0 ORDER BY Song.durationText")
-    fun songsOfflineByDurationAsc(): Flow<List<SongEntity>>
+    @Query("""
+        SELECT DISTINCT Song.*, Format.contentLength, Album.title
+        FROM Song 
+        LEFT JOIN SongAlbumMap ON Song.id = SongAlbumMap.songId 
+        LEFT JOIN Album ON Album.id = SongAlbumMap.albumId 
+        LEFT JOIN Format ON Format.songId = Song.id
+        WHERE Song.totalPlayTimeMs >= :showHidden 
+        ORDER BY 
+            CASE
+                WHEN Song.title LIKE "$EXPLICIT_PREFIX%" THEN SUBSTR(Song.title, LENGTH('$EXPLICIT_PREFIX') + 1)
+                ELSE Song.title
+            END
+        COLLATE NOCASE
+    """)
+    fun sortAllSongsByTitle(
+        @MagicConstant(intValues = [-1, 0]) showHidden: Int
+    ): Flow<List<SongEntity>>
 
-    @SuppressWarnings(RoomWarnings.QUERY_MISMATCH)
-    @Transaction
-    @Query("SELECT Song.*, contentLength FROM Song INNER JOIN Format ON id = songId WHERE contentLength IS NOT NULL AND totalPlayTimeMs > 0 ORDER BY Song.durationText DESC")
-    fun songsOfflineByDurationDesc(): Flow<List<SongEntity>>
+    @Query("""
+        SELECT DISTINCT Song.*, Format.contentLength, Album.title
+        FROM Song 
+        LEFT JOIN SongAlbumMap ON Song.id = SongAlbumMap.songId 
+        LEFT JOIN Album ON Album.id = SongAlbumMap.albumId 
+        LEFT JOIN Format ON Format.songId = Song.id
+        WHERE Song.totalPlayTimeMs >= :showHidden 
+        ORDER BY Song.totalPlayTimeMs
+    """)
+    fun sortAllSongsByPlayTime(
+        @MagicConstant(intValues = [-1, 0]) showHidden: Int
+    ): Flow<List<SongEntity>>
 
-    fun songsOffline(sortBy: SongSortBy, sortOrder: SortOrder): Flow<List<SongEntity>> {
-        return when (sortBy) {
-            SongSortBy.PlayTime, SongSortBy.DatePlayed -> when (sortOrder) {
-                SortOrder.Ascending -> songsOfflineByPlayTimeAsc()
-                SortOrder.Descending -> songsOfflineByPlayTimeDesc()
-            }
-            SongSortBy.Title, SongSortBy.AlbumName -> when (sortOrder) {
-                SortOrder.Ascending -> songsOfflineByTitleAsc()
-                SortOrder.Descending -> songsOfflineByTitleDesc()
-            }
-            SongSortBy.DateAdded -> when (sortOrder) {
-                SortOrder.Ascending -> songsOfflineByRowIdAsc()
-                SortOrder.Descending -> songsOfflineByRowIdDesc()
-            }
-            SongSortBy.DateLiked -> when (sortOrder) {
-                SortOrder.Ascending -> songsOfflineByLikedAtAsc()
-                SortOrder.Descending -> songsOfflineByLikedAtDesc()
-            }
-            SongSortBy.Artist -> when (sortOrder) {
-                SortOrder.Ascending -> songsOfflineByArtistAsc()
-                SortOrder.Descending -> songsOfflineByArtistDesc()
-            }
-            SongSortBy.Duration -> when (sortOrder) {
-                SortOrder.Ascending -> songsOfflineByDurationAsc()
-                SortOrder.Descending -> songsOfflineByDurationDesc()
-            }
-        }
-    }
+    @Query("""
+        SELECT DISTINCT Song.*, Format.contentLength, Album.title
+        FROM Song 
+        LEFT JOIN Event E ON E.songId=Song.id 
+        LEFT JOIN SongAlbumMap ON Song.id = SongAlbumMap.songId 
+        LEFT JOIN Album ON Album.id = SongAlbumMap.albumId 
+        LEFT JOIN Format ON Format.songId = Song.id
+        WHERE Song.totalPlayTimeMs >= :showHidden 
+        ORDER BY E.timestamp
+    """)
+    fun sortAllSongsByDatePlayed(
+        @MagicConstant(intValues = [-1, 0]) showHidden: Int
+    ): Flow<List<SongEntity>>
 
-    @Query("SELECT thumbnailUrl FROM Song JOIN Format ON id = songId WHERE contentLength IS NOT NULL AND totalPlayTimeMs > 0  LIMIT 4")
-    fun offlineThumbnailUrls(): Flow<List<String?>>
+    @Query("""
+        SELECT DISTINCT Song.*, Format.contentLength, Album.title
+        FROM Song 
+        LEFT JOIN SongAlbumMap ON Song.id = SongAlbumMap.songId 
+        LEFT JOIN Album ON Album.id = SongAlbumMap.albumId 
+        LEFT JOIN Format ON Format.songId = Song.id
+        WHERE Song.totalPlayTimeMs >= :showHidden 
+        ORDER BY Song.likedAt
+    """)
+    fun sortAllSongsByLikedAt(
+        @MagicConstant(intValues = [-1, 0]) showHidden: Int
+    ): Flow<List<SongEntity>>
 
-    @SuppressWarnings(RoomWarnings.QUERY_MISMATCH)
-    @Transaction
-    @Query("SELECT Song.*, Album.title as albumTitle FROM Song LEFT JOIN SongAlbumMap ON Song.id = SongAlbumMap.songId  " +
-            "LEFT JOIN Album ON Album.id = SongAlbumMap.albumId " +
-            "WHERE (Song.totalPlayTimeMs > :showHiddenSongs OR Song.likedAt NOT NULL) AND Song.id NOT LIKE '$LOCAL_KEY_PREFIX%' ORDER BY Song.ROWID ASC")
-    @RewriteQueriesToDropUnusedColumns
-    fun songsByRowIdAsc(showHiddenSongs: Int = 0): Flow<List<SongEntity>>
+    @Query("""
+        SELECT DISTINCT Song.*, Format.contentLength, Album.title
+        FROM Song 
+        LEFT JOIN SongAlbumMap ON Song.id = SongAlbumMap.songId 
+        LEFT JOIN Album ON Album.id = SongAlbumMap.albumId 
+        LEFT JOIN Format ON Format.songId = Song.id
+        WHERE Song.totalPlayTimeMs >= :showHidden 
+        ORDER BY Song.artistsText COLLATE NOCASE
+    """)
+    fun sortAllSongsByArtist(
+        @MagicConstant(intValues = [-1, 0]) showHidden: Int
+    ): Flow<List<SongEntity>>
 
-    @SuppressWarnings(RoomWarnings.QUERY_MISMATCH)
-    @Transaction
-    @Query("SELECT Song.*, Album.title as albumTitle FROM Song LEFT JOIN SongAlbumMap ON Song.id = SongAlbumMap.songId  " +
-            "LEFT JOIN Album ON Album.id = SongAlbumMap.albumId " +
-            "WHERE (Song.totalPlayTimeMs > :showHiddenSongs OR Song.likedAt NOT NULL) AND Song.id NOT LIKE '$LOCAL_KEY_PREFIX%' ORDER BY Song.ROWID DESC")
-    @RewriteQueriesToDropUnusedColumns
-    fun songsByRowIdDesc(showHiddenSongs: Int = 0): Flow<List<SongEntity>>
+    @Query("""
+        SELECT DISTINCT Song.*, Format.contentLength, Album.title
+        FROM Song 
+        LEFT JOIN SongAlbumMap ON Song.id = SongAlbumMap.songId 
+        LEFT JOIN Album ON Album.id = SongAlbumMap.albumId 
+        LEFT JOIN Format ON Format.songId = Song.id
+        WHERE Song.totalPlayTimeMs >= :showHidden 
+        ORDER BY Song.durationText
+    """)
+    fun sortAllSongsByDuration(
+        @MagicConstant(intValues = [-1, 0]) showHidden: Int
+    ): Flow<List<SongEntity>>
 
-    @SuppressWarnings(RoomWarnings.QUERY_MISMATCH)
-    @Transaction
-    @Query("SELECT Song.*, Album.title as albumTitle FROM Song LEFT JOIN SongAlbumMap ON Song.id = SongAlbumMap.songId  " +
-            "LEFT JOIN Album ON Album.id = SongAlbumMap.albumId " +
-            "WHERE (Song.totalPlayTimeMs > :showHiddenSongs OR Song.likedAt NOT NULL) AND Song.id NOT LIKE '$LOCAL_KEY_PREFIX%' ORDER BY Song.title COLLATE NOCASE ASC")
-    @RewriteQueriesToDropUnusedColumns
-    fun songsByTitleAsc(showHiddenSongs: Int = 0): Flow<List<SongEntity>>
+    @Query("""
+        SELECT DISTINCT Song.*, Format.contentLength, Album.title
+        FROM Song 
+        LEFT JOIN SongAlbumMap ON Song.id = SongAlbumMap.songId 
+        LEFT JOIN Album ON Album.id = SongAlbumMap.albumId 
+        LEFT JOIN Format ON Format.songId = Song.id
+        WHERE Song.totalPlayTimeMs >= :showHidden 
+        ORDER BY Album.title COLLATE NOCASE
+    """)
+    fun sortAllSongsByAlbum(
+        @MagicConstant(intValues = [-1, 0]) showHidden: Int
+    ): Flow<List<SongEntity>>
 
-    @SuppressWarnings(RoomWarnings.QUERY_MISMATCH)
-    @Transaction
-    @Query("SELECT Song.*, Album.title as albumTitle FROM Song LEFT JOIN SongAlbumMap ON Song.id = SongAlbumMap.songId  " +
-            "LEFT JOIN Album ON Album.id = SongAlbumMap.albumId " +
-            "WHERE (Song.totalPlayTimeMs > :showHiddenSongs OR Song.likedAt NOT NULL) AND Song.id NOT LIKE '$LOCAL_KEY_PREFIX%' ORDER BY Song.title COLLATE NOCASE DESC")
-    @RewriteQueriesToDropUnusedColumns
-    fun songsByTitleDesc(showHiddenSongs: Int = 0): Flow<List<SongEntity>>
+    /**
+     * Fetch all songs from the database and sort them
+     * according to [sortBy] and [sortOrder]. It also
+     * excludes songs if condition of [showHidden] is met.
+     *
+     * [sortBy] sorts all based on each song's property
+     * such as [SongSortBy.Title], [SongSortBy.PlayTime], etc.
+     * While [sortOrder] arranges order of sorted songs
+     * to follow alphabetical order A to Z, or numerical order 0 to 9, etc.
+     *
+     * [showHidden] is an optional parameter that indicates
+     * whether the final results contain songs that are hidden
+     * (in)directly by the user.
+     * `-1` shows hidden while `0` does not.
+     *
+     * @param sortBy which song's property is used to sort
+     * @param sortOrder what order should results be in
+     * @param showHidden include hidden songs to final results or not
+     *
+     * @return a **SORTED** list of [SongEntity]'s that are continuously
+     * updated to reflect changes within the database - wrapped by [Flow]
+     *
+     * @see SongSortBy
+     * @see SortOrder
+     */
+    fun listAllSongs(
+        sortBy: SongSortBy,
+        sortOrder: SortOrder,
+        @MagicConstant(intValues = [-1, 0]) showHidden: Int
+    ): Flow<List<SongEntity>> = when( sortBy ) {
+        // Due to the unknown amount of songs, letting SQLite handle
+        // the sorting is a better idea
+        SongSortBy.PlayTime -> sortAllSongsByPlayTime( showHidden )
+        SongSortBy.Title -> sortAllSongsByTitle( showHidden )
+        SongSortBy.DateAdded -> sortAllSongsByRowId( showHidden )
+        SongSortBy.DatePlayed -> sortAllSongsByDatePlayed( showHidden )
+        SongSortBy.DateLiked -> sortAllSongsByLikedAt( showHidden )
+        SongSortBy.Artist -> sortAllSongsByArtist( showHidden )
+        SongSortBy.Duration -> sortAllSongsByDuration( showHidden )
+        SongSortBy.AlbumName -> sortAllSongsByAlbum( showHidden )
+    }.map( sortOrder::applyTo )
 
-    @SuppressWarnings(RoomWarnings.QUERY_MISMATCH)
-    @Transaction
-    @Query("SELECT Song.*, Album.title as albumTitle FROM Song LEFT JOIN SongAlbumMap ON Song.id = SongAlbumMap.songId  " +
-            "LEFT JOIN Album ON Album.id = SongAlbumMap.albumId " +
-            "WHERE (Song.totalPlayTimeMs > :showHiddenSongs OR Song.likedAt NOT NULL) AND Song.id NOT LIKE '$LOCAL_KEY_PREFIX%' ORDER BY Song.totalPlayTimeMs ASC")
-    @RewriteQueriesToDropUnusedColumns
-    fun songsByPlayTimeAsc(showHiddenSongs: Int = 0): Flow<List<SongEntity>>
-
-    @SuppressWarnings(RoomWarnings.QUERY_MISMATCH)
-    @Transaction
-    @Query("SELECT Song.*, Album.title as albumTitle FROM Song LEFT JOIN SongAlbumMap ON Song.id = SongAlbumMap.songId  " +
-            "LEFT JOIN Album ON Album.id = SongAlbumMap.albumId " +
-            "WHERE (Song.totalPlayTimeMs > :showHiddenSongs OR Song.likedAt NOT NULL) AND Song.id NOT LIKE '$LOCAL_KEY_PREFIX%' ORDER BY Song.totalPlayTimeMs DESC")
-    @RewriteQueriesToDropUnusedColumns
-    fun songsByPlayTimeDesc(showHiddenSongs: Int = 0): Flow<List<SongEntity>>
+    /**
+     * Fetch all songs from the database, 
+     * excludes songs if condition of [showHidden] is met.
+     *
+     * [showHidden] is an optional parameter that indicates
+     * whether the final results contain songs that are hidden
+     * (in)directly by the user.
+     * `-1` shows hidden while `0` does not.
+     *
+     * @param showHidden include hidden songs to final results or not
+     *
+     * @return an **UNSORTED** list of [SongEntity]'s that are continuously
+     * updated to reflect changes within the database - wrapped by [Flow]
+     */
+    @Query("""
+        SELECT DISTINCT Song.*, Format.contentLength, Album.title
+        FROM Song 
+        LEFT JOIN SongAlbumMap ON Song.id = SongAlbumMap.songId 
+        LEFT JOIN Album ON Album.id = SongAlbumMap.albumId 
+        LEFT JOIN Format ON Format.songId = Song.id
+        WHERE Song.totalPlayTimeMs > :showHidden 
+    """)
+    fun listAllSongs(
+        @MagicConstant(intValues = [-1, 0]) showHidden: Int
+    ): Flow<List<SongEntity>>
 
     @Transaction
     @Query(
@@ -537,132 +699,14 @@ interface Database {
 
     @SuppressWarnings(RoomWarnings.QUERY_MISMATCH)
     @Transaction
-    @Query("SELECT DISTINCT Song.*, Album.title as albumTitle FROM Song " +
-            "LEFT JOIN Event E ON E.songId=Song.id LEFT JOIN SongAlbumMap ON Song.id = SongAlbumMap.songId " +
-            "LEFT JOIN Album ON Album.id = SongAlbumMap.albumId " +
-            "WHERE (Song.totalPlayTimeMs > :showHiddenSongs OR Song.likedAt NOT NULL) AND Song.id NOT LIKE '$LOCAL_KEY_PREFIX%' " +
-            "ORDER BY E.timestamp DESC")
-    fun songsByDatePlayedDesc(showHiddenSongs: Int = 0): Flow<List<SongEntity>>
-
-    @SuppressWarnings(RoomWarnings.QUERY_MISMATCH)
-    @Transaction
-    @Query("SELECT DISTINCT Song.*, Album.title as albumTitle FROM Song " +
-            "LEFT JOIN Event E ON E.songId=Song.id LEFT JOIN SongAlbumMap ON Song.id = SongAlbumMap.songId " +
-            "LEFT JOIN Album ON Album.id = SongAlbumMap.albumId " +
-            "WHERE (Song.totalPlayTimeMs > :showHiddenSongs OR Song.likedAt NOT NULL) AND Song.id NOT LIKE '$LOCAL_KEY_PREFIX%' " +
-            "ORDER BY E.timestamp")
-    @RewriteQueriesToDropUnusedColumns
-    fun songsByDatePlayedAsc(showHiddenSongs: Int = 0): Flow<List<SongEntity>>
-
-    @SuppressWarnings(RoomWarnings.QUERY_MISMATCH)
-    @Transaction
-    @Query("SELECT Song.*, Album.title as albumTitle FROM Song LEFT JOIN SongAlbumMap ON Song.id = SongAlbumMap.songId  " +
-            "LEFT JOIN Album ON Album.id = SongAlbumMap.albumId " +
-            "WHERE (Song.totalPlayTimeMs > :showHiddenSongs OR Song.likedAt NOT NULL) AND Song.id NOT LIKE '$LOCAL_KEY_PREFIX%' ORDER BY Song.likedAt ASC")
-    @RewriteQueriesToDropUnusedColumns
-    fun songsByLikedAtAsc(showHiddenSongs: Int = 0): Flow<List<SongEntity>>
-
-    @SuppressWarnings(RoomWarnings.QUERY_MISMATCH)
-    @Transaction
-    @Query("SELECT Song.*, Album.title as albumTitle FROM Song LEFT JOIN SongAlbumMap ON Song.id = SongAlbumMap.songId  " +
-            "LEFT JOIN Album ON Album.id = SongAlbumMap.albumId " +
-            "WHERE (Song.totalPlayTimeMs > :showHiddenSongs OR Song.likedAt NOT NULL) AND Song.id NOT LIKE '$LOCAL_KEY_PREFIX%' ORDER BY Song.likedAt DESC")
-    @RewriteQueriesToDropUnusedColumns
-    fun songsByLikedAtDesc(showHiddenSongs: Int = 0): Flow<List<SongEntity>>
-
-    @SuppressWarnings(RoomWarnings.QUERY_MISMATCH)
-    @Transaction
-    @Query("SELECT Song.*, Album.title as albumTitle FROM Song LEFT JOIN SongAlbumMap ON Song.id = SongAlbumMap.songId  " +
-            "LEFT JOIN Album ON Album.id = SongAlbumMap.albumId " +
-            "WHERE (Song.totalPlayTimeMs > :showHiddenSongs OR Song.likedAt NOT NULL) AND Song.id NOT LIKE '$LOCAL_KEY_PREFIX%' ORDER BY Song.artistsText ASC")
-    @RewriteQueriesToDropUnusedColumns
-    fun songsByArtistAsc(showHiddenSongs: Int = 0): Flow<List<SongEntity>>
-
-    @SuppressWarnings(RoomWarnings.QUERY_MISMATCH)
-    @Transaction
-    @Query("SELECT Song.*, Album.title as albumTitle FROM Song LEFT JOIN SongAlbumMap ON Song.id = SongAlbumMap.songId  " +
-            "LEFT JOIN Album ON Album.id = SongAlbumMap.albumId " +
-            "WHERE (Song.totalPlayTimeMs > :showHiddenSongs OR Song.likedAt NOT NULL) AND Song.id NOT LIKE '$LOCAL_KEY_PREFIX%' ORDER BY Song.artistsText DESC")
-    @RewriteQueriesToDropUnusedColumns
-    fun songsByArtistDesc(showHiddenSongs: Int = 0): Flow<List<SongEntity>>
-
-    @SuppressWarnings(RoomWarnings.QUERY_MISMATCH)
-    @Query("SELECT Song.*, Album.title as albumTitle FROM Song LEFT JOIN SongAlbumMap ON Song.id = SongAlbumMap.songId  " +
-            "LEFT JOIN Album ON Album.id = SongAlbumMap.albumId " +
-            "WHERE (Song.totalPlayTimeMs > :showHiddenSongs OR Song.likedAt NOT NULL) AND Song.id NOT LIKE '$LOCAL_KEY_PREFIX%' ORDER BY Song.durationText ASC")
-    @RewriteQueriesToDropUnusedColumns
-    fun songsByDurationAsc(showHiddenSongs: Int = 0): Flow<List<SongEntity>>
-
-    @SuppressWarnings(RoomWarnings.QUERY_MISMATCH)
-    @Query("SELECT Song.*, Album.title as albumTitle FROM Song LEFT JOIN SongAlbumMap ON Song.id = SongAlbumMap.songId  " +
-            "LEFT JOIN Album ON Album.id = SongAlbumMap.albumId " +
-            "WHERE (Song.totalPlayTimeMs > :showHiddenSongs OR Song.likedAt NOT NULL) AND Song.id NOT LIKE '$LOCAL_KEY_PREFIX%' ORDER BY Song.durationText DESC")
-    @RewriteQueriesToDropUnusedColumns
-    fun songsByDurationDesc(showHiddenSongs: Int = 0): Flow<List<SongEntity>>
-
-    @SuppressWarnings(RoomWarnings.QUERY_MISMATCH)
-    @Transaction
-    @Query("SELECT Song.*, Album.title as albumTitle FROM Song LEFT JOIN SongAlbumMap ON Song.id = SongAlbumMap.songId  " +
-            "LEFT JOIN Album ON Album.id = SongAlbumMap.albumId " +
-            "WHERE (Song.totalPlayTimeMs > :showHiddenSongs OR Song.likedAt NOT NULL) AND Song.id NOT LIKE '$LOCAL_KEY_PREFIX%' ORDER BY Album.title COLLATE NOCASE ASC")
-    @RewriteQueriesToDropUnusedColumns
-    fun songsByAlbumNameAsc(showHiddenSongs: Int = 0): Flow<List<SongEntity>>
-
-    @SuppressWarnings(RoomWarnings.QUERY_MISMATCH)
-    @Transaction
-    @Query("SELECT Song.*, Album.title as albumTitle FROM Song LEFT JOIN SongAlbumMap ON Song.id = SongAlbumMap.songId  " +
-            "LEFT JOIN Album ON Album.id = SongAlbumMap.albumId " +
-            "WHERE (Song.totalPlayTimeMs > :showHiddenSongs OR Song.likedAt NOT NULL) AND Song.id NOT LIKE '$LOCAL_KEY_PREFIX%' ORDER BY Album.title COLLATE NOCASE DESC")
-    @RewriteQueriesToDropUnusedColumns
-    fun songsByAlbumNameDesc(showHiddenSongs: Int = 0): Flow<List<SongEntity>>
-
-    fun songs(sortBy: SongSortBy, sortOrder: SortOrder, showHiddenSongs: Int): Flow<List<SongEntity>> {
-        return when (sortBy) {
-            SongSortBy.AlbumName -> when (sortOrder) {
-                SortOrder.Ascending -> songsByAlbumNameAsc(showHiddenSongs)
-                SortOrder.Descending -> songsByAlbumNameDesc(showHiddenSongs)
-            }
-            SongSortBy.PlayTime -> when (sortOrder) {
-                SortOrder.Ascending -> songsByPlayTimeAsc(showHiddenSongs)
-                SortOrder.Descending -> songsByPlayTimeDesc(showHiddenSongs)
-            }
-            SongSortBy.Title -> when (sortOrder) {
-                SortOrder.Ascending -> songsByTitleAsc(showHiddenSongs)
-                SortOrder.Descending -> songsByTitleDesc(showHiddenSongs)
-            }
-            SongSortBy.DateAdded -> when (sortOrder) {
-                SortOrder.Ascending -> songsByRowIdAsc(showHiddenSongs)
-                SortOrder.Descending -> songsByRowIdDesc(showHiddenSongs)
-            }
-            SongSortBy.DatePlayed -> when (sortOrder) {
-                SortOrder.Ascending -> songsByDatePlayedAsc(showHiddenSongs)
-                SortOrder.Descending -> songsByDatePlayedDesc(showHiddenSongs)
-            }
-            SongSortBy.DateLiked -> when (sortOrder) {
-                SortOrder.Ascending -> songsByLikedAtAsc(showHiddenSongs)
-                SortOrder.Descending -> songsByLikedAtDesc(showHiddenSongs)
-            }
-            SongSortBy.Artist -> when (sortOrder) {
-                SortOrder.Ascending -> songsByArtistAsc(showHiddenSongs)
-                SortOrder.Descending -> songsByArtistDesc(showHiddenSongs)
-            }
-            SongSortBy.Duration -> when (sortOrder) {
-                SortOrder.Ascending -> songsByDurationAsc(showHiddenSongs)
-                SortOrder.Descending -> songsByDurationDesc(showHiddenSongs)
-            }
-        }
-    }
-
-
-    @SuppressWarnings(RoomWarnings.QUERY_MISMATCH)
-    @Transaction
     @Query("SELECT Song.*, Album.title as albumTitle FROM Song JOIN SongAlbumMap ON Song.id = SongAlbumMap.songId  " +
             "JOIN Album ON Album.id = SongAlbumMap.albumId " +
             "WHERE (Song.totalPlayTimeMs > :showHiddenSongs OR Song.likedAt NOT NULL) AND Song.id NOT LIKE '$LOCAL_KEY_PREFIX%' ORDER BY Song.artistsText DESC")
     @RewriteQueriesToDropUnusedColumns
     fun songsWithAlbumByPlayTimeDesc(showHiddenSongs: Int = 0): Flow<List<SongEntity>>
 
-
+    @Query("SELECT thumbnailUrl FROM Song JOIN Format ON id = songId WHERE contentLength IS NOT NULL AND totalPlayTimeMs > 0  LIMIT 4")
+    fun offlineThumbnailUrls(): Flow<List<String?>>
 
     @Transaction
     @Query("SELECT * FROM Song WHERE likedAt IS NOT NULL ORDER BY likedAt DESC")
@@ -1091,11 +1135,13 @@ interface Database {
             " ORDER BY A.authorsText COLLATE NOCASE DESC")
     fun albumsWithSongsSavedByArtistDesc(): Flow<List<Album>>
 
+    @SuppressWarnings(RoomWarnings.QUERY_MISMATCH)
     @Query("SELECT *, (SELECT COUNT(*) FROM SongAlbumMap WHERE albumId = A.id) as songCount  FROM Album A" +
             " WHERE A.id in ( SELECT DISTINCT albumId FROM SongAlbumMap ) " +
             " ORDER BY songCount ASC")
     fun albumsWithSongsSavedBySongsCountAsc(): Flow<List<Album>>
 
+    @SuppressWarnings(RoomWarnings.QUERY_MISMATCH)
     @Query("SELECT *, (SELECT COUNT(*) FROM SongAlbumMap WHERE albumId = A.id) as songCount  FROM Album A" +
             " WHERE A.id in ( SELECT DISTINCT albumId FROM SongAlbumMap ) " +
             " ORDER BY songCount DESC")
@@ -1192,6 +1238,7 @@ interface Database {
     )
     fun playlistSongs(id: Long): Flow<List<Song>?>
 
+    @SuppressWarnings(RoomWarnings.QUERY_MISMATCH)
     @RewriteQueriesToDropUnusedColumns
     @Transaction
     @Query(
@@ -1367,7 +1414,7 @@ interface Database {
     fun sortSongsFromPlaylistByRowId( id: Long ): Flow<List<SongEntity>>
 
     @Query("""
-        SELECT S.*, Album.title as albumTitle, Format.contentLength as contentLength
+        SELECT DISTINCT S.*, Album.title as albumTitle, Format.contentLength as contentLength
         FROM Song S 
         INNER JOIN songplaylistmap SP ON S.id = SP.songId 
         LEFT JOIN SongAlbumMap ON SongAlbumMap.songId = S.id 
@@ -1493,7 +1540,7 @@ interface Database {
     }
 
     @Query("SELECT thumbnailUrl FROM Song JOIN SongPlaylistMap ON id = songId WHERE playlistId = :id ORDER BY position LIMIT 4")
-    fun playlistThumbnailUrls(id: Long): Flow<List<String>>
+    fun playlistThumbnailUrls(id: Long): Flow<List<String?>>
 
 
 
@@ -1508,19 +1555,24 @@ interface Database {
     @Query("SELECT contentLength FROM Format WHERE songId = :songId")
     fun formatContentLength(songId: String): Long
 
+    @Transaction
     @Query("UPDATE Format SET contentLength = 0 WHERE songId = :songId")
     fun resetFormatContentLength(songId: String)
 
+    @Transaction
     @Query("DELETE FROM Song WHERE totalPlayTimeMs = 0")
     fun deleteHiddenSongs()
     // USEFUL FOR MAINTENANCE
+    @Transaction
     @Query("DELETE FROM SongArtistMap WHERE songId NOT IN (SELECT DISTINCT id FROM Song)")
     fun cleanSongArtistMap()
+    @Transaction
     @Query("DELETE FROM SongPlaylistMap WHERE songId NOT IN (SELECT DISTINCT id FROM Song)")
     fun cleanSongPlaylistMap()
+    @Transaction
     @Query("DELETE FROM SongAlbumMap WHERE songId NOT IN (SELECT DISTINCT id FROM Song)")
     fun cleanSongAlbumMap()
-
+    @Transaction
     @Query("DELETE FROM Format WHERE songId = :songId")
     fun deleteFormat(songId: String)
 
@@ -1587,6 +1639,7 @@ interface Database {
     @RewriteQueriesToDropUnusedColumns
     fun trending(limit: Int = 3): Flow<List<Song>>
 
+    @SuppressWarnings(RoomWarnings.QUERY_MISMATCH)
     @Transaction
     @Query("SELECT Song.* FROM Event JOIN Song ON Song.id = songId WHERE Song.id NOT LIKE '$LOCAL_KEY_PREFIX%' GROUP BY songId ORDER BY SUM(playTime) DESC LIMIT :limit")
     @RewriteQueriesToDropUnusedColumns

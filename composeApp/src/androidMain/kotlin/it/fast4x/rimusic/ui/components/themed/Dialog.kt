@@ -103,6 +103,7 @@ import it.fast4x.rimusic.cleanPrefix
 import it.fast4x.rimusic.utils.VinylSizeKey
 import it.fast4x.rimusic.utils.colorPaletteModeKey
 import it.fast4x.rimusic.utils.drawCircle
+import it.fast4x.rimusic.utils.expandedplayerKey
 import it.fast4x.rimusic.utils.fadingedgeKey
 import it.fast4x.rimusic.utils.getDeviceVolume
 import it.fast4x.rimusic.utils.isLandscape
@@ -124,8 +125,8 @@ import it.fast4x.rimusic.utils.thumbnailOffsetKey
 import it.fast4x.rimusic.utils.thumbnailRoundnessKey
 import it.fast4x.rimusic.utils.thumbnailSpacingKey
 import kotlinx.coroutines.delay
-import me.knighthat.colorPalette
-import me.knighthat.typography
+import it.fast4x.rimusic.colorPalette
+import it.fast4x.rimusic.typography
 
 @Composable
 fun TextFieldDialog(
@@ -1292,6 +1293,7 @@ fun BlurParamsDialog(
         var fadingedge by rememberPreference(fadingedgeKey, false)
         var imageCoverSize by rememberPreference(VinylSizeKey, defaultImageCoverSize)
         val showCoverThumbnailAnimation by rememberPreference(showCoverThumbnailAnimationKey, false)
+        val expandedplayer by rememberPreference(expandedplayerKey, false)
         DefaultDialog(
             onDismiss = {
                 scaleValue(thumbnailOffset)
@@ -1331,30 +1333,32 @@ fun BlurParamsDialog(
                 }
             }
 
-            Row(
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier
-                    .fillMaxWidth()
-            ) {
-                IconButton(
-                    onClick = {
-                        thumbnailOffset = defaultOffset
-                    },
-                    icon = R.drawable.up_right_arrow,
-                    color = colorPalette().favoritesIcon,
+            if (expandedplayer || isLandscape) {
+                Row(
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier
-                        .size(24.dp)
-                        .rotate(if (isLandscape) 45f else 135f)
-                )
+                        .fillMaxWidth()
+                ) {
+                    IconButton(
+                        onClick = {
+                            thumbnailOffset = defaultOffset
+                        },
+                        icon = R.drawable.up_right_arrow,
+                        color = colorPalette().favoritesIcon,
+                        modifier = Modifier
+                            .size(24.dp)
+                            .rotate(if (isLandscape) 45f else 135f)
+                    )
 
-                SliderControl(
-                    state = thumbnailOffset,
-                    onSlide = { thumbnailOffset = it },
-                    onSlideComplete = {},
-                    toDisplay = { "%.0f".format(it) },
-                    range = 0f..50f
-                )
+                    SliderControl(
+                        state = thumbnailOffset,
+                        onSlide = { thumbnailOffset = it },
+                        onSlideComplete = {},
+                        toDisplay = { "%.0f".format(it) },
+                        range = 0f..50f
+                    )
+                }
             }
 
             if(fadingedge && !isLandscape) {
@@ -1442,31 +1446,32 @@ fun BlurParamsDialog(
                 */
                 }
             }
-            Row(
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier
-                    .fillMaxWidth()
-            ) {
-                IconButton(
-                    onClick = {
-                        thumbnailSpacing = defaultSpacing
-                    },
-                    icon = R.drawable.burger,
-                    color = colorPalette().favoritesIcon,
+            if (expandedplayer || isLandscape) {
+                Row(
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier
-                        .size(24.dp)
-                )
+                        .fillMaxWidth()
+                ) {
+                    IconButton(
+                        onClick = {
+                            thumbnailSpacing = defaultSpacing
+                        },
+                        icon = R.drawable.burger,
+                        color = colorPalette().favoritesIcon,
+                        modifier = Modifier
+                            .size(24.dp)
+                    )
 
-                SliderControl(
-                    state = thumbnailSpacing,
-                    onSlide = { thumbnailSpacing = it },
-                    onSlideComplete = {},
-                    toDisplay = { "%.0f".format(it) },
-                    range = -50f..50f
-                )
+                    SliderControl(
+                        state = thumbnailSpacing,
+                        onSlide = { thumbnailSpacing = it },
+                        onSlideComplete = {},
+                        toDisplay = { "%.0f".format(it) },
+                        range = -50f..50f
+                    )
 
-                /*
+                    /*
                 CustomSlider(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -1523,6 +1528,7 @@ fun BlurParamsDialog(
                     }
                 )
                  */
+                }
             }
         }
     }
