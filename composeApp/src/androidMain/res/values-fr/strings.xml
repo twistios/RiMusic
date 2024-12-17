@@ -822,9 +822,9 @@
     <string name="wallpaper">Fond d\'écran</string>
     <string name="enable_wallpaper">Activer le fond d\'écran</string>
     <string name="set_cover_thumbnail_as_wallpaper">Définir la miniature de pochette comme fond d\'écran</string>
-    <string name="notification_type">Notification type</string>
-    <string name="notification_type_default">Default</string>
-    <string name="notification_type_advanced">Advanced</string>
-    <string name="notification_type_info">The way the player is handled in the notification area and lockscreen.</string>
-    <string name="action_bar_show_start_radio_button">Start radio button</string>
+    <string name="notification_type">Type de notification</string>
+    <string name="notification_type_default">Défaut</string>
+    <string name="notification_type_advanced">Avancé</string>
+    <string name="notification_type_info">La façon dont le lecteur est géré dans la zone de notification et l\'écran de verrouillage.</string>
+    <string name="action_bar_show_start_radio_button">Afficher le bouton radio</string>
 </resources>

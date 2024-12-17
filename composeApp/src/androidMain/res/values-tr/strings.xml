@@ -820,9 +820,9 @@
     <string name="wallpaper">Duvar Kağıdı</string>
     <string name="enable_wallpaper">Duvar kağıdını etkinleştir</string>
     <string name="set_cover_thumbnail_as_wallpaper">Kapak resmini duvar kağıdı olarak ayarla</string>
-    <string name="notification_type">Notification type</string>
-    <string name="notification_type_default">Default</string>
-    <string name="notification_type_advanced">Advanced</string>
-    <string name="notification_type_info">The way the player is handled in the notification area and lockscreen.</string>
-    <string name="action_bar_show_start_radio_button">Start radio button</string>
+    <string name="notification_type">Bildirim türü</string>
+    <string name="notification_type_default">Varsayılan</string>
+    <string name="notification_type_advanced">Gelişmiş</string>
+    <string name="notification_type_info">Oynatıcının bildirim alanında ve kilit ekranında kullanılma şekli.</string>
+    <string name="action_bar_show_start_radio_button">Radyoyu başlat düğmesi</string>
 </resources>

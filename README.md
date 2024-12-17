@@ -111,7 +111,7 @@
 
 ## ❗ CUSTOM VERSION
 WARNING, the custom version is not an official release, download only if invited by the developer!
-[Go to custom version](https://github.com/fast4x/RiMusic/releases/tag/custom-version)
+[Go to custom version](https://github.com/fast4x/RiMusic/tree/master/customVersion)
 
 ## ❓ FAQs
 - See [Wiki page FAQs](https://github.com/fast4x/RiMusic/wiki/FAQs)

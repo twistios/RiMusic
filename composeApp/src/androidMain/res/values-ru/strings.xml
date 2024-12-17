@@ -822,9 +822,9 @@
     <string name="wallpaper">Обои</string>
     <string name="enable_wallpaper">Включить обои</string>
     <string name="set_cover_thumbnail_as_wallpaper">Установить миниатюру обложки в качестве обоев</string>
-    <string name="notification_type">Notification type</string>
-    <string name="notification_type_default">Default</string>
-    <string name="notification_type_advanced">Advanced</string>
-    <string name="notification_type_info">The way the player is handled in the notification area and lockscreen.</string>
-    <string name="action_bar_show_start_radio_button">Start radio button</string>
+    <string name="notification_type">Тип уведомлений</string>
+    <string name="notification_type_default">По умолчанию</string>
+    <string name="notification_type_advanced">Расширенные настройки</string>
+    <string name="notification_type_info">Способ управления плеером в области уведомлений и на экране блокировки.</string>
+    <string name="action_bar_show_start_radio_button">Запустить радио</string>
 </resources>

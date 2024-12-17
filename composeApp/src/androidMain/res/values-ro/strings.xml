@@ -820,9 +820,9 @@
     <string name="wallpaper">Imagine de fundal</string>
     <string name="enable_wallpaper">Activează imaginea de fundal</string>
     <string name="set_cover_thumbnail_as_wallpaper">Setează coperta ca fundal</string>
-    <string name="notification_type">Notification type</string>
-    <string name="notification_type_default">Default</string>
-    <string name="notification_type_advanced">Advanced</string>
-    <string name="notification_type_info">The way the player is handled in the notification area and lockscreen.</string>
-    <string name="action_bar_show_start_radio_button">Start radio button</string>
+    <string name="notification_type">Tip notificare</string>
+    <string name="notification_type_default">Implicit</string>
+    <string name="notification_type_advanced">Avansat</string>
+    <string name="notification_type_info">Modul în care playerul este tratat în zona de notificare și în ecranul de blocare.</string>
+    <string name="action_bar_show_start_radio_button">Butonul de pornire radio</string>
 </resources>

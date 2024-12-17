@@ -356,7 +356,7 @@
     <string name="following">Sequinte</string>
     <string name="artist_subscribers">%s subscriptores</string>
     <string name="but_these_updates_would_not_go_through">But these updates would not go through the additional screening performed at e.g. IzzyOnDroid or F-Droid.</string>
-    <string name="sleeptimer_stop">stop</string>
+    <string name="sleeptimer_stop">detener</string>
     <string name="player_keep_minimized">Mantener minimisate</string>
     <string name="when_click_on_a_song_player_start_minimized">Quando tu clicca in un canto, le reproductor initia minimisate</string>
     <string name="settings_use_font_type">Usar typo de littera</string>
@@ -812,7 +812,7 @@
     <string name="cover_thumbnail_animation_type">Cover animation type</string>
     <string name="jump_previous">Previous Button Will Restart the Current Song After the Following Seconds Have Passed</string>
     <string name="jump_previous_blank">Leave it Blank or 0 for Previous Button to Always Play the Previous Song</string>
-    <string name="delete_hidden_songs">Do you really want to delete all hidden songs from database? This action is irreversible.</string>
+    <string name="delete_hidden_songs">Vole tu realmente supprimer tote le cantiones oculte del base de datos? Iste action es irreversibile.</string>
     <string name="delete_hidden_songs_message">Delete hidden songs</string>
     <string name="cover_type_vinyl">Vinyl</string>
     <string name="cover_type_cd">CD</string>

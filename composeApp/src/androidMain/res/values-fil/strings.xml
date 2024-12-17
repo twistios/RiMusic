@@ -717,7 +717,7 @@
     <string name="error_timeout">Connection timeout</string>
     <string name="error_unknown">Unknown error</string>
     <string name="delete_song">Do you really want to delete this song? It will be deleted from database.\\nThis action is irreversible.</string>
-    <string name="info_check_update_now">Check Now</string>
+    <string name="info_check_update_now">Suriin ngayon</string>
     <string name="info_no_update_available">No update available</string>
     <string name="lang_galician">Galician</string>
     <string name="lang_norwegian">Norwegian</string>

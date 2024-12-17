@@ -820,9 +820,9 @@
     <string name="wallpaper">Fondo de pantalla</string>
     <string name="enable_wallpaper">Habilitar fondo de pantalla</string>
     <string name="set_cover_thumbnail_as_wallpaper">Establecer miniatura de la portada como fondo de pantalla</string>
-    <string name="notification_type">Notification type</string>
-    <string name="notification_type_default">Default</string>
-    <string name="notification_type_advanced">Advanced</string>
-    <string name="notification_type_info">The way the player is handled in the notification area and lockscreen.</string>
-    <string name="action_bar_show_start_radio_button">Start radio button</string>
+    <string name="notification_type">Tipo de notificación</string>
+    <string name="notification_type_default">Por defecto</string>
+    <string name="notification_type_advanced">Avanzado</string>
+    <string name="notification_type_info">La forma en que se maneja el reproductor en el área de notificaciones y en la pantalla de bloqueo.</string>
+    <string name="action_bar_show_start_radio_button">Botón de iniciar radio</string>
 </resources>

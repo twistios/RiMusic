@@ -820,9 +820,9 @@
     <string name="wallpaper">Divar kağızı</string>
     <string name="enable_wallpaper">Divar kağızın aktiv et</string>
     <string name="set_cover_thumbnail_as_wallpaper">Cild miniatürün divar kağızı kimi yerləşdir</string>
-    <string name="notification_type">Notification type</string>
-    <string name="notification_type_default">Default</string>
-    <string name="notification_type_advanced">Advanced</string>
-    <string name="notification_type_info">The way the player is handled in the notification area and lockscreen.</string>
-    <string name="action_bar_show_start_radio_button">Start radio button</string>
+    <string name="notification_type">Bildiriş növü</string>
+    <string name="notification_type_default">İlkin</string>
+    <string name="notification_type_advanced">Qabaqcıl</string>
+    <string name="notification_type_info">Bildiriş sahəsində və kilid ekranında oynadıcı işləmə üsulu.</string>
+    <string name="action_bar_show_start_radio_button">Radio düyməsin başlat</string>
 </resources>
