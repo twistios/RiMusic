@@ -241,6 +241,17 @@ fun getVisualizers(): List<Painter> {
     var bitmapCover by remember { mutableStateOf(ContextCompat.getDrawable(context, R.drawable.app_logo)?.toBitmap()!!) }
     val binder = LocalPlayerServiceBinder.current
     val coroutineScope = rememberCoroutineScope()
+    LaunchedEffect(Unit) {
+            try {
+                bitmapCover = getBitmapFromUrl(
+                    context,
+                    binder?.player?.currentWindow?.mediaItem?.mediaMetadata?.artworkUri.toString()
+                        .resize(1200, 1200)
+                )
+            } catch (e: Exception) {
+                Timber.e("Failed to get bitmap in NextVisualizer ${e.stackTraceToString()}")
+            }
+    }
     /*
     LaunchedEffect(Unit, binder?.player?.currentWindow?.mediaItem?.mediaId) {
         try {
