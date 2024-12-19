@@ -23,6 +23,7 @@ import androidx.compose.foundation.interaction.collectIsDraggedAsState
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -249,7 +250,6 @@ import it.fast4x.rimusic.utils.showvisthumbnailKey
 import it.fast4x.rimusic.utils.statsfornerdsKey
 import it.fast4x.rimusic.utils.swipeUpQueueKey
 import it.fast4x.rimusic.utils.tapqueueKey
-import it.fast4x.rimusic.utils.thumbnailOffsetKey
 import it.fast4x.rimusic.utils.thumbnailRoundnessKey
 import it.fast4x.rimusic.utils.thumbnailSpacingKey
 import it.fast4x.rimusic.utils.thumbnailTypeKey
@@ -267,6 +267,7 @@ import it.fast4x.rimusic.utils.thumbnailFadeKey
 import it.fast4x.rimusic.colorPalette
 import it.fast4x.rimusic.thumbnailShape
 import it.fast4x.rimusic.typography
+import it.fast4x.rimusic.utils.topPaddingKey
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -322,7 +323,6 @@ fun Player(
     val defaultFade = 5f
     val defaultImageCoverSize = 50f
     var blurStrength by rememberPreference(blurStrengthKey, defaultStrength)
-    var thumbnailOffset  by rememberPreference(thumbnailOffsetKey, defaultOffset)
     var thumbnailSpacing  by rememberPreference(thumbnailSpacingKey, defaultSpacing)
     var thumbnailFade  by rememberPreference(thumbnailFadeKey, defaultFade)
     var imageCoverSize by rememberPreference(VinylSizeKey, defaultImageCoverSize)
@@ -356,7 +356,6 @@ fun Player(
 
         ThumbnailOffsetDialog(
             onDismiss = { showThumbnailOffsetDialog = false},
-            scaleValue = { thumbnailOffset = it },
             spacingValue = { thumbnailSpacing = it },
             fadeValue = { thumbnailFade = it },
             imageCoverSizeValue = { imageCoverSize = it }
@@ -567,6 +566,7 @@ fun Player(
     val fadingedge by rememberPreference(fadingedgeKey, false)
     val configuration = LocalConfiguration.current
     val screenWidth = configuration.screenWidthDp.dp
+    val screenHeight = configuration.screenHeightDp.dp
 
     if (isShowingSleepTimerDialog) {
         if (sleepTimerMillisLeft != null) {
@@ -1713,6 +1713,7 @@ fun Player(
         val thumbnailRoundness by rememberPreference(thumbnailRoundnessKey, ThumbnailRoundness.Heavy)
         val thumbnailType by rememberPreference(thumbnailTypeKey, ThumbnailType.Modern)
         val statsfornerds by rememberPreference(statsfornerdsKey, false)
+        val topPadding by rememberPreference(topPaddingKey, true)
 
         if (isLandscape) {
          Box(
@@ -1923,7 +1924,7 @@ fun Player(
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
                     if (playerType == PlayerType.Modern) {
-                         Box(
+                        BoxWithConstraints(
                              contentAlignment = Alignment.Center,
                              modifier = Modifier
                                  .weight(1f)
@@ -1951,7 +1952,7 @@ fun Player(
                                          state = pagerState,
                                          pageSize = PageSize.Fixed(thumbnailSizeDp),
                                          pageSpacing = thumbnailSpacing.toInt()*0.01*(screenWidth) - (2.5*playerThumbnailSize.size.dp),
-                                         contentPadding = PaddingValues(start = thumbnailOffset.toInt()*0.01*(screenWidth), end = thumbnailOffset.toInt()*0.01*(screenWidth) + if (pageSpacing < 0.dp) (-(pageSpacing)) else 0.dp),
+                                         contentPadding = PaddingValues(start = (maxWidth - maxHeight)/2),
                                          beyondViewportPageCount = 3,
                                          flingBehavior = fling,
                                          modifier = Modifier
@@ -2364,69 +2365,43 @@ fun Player(
             ) {
 
 
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    modifier = Modifier
-                        .padding(
-                            windowInsets
-                                .only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal)
-                                .asPaddingValues()
-                        )
-                        //.padding(top = 5.dp)
-                        .fillMaxWidth(0.9f)
-                        .height(30.dp)
-                ) {
+                if (showTopActionsBar) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        modifier = Modifier
+                            .padding(
+                                windowInsets
+                                    .only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal)
+                                    .asPaddingValues()
+                            )
+                            //.padding(top = 5.dp)
+                            .fillMaxWidth(0.9f)
+                            .height(30.dp)
+                    ) {
 
-                    if (showTopActionsBar) {
-                        Image(
-                            painter = painterResource(R.drawable.chevron_down),
-                            contentDescription = null,
-                            colorFilter = ColorFilter.tint(colorPalette().collapsedPlayerProgressBar),
-                            modifier = Modifier
-                                .clickable {
-                                    onDismiss()
-                                }
-                                .rotate(rotationAngle)
-                                //.padding(10.dp)
-                                .size(24.dp)
-                        )
-
-
-                        Image(
-                            painter = painterResource(R.drawable.app_icon),
-                            contentDescription = null,
-                            colorFilter = ColorFilter.tint(colorPalette().collapsedPlayerProgressBar),
-                            modifier = Modifier
-                                .clickable {
-                                    onDismiss()
-                                    navController.navigate(NavRoutes.home.name)
-                                }
-                                .rotate(rotationAngle)
-                                //.padding(10.dp)
-                                .size(24.dp)
-
-                        )
-
-                        if (!showButtonPlayerMenu)
                             Image(
-                                painter = painterResource(R.drawable.ellipsis_vertical),
+                                painter = painterResource(R.drawable.chevron_down),
                                 contentDescription = null,
                                 colorFilter = ColorFilter.tint(colorPalette().collapsedPlayerProgressBar),
                                 modifier = Modifier
                                     .clickable {
-                                        menuState.display {
-                                            PlayerMenu(
-                                                navController = navController,
-                                                onDismiss = menuState::hide,
-                                                mediaItem = mediaItem,
-                                                binder = binder,
-                                                onClosePlayer = {
-                                                    onDismiss()
-                                                },
-                                                disableScrollingText = disableScrollingText
-                                            )
-                                        }
+                                        onDismiss()
+                                    }
+                                    .rotate(rotationAngle)
+                                    //.padding(10.dp)
+                                    .size(24.dp)
+                            )
+
+
+                            Image(
+                                painter = painterResource(R.drawable.app_icon),
+                                contentDescription = null,
+                                colorFilter = ColorFilter.tint(colorPalette().collapsedPlayerProgressBar),
+                                modifier = Modifier
+                                    .clickable {
+                                        onDismiss()
+                                        navController.navigate(NavRoutes.home.name)
                                     }
                                     .rotate(rotationAngle)
                                     //.padding(10.dp)
@@ -2434,18 +2409,51 @@ fun Player(
 
                             )
 
+                            if (!showButtonPlayerMenu)
+                                Image(
+                                    painter = painterResource(R.drawable.ellipsis_vertical),
+                                    contentDescription = null,
+                                    colorFilter = ColorFilter.tint(colorPalette().collapsedPlayerProgressBar),
+                                    modifier = Modifier
+                                        .clickable {
+                                            menuState.display {
+                                                PlayerMenu(
+                                                    navController = navController,
+                                                    onDismiss = menuState::hide,
+                                                    mediaItem = mediaItem,
+                                                    binder = binder,
+                                                    onClosePlayer = {
+                                                        onDismiss()
+                                                    },
+                                                    disableScrollingText = disableScrollingText
+                                                )
+                                            }
+                                        }
+                                        .rotate(rotationAngle)
+                                        //.padding(10.dp)
+                                        .size(24.dp)
+
+                                )
+
                     }
+                    Spacer(
+                        modifier = Modifier
+                            .height(5.dp)
+                    )
                 }
 
-                Spacer(
-                    modifier = Modifier
-                        .height(5.dp)
-                )
+                if (topPadding && !showTopActionsBar) {
+                    Spacer(
+                        modifier = Modifier
+                            .height(35.dp)
+                    )
+                }
 
-                Box(
+                BoxWithConstraints(
                     contentAlignment = Alignment.Center,
                     modifier = Modifier
-                        .weight(1f)
+                        .conditional((screenHeight/screenWidth) > 1.78 && !expandedplayer){height(screenWidth)}
+                        .conditional((screenHeight/screenWidth) <= 1.78 || expandedplayer){weight(1f)}
                 ) {
 
                       if (showthumbnail) {
@@ -2464,30 +2472,29 @@ fun Player(
                                          previousPage = it
                                      }
                                  }
-                                 
-                                 val screenHeight = configuration.screenHeightDp.dp
+
                                  val pageSpacing = (thumbnailSpacing.toInt()*0.01*(screenHeight) - if (carousel) (3*carouselSize.size.dp) else (2*playerThumbnailSize.size.dp))
                                  VerticalPager(
                                      state = pagerState,
-                                     pageSize = PageSize.Fixed(thumbnailSizeDp),
-                                     contentPadding = PaddingValues(top = if (expandedplayer) (thumbnailOffset.toInt()*0.01*(screenHeight)) else 0.dp, bottom = (thumbnailOffset.toInt()*0.01*(screenHeight)) + if (pageSpacing < 0.dp) (-(pageSpacing)) else 0.dp),
+                                     pageSize = PageSize.Fixed( if (maxWidth < maxHeight) maxWidth else maxHeight),
+                                     contentPadding = PaddingValues(top = (maxHeight - (if (maxWidth < maxHeight) maxWidth else maxHeight))/2),
                                      pageSpacing = if (expandedplayer) (thumbnailSpacing.toInt()*0.01*(screenHeight) - if (carousel) (3*carouselSize.size.dp) else (2*playerThumbnailSize.size.dp)) else 10.dp,
                                      beyondViewportPageCount = 2,
                                      flingBehavior = fling,
                                      modifier = modifier
-                                         .padding(top = if (expandedplayer) 0.dp else 8.dp)
+                                         //.padding(top = if (expandedplayer) 0.dp else 8.dp)
                                          .padding(
                                              all = (if (expandedplayer) 0.dp else if (thumbnailType == ThumbnailType.Modern) -(10.dp) else 0.dp).coerceAtLeast(
                                                  0.dp
                                              )
                                          )
-                                         .conditional(fadingedge && !expandedplayer) {
+                                         /*.conditional(fadingedge && !expandedplayer) {
                                              padding(
                                                  vertical = 2.5.dp
                                              )
-                                         }
+                                         }*/
                                          .conditional(fadingedge) {
-                                             VerticalfadingEdge2(fade = thumbnailFade*0.05f)
+                                             VerticalfadingEdge2(fade = thumbnailFade*0.05f,showTopActionsBar,topPadding,expandedplayer)
                                          }
                                  ){ it ->
 
@@ -2498,7 +2505,7 @@ fun Player(
                                      )
 
                                      val coverModifier = Modifier
-                                         .fillMaxSize()
+                                         .aspectRatio(1f)
                                          .padding(all = if (expandedplayer) carouselSize.size.dp else playerThumbnailSize.size.dp)
                                          .conditional(carousel)
                                          {

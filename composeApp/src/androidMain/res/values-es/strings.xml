@@ -825,4 +825,5 @@
     <string name="notification_type_advanced">Avanzado</string>
     <string name="notification_type_info">La forma en que se maneja el reproductor en el área de notificaciones y en la pantalla de bloqueo.</string>
     <string name="action_bar_show_start_radio_button">Botón de iniciar radio</string>
+    <string name="blankspace">Espacio en blanco superior</string>
 </resources>

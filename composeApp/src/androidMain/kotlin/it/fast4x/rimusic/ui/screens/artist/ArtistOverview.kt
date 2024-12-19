@@ -525,16 +525,32 @@ fun ArtistOverview(
                         }
 
                         songs.forEachIndexed { index, song ->
+                            downloadState = getDownloadState(song.asMediaItem.mediaId)
+                            val isDownloaded = isDownloadedSong(song.asMediaItem.mediaId)
 
                             SwipeablePlaylistItem(
                                 mediaItem = song.asMediaItem,
-                                onSwipeToRight = {
+                                onPlayNext = {
                                     binder?.player?.addNext(song.asMediaItem)
+                                },
+                                onDownload = {
+                                    binder?.cache?.removeResource(song.asMediaItem.mediaId)
+                                    CoroutineScope(Dispatchers.IO).launch {
+                                        Database.resetContentLength( song.asMediaItem.mediaId )
+                                    }
+
+                                    manageDownload(
+                                        context = context,
+                                        mediaItem = song.asMediaItem,
+                                        downloadState = isDownloaded
+                                    )
+                                },
+                                onEnqueue = {
+                                    binder?.player?.enqueue(song.asMediaItem)
                                 }
                             ) {
                                 listMediaItems.add(song.asMediaItem)
-                                downloadState = getDownloadState(song.asMediaItem.mediaId)
-                                val isDownloaded = isDownloadedSong(song.asMediaItem.mediaId)
+
                                 SongItem(
                                     song = song,
                                     onDownloadClick = {

@@ -113,12 +113,14 @@ fun Modifier.fadingEdge(
     bottom = vertical
 )
 
-fun Modifier.VerticalfadingEdge2(fade: Float) = this
+fun Modifier.VerticalfadingEdge2(fade: Float, showTopActionsBar: Boolean, topPadding: Boolean, expandedplayer: Boolean) = this
     .graphicsLayer(compositingStrategy = CompositingStrategy.Offscreen)
-    .drawWithContent {
+    .conditional(showTopActionsBar || topPadding || expandedplayer){
+    drawWithContent {
         val topFade = Brush.verticalGradient(0f to Color.Transparent, fade to Color.Red)
         drawContent()
         drawRect(brush = topFade, blendMode = BlendMode.DstIn)
+       }
     }
     .drawWithContent {
         val bottomFade = Brush.verticalGradient(0f to Color.Transparent, fade to Color.Red, startY =  Float.POSITIVE_INFINITY, endY = 0f)

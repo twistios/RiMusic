@@ -825,4 +825,5 @@
     <string name="notification_type_advanced">Gelişmiş</string>
     <string name="notification_type_info">Oynatıcının bildirim alanında ve kilit ekranında kullanılma şekli.</string>
     <string name="action_bar_show_start_radio_button">Radyoyu başlat düğmesi</string>
+    <string name="blankspace">En Üstte Boş Alan</string>
 </resources>

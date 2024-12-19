@@ -141,6 +141,7 @@ import kotlinx.coroutines.launch
 import it.fast4x.rimusic.colorPalette
 import it.fast4x.rimusic.thumbnailShape
 import it.fast4x.rimusic.typography
+import it.fast4x.rimusic.utils.enqueue
 import java.text.SimpleDateFormat
 import java.util.Date
 
@@ -554,12 +555,27 @@ fun Queue(
 
                             SwipeableQueueItem(
                                 mediaItem = window.mediaItem,
-                                onSwipeToLeft = {
+                                onPlayNext = {
+                                    binder.player.addNext(
+                                        window.mediaItem,
+                                        context
+                                    )
+                                },
+                                onDownload = {
+                                    binder.cache.removeResource(window.mediaItem.mediaId)
+                                    if (!isLocal)
+                                        manageDownload(
+                                            context = context,
+                                            mediaItem = window.mediaItem,
+                                            downloadState = isDownloaded
+                                        )
+                                },
+                                onRemoveFromQueue = {
                                     player.removeMediaItem(currentItem.firstPeriodIndex)
                                     SmartMessage("${context.resources.getString(R.string.deleted)} ${currentItem.mediaItem.mediaMetadata.title}", type = PopupType.Warning, context = context)
                                 },
-                                onSwipeToRight = {
-                                    binder.player.addNext(
+                                onEnqueue = {
+                                    binder.player.enqueue(
                                         window.mediaItem,
                                         context
                                     )

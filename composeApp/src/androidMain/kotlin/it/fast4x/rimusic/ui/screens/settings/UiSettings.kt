@@ -35,6 +35,7 @@ import androidx.media3.common.util.UnstableApi
 import androidx.navigation.NavController
 import it.fast4x.rimusic.LocalPlayerServiceBinder
 import it.fast4x.rimusic.R
+import it.fast4x.rimusic.enums.AlbumSwipeAction
 import it.fast4x.rimusic.enums.AudioQualityFormat
 import it.fast4x.rimusic.enums.BackgroundProgress
 import it.fast4x.rimusic.enums.CarouselSize
@@ -68,6 +69,8 @@ import it.fast4x.rimusic.enums.PlayerThumbnailSize
 import it.fast4x.rimusic.enums.PlayerTimelineSize
 import it.fast4x.rimusic.enums.PlayerTimelineType
 import it.fast4x.rimusic.enums.PlayerType
+import it.fast4x.rimusic.enums.PlaylistSwipeAction
+import it.fast4x.rimusic.enums.QueueSwipeAction
 import it.fast4x.rimusic.enums.QueueType
 import it.fast4x.rimusic.enums.RecommendationsNumber
 import it.fast4x.rimusic.enums.ThumbnailRoundness
@@ -85,6 +88,8 @@ import it.fast4x.rimusic.utils.RestartActivity
 import it.fast4x.rimusic.utils.RestartPlayerService
 import it.fast4x.rimusic.utils.UiTypeKey
 import it.fast4x.rimusic.utils.actionspacedevenlyKey
+import it.fast4x.rimusic.utils.albumSwipeLeftActionKey
+import it.fast4x.rimusic.utils.albumSwipeRightActionKey
 import it.fast4x.rimusic.utils.applyFontPaddingKey
 import it.fast4x.rimusic.utils.audioQualityFormatKey
 import it.fast4x.rimusic.utils.autoLoadSongsInQueueKey
@@ -174,7 +179,11 @@ import it.fast4x.rimusic.utils.playerThumbnailSizeKey
 import it.fast4x.rimusic.utils.playerTimelineSizeKey
 import it.fast4x.rimusic.utils.playerTimelineTypeKey
 import it.fast4x.rimusic.utils.playerTypeKey
+import it.fast4x.rimusic.utils.playlistSwipeLeftActionKey
+import it.fast4x.rimusic.utils.playlistSwipeRightActionKey
 import it.fast4x.rimusic.utils.playlistindicatorKey
+import it.fast4x.rimusic.utils.queueSwipeLeftActionKey
+import it.fast4x.rimusic.utils.queueSwipeRightActionKey
 import it.fast4x.rimusic.utils.queueTypeKey
 import it.fast4x.rimusic.utils.recommendationsNumberKey
 import it.fast4x.rimusic.utils.rememberEqualizerLauncher
@@ -519,6 +528,21 @@ fun DefaultUiSettings() {
         false
     )
     showButtonPlayerSystemEqualizer = false
+    var queueSwipeLeftAction by rememberPreference(queueSwipeLeftActionKey, QueueSwipeAction.RemoveFromQueue)
+    queueSwipeLeftAction = QueueSwipeAction.RemoveFromQueue
+    var queueSwipeRightAction by rememberPreference(queueSwipeRightActionKey, QueueSwipeAction.PlayNext)
+    queueSwipeRightAction = QueueSwipeAction.PlayNext
+
+    var playlistSwipeLeftAction by rememberPreference(playlistSwipeLeftActionKey, PlaylistSwipeAction.Favourite)
+    playlistSwipeLeftAction = PlaylistSwipeAction.Favourite
+    var playlistSwipeRightAction by rememberPreference(playlistSwipeRightActionKey, PlaylistSwipeAction.PlayNext)
+    playlistSwipeRightAction = PlaylistSwipeAction.PlayNext
+
+    var albumSwipeLeftAction by rememberPreference(albumSwipeLeftActionKey, AlbumSwipeAction.PlayNext)
+    albumSwipeLeftAction = AlbumSwipeAction.PlayNext
+    var albumSwipeRightAction by rememberPreference(albumSwipeRightActionKey, AlbumSwipeAction.Bookmark)
+    albumSwipeRightAction = AlbumSwipeAction.Bookmark
+
     var showButtonPlayerDiscover by rememberPreference(showButtonPlayerDiscoverKey, false)
     showButtonPlayerDiscover = false
     var playerEnableLyricsPopupMessage by rememberPreference(
@@ -660,6 +684,31 @@ fun UiSettings(
 
 
     val launchEqualizer by rememberEqualizerLauncher(audioSessionId = { binder?.player?.audioSessionId })
+
+    var queueSwipeLeftAction by rememberPreference(
+        queueSwipeLeftActionKey,
+        QueueSwipeAction.RemoveFromQueue
+    )
+    var queueSwipeRightAction by rememberPreference(
+        queueSwipeRightActionKey,
+        QueueSwipeAction.PlayNext
+    )
+    var playlistSwipeLeftAction by rememberPreference(
+        playlistSwipeLeftActionKey,
+        PlaylistSwipeAction.Favourite
+    )
+    var playlistSwipeRightAction by rememberPreference(
+        playlistSwipeRightActionKey,
+        PlaylistSwipeAction.PlayNext
+    )
+    var albumSwipeLeftAction by rememberPreference(
+        albumSwipeLeftActionKey,
+        AlbumSwipeAction.PlayNext
+    )
+    var albumSwipeRightAction by rememberPreference(
+        albumSwipeRightActionKey,
+        AlbumSwipeAction.Bookmark
+    )
 
     var minimumSilenceDuration by rememberPreference(minimumSilenceDurationKey, 2_000_000L)
 
@@ -1865,6 +1914,7 @@ fun UiSettings(
 
 
         if (search.input.isBlank() || stringResource(R.string.swipe_to_action).contains(search.input,true))
+        {
             SwitchSettingEntry(
                 title = stringResource(R.string.swipe_to_action),
                 text = stringResource(R.string.activate_the_action_menu_by_swiping_the_song_left_or_right),
@@ -1872,6 +1922,73 @@ fun UiSettings(
                 onCheckedChange = { isSwipeToActionEnabled = it }
             )
 
+            AnimatedVisibility(visible = isSwipeToActionEnabled) {
+                Column(
+                    modifier = Modifier.padding(start = 25.dp)
+                ) {
+                    EnumValueSelectorSettingsEntry<QueueSwipeAction>(
+                        title = stringResource(R.string.queue_and_local_playlists_left_swipe),
+                        selectedValue = queueSwipeLeftAction,
+                        onValueSelected = {
+                            queueSwipeLeftAction = it
+                        },
+                        valueText = {
+                            it.displayName
+                        },
+                    )
+                    EnumValueSelectorSettingsEntry<QueueSwipeAction>(
+                        title = stringResource(R.string.queue_and_local_playlists_right_swipe),
+                        selectedValue = queueSwipeRightAction,
+                        onValueSelected = {
+                            queueSwipeRightAction = it
+                        },
+                        valueText = {
+                            it.displayName
+                        },
+                    )
+                    EnumValueSelectorSettingsEntry<PlaylistSwipeAction>(
+                        title = stringResource(R.string.playlist_left_swipe),
+                        selectedValue = playlistSwipeLeftAction,
+                        onValueSelected = {
+                            playlistSwipeLeftAction = it
+                        },
+                        valueText = {
+                            it.displayName
+                        },
+                    )
+                    EnumValueSelectorSettingsEntry<PlaylistSwipeAction>(
+                        title = stringResource(R.string.playlist_right_swipe),
+                        selectedValue = playlistSwipeRightAction,
+                        onValueSelected = {
+                            playlistSwipeRightAction = it
+                        },
+                        valueText = {
+                            it.displayName
+                        },
+                    )
+                    EnumValueSelectorSettingsEntry<AlbumSwipeAction>(
+                        title = stringResource(R.string.album_left_swipe),
+                        selectedValue = albumSwipeLeftAction,
+                        onValueSelected = {
+                            albumSwipeLeftAction = it
+                        },
+                        valueText = {
+                            it.displayName
+                        },
+                    )
+                    EnumValueSelectorSettingsEntry<AlbumSwipeAction>(
+                        title = stringResource(R.string.album_right_swipe),
+                        selectedValue = albumSwipeRightAction,
+                        onValueSelected = {
+                            albumSwipeRightAction = it
+                        },
+                        valueText = {
+                            it.displayName
+                        },
+                    )
+                }
+            }
+        }
 
         SettingsGroupSpacer()
         SettingsEntryGroupText(title = stringResource(R.string.songs).uppercase())

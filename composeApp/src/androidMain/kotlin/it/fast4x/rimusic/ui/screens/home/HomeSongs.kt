@@ -749,14 +749,32 @@ fun HomeSongs(
                 ) {index, song ->
                     val mediaItem = song.asMediaItem
 
+                    val isLocal by remember { derivedStateOf { mediaItem.isLocal } }
+                    val isDownloaded = isLocal || isDownloadedSong( mediaItem.mediaId )
+
                     SwipeablePlaylistItem(
                         mediaItem = mediaItem,
-                        onSwipeToRight = { binder?.player?.addNext( mediaItem ) }
+                        onPlayNext = { binder?.player?.addNext( mediaItem ) },
+                        onDownload = {
+                            if( builtInPlaylist != BuiltInPlaylist.OnDevice ) {
+                                binder?.cache?.removeResource(song.song.asMediaItem.mediaId)
+                                CoroutineScope(Dispatchers.IO).launch {
+                                    Database.resetContentLength( song.asMediaItem.mediaId )
+                                }
+                                if (!isLocal)
+                                    manageDownload(
+                                        context = context,
+                                        mediaItem = song.song.asMediaItem,
+                                        downloadState = isDownloaded
+                                    )
+                            }
+                        },
+                        onEnqueue = {
+                            binder?.player?.enqueue(mediaItem)
+                        }
                     ) {
                         downloadAllDialog.state = getDownloadState( mediaItem.mediaId )
 
-                        val isLocal by remember { derivedStateOf { mediaItem.isLocal } }
-                        val isDownloaded = isLocal || isDownloadedSong( mediaItem.mediaId )
                         var forceRecompose by remember { mutableStateOf(false) }
                         SongItem(
                             song = song.song,

@@ -139,6 +139,7 @@ import it.fast4x.rimusic.utils.visualizerEnabledKey
 import it.fast4x.rimusic.utils.wallpaperTypeKey
 import it.fast4x.rimusic.colorPalette
 import it.fast4x.rimusic.ui.components.themed.Search
+import it.fast4x.rimusic.utils.topPaddingKey
 
 @Composable
 fun DefaultAppearanceSettings() {
@@ -491,6 +492,7 @@ fun AppearanceSettings(
     var notificationPlayerSecondIcon by rememberPreference(notificationPlayerSecondIconKey, NotificationButtons.Favorites)
     var enableWallpaper by rememberPreference(enableWallpaperKey, false)
     var wallpaperType by rememberPreference(wallpaperTypeKey, WallpaperType.Lockscreen)
+    var topPadding by rememberPreference(topPaddingKey, true)
 
     Column(
         modifier = Modifier
@@ -544,17 +546,33 @@ fun AppearanceSettings(
 
         if (showlyricsthumbnail) expandedlyrics = false
 
-        if (search.input.isBlank() || stringResource(R.string.show_player_top_actions_bar).contains(
-                search.input,
-                true
+        if (!isLandscape) {
+            if (search.input.isBlank() || stringResource(R.string.show_player_top_actions_bar).contains(
+                    search.input,
+                    true
+                )
             )
-        )
-            SwitchSettingEntry(
-                title = stringResource(R.string.show_player_top_actions_bar),
-                text = "",
-                isChecked = showTopActionsBar,
-                onCheckedChange = { showTopActionsBar = it }
-            )
+                SwitchSettingEntry(
+                    title = stringResource(R.string.show_player_top_actions_bar),
+                    text = "",
+                    isChecked = showTopActionsBar,
+                    onCheckedChange = { showTopActionsBar = it }
+                )
+
+            if (!showTopActionsBar) {
+                if (search.input.isBlank() || stringResource(R.string.blankspace).contains(
+                        search.input,
+                        true
+                    )
+                )
+                    SwitchSettingEntry(
+                        title = stringResource(R.string.blankspace),
+                        text = "",
+                        isChecked = topPadding,
+                        onCheckedChange = { topPadding = it }
+                    )
+            }
+        }
         if (search.input.isBlank() || stringResource(R.string.playertype).contains(
                 search.input,
                 true

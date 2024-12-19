@@ -1278,16 +1278,14 @@ fun BlurParamsDialog(
     @Composable
     fun ThumbnailOffsetDialog(
         onDismiss: () -> Unit,
-        scaleValue: (Float) -> Unit,
         spacingValue: (Float) -> Unit,
         fadeValue: (Float) -> Unit,
         imageCoverSizeValue: (Float) -> Unit
     ) {
         val defaultFade = 5f
-        val defaultOffset = 10f
+        val defaultOffset = 0f
         val defaultSpacing = 0f
         val defaultImageCoverSize = 50f
-        var thumbnailOffset by rememberPreference(thumbnailOffsetKey, defaultOffset)
         var thumbnailSpacing by rememberPreference(thumbnailSpacingKey, defaultOffset)
         var thumbnailFade by rememberPreference(thumbnailFadeKey, defaultFade)
         var fadingedge by rememberPreference(fadingedgeKey, false)
@@ -1296,7 +1294,6 @@ fun BlurParamsDialog(
         val expandedplayer by rememberPreference(expandedplayerKey, false)
         DefaultDialog(
             onDismiss = {
-                scaleValue(thumbnailOffset)
                 spacingValue(thumbnailSpacing)
                 fadeValue(thumbnailFade)
                 imageCoverSizeValue(imageCoverSize)
@@ -1329,34 +1326,6 @@ fun BlurParamsDialog(
                         toDisplay = { "%.0f".format(it) },
                         steps = 10,
                         range = 50f..100f
-                    )
-                }
-            }
-
-            if (expandedplayer || isLandscape) {
-                Row(
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                ) {
-                    IconButton(
-                        onClick = {
-                            thumbnailOffset = defaultOffset
-                        },
-                        icon = R.drawable.up_right_arrow,
-                        color = colorPalette().favoritesIcon,
-                        modifier = Modifier
-                            .size(24.dp)
-                            .rotate(if (isLandscape) 45f else 135f)
-                    )
-
-                    SliderControl(
-                        state = thumbnailOffset,
-                        onSlide = { thumbnailOffset = it },
-                        onSlideComplete = {},
-                        toDisplay = { "%.0f".format(it) },
-                        range = 0f..50f
                     )
                 }
             }

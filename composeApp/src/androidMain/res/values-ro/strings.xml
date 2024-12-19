@@ -825,4 +825,5 @@
     <string name="notification_type_advanced">Avansat</string>
     <string name="notification_type_info">Modul în care playerul este tratat în zona de notificare și în ecranul de blocare.</string>
     <string name="action_bar_show_start_radio_button">Butonul de pornire radio</string>
+    <string name="blankspace">Spațiu gol în sus</string>
 </resources>

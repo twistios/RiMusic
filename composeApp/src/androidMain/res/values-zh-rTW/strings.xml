@@ -825,4 +825,5 @@
     <string name="notification_type_advanced">進階</string>
     <string name="notification_type_info">在通知區域和鎖定畫面中處理播放器的方式。</string>
     <string name="action_bar_show_start_radio_button">Start radio button</string>
+    <string name="blankspace">Blank Space at Top</string>
 </resources>

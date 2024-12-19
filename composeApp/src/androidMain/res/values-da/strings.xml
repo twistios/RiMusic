@@ -825,4 +825,5 @@
     <string name="notification_type_advanced">Advanced</string>
     <string name="notification_type_info">The way the player is handled in the notification area and lockscreen.</string>
     <string name="action_bar_show_start_radio_button">Start radio button</string>
+    <string name="blankspace">Blank Space at Top</string>
 </resources>

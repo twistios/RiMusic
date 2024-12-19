@@ -81,6 +81,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import it.fast4x.rimusic.ui.components.Skeleton
+import it.fast4x.rimusic.ui.components.themed.SmartMessage
 
 @ExperimentalMaterialApi
 @ExperimentalTextApi
@@ -203,15 +204,31 @@ fun SearchResultScreen(
                                     if (parentalControlEnabled && song.asSong.title.startsWith(EXPLICIT_PREFIX))
                                         return@ItemsPage
 
+                                    downloadState = getDownloadState(song.asMediaItem.mediaId)
+                                    val isDownloaded =
+                                        isDownloadedSong(song.asMediaItem.mediaId)
+
                                     SwipeablePlaylistItem(
                                         mediaItem = song.asMediaItem,
-                                        onSwipeToRight = {
+                                        onPlayNext = {
                                             localBinder?.player?.addNext(song.asMediaItem)
+                                        },
+                                        onDownload = {
+                                            localBinder?.cache?.removeResource(song.asMediaItem.mediaId)
+                                            CoroutineScope(Dispatchers.IO).launch {
+                                                Database.resetContentLength( song.asMediaItem.mediaId )
+                                            }
+
+                                            manageDownload(
+                                                context = context,
+                                                mediaItem = song.asMediaItem,
+                                                downloadState = isDownloaded
+                                            )
+                                        },
+                                        onEnqueue = {
+                                            localBinder?.player?.enqueue(song.asMediaItem)
                                         }
                                     ) {
-                                        downloadState = getDownloadState(song.asMediaItem.mediaId)
-                                        val isDownloaded =
-                                            isDownloadedSong(song.asMediaItem.mediaId)
                                         var forceRecompose by remember { mutableStateOf(false) }
                                         SongItem(
                                             song = song,
@@ -298,7 +315,57 @@ fun SearchResultScreen(
                                     var albumPage by persist<Innertube.PlaylistOrAlbumPage?>("album/${album.key}/albumPage")
                                     SwipeableAlbumItem(
                                         albumItem = album,
-                                        onSwipeToLeft = {
+                                        onPlayNext = {
+                                            CoroutineScope(Dispatchers.IO).launch {
+                                                Database
+                                                    .album(album.key)
+                                                    .combine(snapshotFlow { currentTabIndex }) { album, tabIndex -> album to tabIndex }
+                                                    .collect {
+                                                        if (albumPage == null)
+                                                            withContext(Dispatchers.IO) {
+                                                                Innertube.albumPage(
+                                                                    BrowseBody(
+                                                                        browseId = album.key
+                                                                    )
+                                                                )
+                                                                    ?.onSuccess { currentAlbumPage ->
+                                                                        albumPage =
+                                                                            currentAlbumPage
+
+                                                                        println("mediaItem success home album songsPage ${currentAlbumPage.songsPage} description ${currentAlbumPage.description} year ${currentAlbumPage.year}")
+
+                                                                        albumPage
+                                                                            ?.songsPage
+                                                                            ?.items
+                                                                            ?.map(
+                                                                                Innertube.SongItem::asMediaItem
+                                                                            )
+                                                                            ?.let { it1 ->
+                                                                                withContext(Dispatchers.Main) {
+                                                                                    binder?.player?.addNext(
+                                                                                        it1,
+                                                                                        context
+                                                                                    )
+                                                                                }
+                                                                            }
+                                                                        println("mediaItem success add in queue album songsPage ${albumPage
+                                                                            ?.songsPage
+                                                                            ?.items?.size}")
+
+                                                                    }
+                                                                    ?.onFailure {
+                                                                        println("mediaItem error searchResultScreen album ${it.stackTraceToString()}")
+                                                                    }
+
+                                                            }
+
+                                                        //}
+                                                    }
+
+                                            }
+
+                                        },
+                                        onEnqueue = {
                                             CoroutineScope(Dispatchers.IO).launch {
                                                 Database
                                                     .album(album.key)
@@ -348,7 +415,7 @@ fun SearchResultScreen(
                                             }
 
                                         },
-                                        onSwipeToRight = {
+                                        onBookmark = {
                                             CoroutineScope(Dispatchers.IO).launch {
                                                 Database
                                                     .album(album.key)
@@ -507,8 +574,20 @@ fun SearchResultScreen(
                                 itemContent = { video ->
                                     SwipeablePlaylistItem(
                                         mediaItem = video.asMediaItem,
-                                        onSwipeToRight = {
+                                        onPlayNext = {
                                             localBinder?.player?.addNext(video.asMediaItem)
+                                        },
+                                        onDownload = {
+                                            val message = context.resources.getString(R.string.downloading_videos_not_supported)
+
+                                            SmartMessage(
+                                                message,
+                                                durationLong = false,
+                                                context = context
+                                            )
+                                        },
+                                        onEnqueue = {
+                                            localBinder?.player?.enqueue(video.asMediaItem)
                                         }
                                     ) {
                                         VideoItem(

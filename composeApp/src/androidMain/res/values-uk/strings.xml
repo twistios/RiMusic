@@ -825,4 +825,5 @@
     <string name="notification_type_advanced">Розширені налаштування</string>
     <string name="notification_type_info">Спосіб керування плеєром в області сповіщень та на екрані блокування.</string>
     <string name="action_bar_show_start_radio_button">Запустити радіо</string>
+    <string name="blankspace">Blank Space at Top</string>
 </resources>

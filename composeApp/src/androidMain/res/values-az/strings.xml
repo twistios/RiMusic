@@ -825,4 +825,5 @@
     <string name="notification_type_advanced">Qabaqcıl</string>
     <string name="notification_type_info">Bildiriş sahəsində və kilid ekranında oynadıcı işləmə üsulu.</string>
     <string name="action_bar_show_start_radio_button">Radio düyməsin başlat</string>
+    <string name="blankspace">Blank Space at Top</string>
 </resources>

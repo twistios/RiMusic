@@ -825,4 +825,5 @@
     <string name="notification_type_advanced">Avanzato</string>
     <string name="notification_type_info">Il modo in cui il player è gestito nell\'area di notifica e schermata di blocco.</string>
     <string name="action_bar_show_start_radio_button">Avvia pulsante radio</string>
+    <string name="blankspace">Blank Space at Top</string>
 </resources>

@@ -776,7 +776,10 @@ fun LocalPlaylistSongs(
 
                         SwipeableQueueItem(
                             mediaItem = song.asMediaItem,
-                            onSwipeToLeft = {
+                            onPlayNext = {
+                                binder?.player?.addNext(song.asMediaItem)
+                            },
+                            onRemoveFromQueue = {
                                 Database.asyncTransaction {
                                     deleteSongFromPlaylist(song.song.id, playlistId)
                                 }
@@ -800,10 +803,26 @@ fun LocalPlaylistSongs(
                                         durationLong = true
                                     )
                                 }
-
                             },
-                            onSwipeToRight = {
-                                binder?.player?.addNext(song.asMediaItem)
+                            onDownload = {
+                                binder?.cache?.removeResource(song.asMediaItem.mediaId)
+                                CoroutineScope(Dispatchers.IO).launch {
+                                    Database.resetContentLength( song.asMediaItem.mediaId )
+                                }
+
+                                if (!isLocal) {
+                                    manageDownload(
+                                        context = context,
+                                        mediaItem = song.asMediaItem,
+                                        downloadState = isDownloaded
+                                    )
+                                }
+                            },
+                            onEnqueue = {
+                                binder?.player?.enqueue(
+                                    song.asMediaItem,
+                                    context
+                                )
                             },
                             modifier = Modifier.zIndex(2f)
                         ) {
