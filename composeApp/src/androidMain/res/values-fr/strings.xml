@@ -828,4 +828,12 @@
     <string name="notification_type_info">La façon dont le lecteur est géré dans la zone de notification et l\'écran de verrouillage.</string>
     <string name="action_bar_show_start_radio_button">Afficher le bouton radio</string>
     <string name="blankspace">Espace Vide en Haut</string>
+    <string name="queue_and_local_playlists_left_swipe">Balayage vers la gauche de la file d\'attente et des playlists locales</string>
+    <string name="queue_and_local_playlists_right_swipe">Balayage vers la droite de la file d\'attente et des playlists locales</string>
+    <string name="playlist_left_swipe">Balayage vers la gauche de la playlist</string>
+    <string name="playlist_right_swipe">Balayage vers la droite de la playlist</string>
+    <string name="album_left_swipe">Balayage vers la gauche de l\'album</string>
+    <string name="album_right_swipe">Balayage vers la droite de l\'album</string>
+    <string name="bookmark">Signet</string>
+    <string name="downloading_videos_not_supported">Le téléchargement de vidéos n\'est pas pris en charge</string>
 </resources>
