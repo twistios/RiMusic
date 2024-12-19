@@ -822,7 +822,7 @@
     <string name="set_cover_thumbnail_as_wallpaper">Verwende Cover als Wallpaper</string>
     <string name="notification_type">Benachrichtigungstyp</string>
     <string name="notification_type_default">Standard</string>
-    <string name="notification_type_advanced">Advanced</string>
+    <string name="notification_type_advanced">Erweitert</string>
     <string name="notification_type_info">Wie der Spieler im Benachrichtigungsbereich und Sperrbildschirm behandelt wird.</string>
     <string name="action_bar_show_start_radio_button">Start radio button</string>
     <string name="blankspace">Blank Space at Top</string>

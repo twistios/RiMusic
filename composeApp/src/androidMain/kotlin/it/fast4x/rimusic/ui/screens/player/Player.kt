@@ -2452,8 +2452,8 @@ fun Player(
                 BoxWithConstraints(
                     contentAlignment = Alignment.Center,
                     modifier = Modifier
-                        .conditional((screenHeight/screenWidth) > 1.78 && !expandedplayer){height(screenWidth)}
-                        .conditional((screenHeight/screenWidth) <= 1.78 || expandedplayer){weight(1f)}
+                        .conditional((screenWidth <= (screenHeight / 2)) && !expandedplayer) {height(screenWidth)}
+                        .conditional((screenWidth > (screenHeight / 2)) || expandedplayer) {weight(1f)}
                 ) {
 
                       if (showthumbnail) {

@@ -825,13 +825,13 @@
     <string name="notification_type_advanced">Qabaqcıl</string>
     <string name="notification_type_info">Bildiriş sahəsində və kilid ekranında oynadıcı işləmə üsulu.</string>
     <string name="action_bar_show_start_radio_button">Radio düyməsin başlat</string>
-    <string name="blankspace">Blank Space at Top</string>
-    <string name="queue_and_local_playlists_left_swipe">Queue and Local Playlists Left Swipe</string>
-    <string name="queue_and_local_playlists_right_swipe">Queue and Local Playlists Right Swipe</string>
-    <string name="playlist_left_swipe">Playlist Left Swipe</string>
-    <string name="playlist_right_swipe">Playlist Right Swipe</string>
-    <string name="album_left_swipe">Album Left Swipe</string>
-    <string name="album_right_swipe">Album Right Swipe</string>
-    <string name="bookmark">Bookmark</string>
-    <string name="downloading_videos_not_supported">Downloading videos not supported</string>
+    <string name="blankspace">Üzərindəki Boş Sahə</string>
+    <string name="queue_and_local_playlists_left_swipe">Növbə və Yerli Pleylistlərin Sola Sürüşdür</string>
+    <string name="queue_and_local_playlists_right_swipe">Növbə və Yerli Pleylistlərin Sağa Sürüşdür</string>
+    <string name="playlist_left_swipe">Pleylist Sola Sürüşdürmə</string>
+    <string name="playlist_right_swipe">Pleylist Sağa Sürüşdürmə</string>
+    <string name="album_left_swipe">Albom Sola Sürüşdürmə</string>
+    <string name="album_right_swipe">Albom Sağa Sürüşdürmə</string>
+    <string name="bookmark">Əlfəcin</string>
+    <string name="downloading_videos_not_supported">Videoların endirilməsi dəstəklənmir</string>
 </resources>
