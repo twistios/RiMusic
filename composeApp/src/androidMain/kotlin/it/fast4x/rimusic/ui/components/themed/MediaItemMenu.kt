@@ -113,6 +113,8 @@ import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import it.fast4x.rimusic.colorPalette
+import it.fast4x.rimusic.context
+import it.fast4x.rimusic.service.MyDownloadHelper
 import it.fast4x.rimusic.typography
 import timber.log.Timber
 import java.time.LocalTime.now
@@ -143,6 +145,7 @@ fun InHistoryMediaItemMenu(
             Database.asyncTransaction {
                 like(song.id, System.currentTimeMillis())
             }
+            MyDownloadHelper.autoDownloadWhenLiked(context(),song.asMediaItem)
         },
         modifier = modifier,
         disableScrollingText = disableScrollingText
@@ -192,6 +195,7 @@ fun InPlaylistMediaItemMenu(
             Database.asyncTransaction {
                 like(song.id, System.currentTimeMillis())
             }
+            MyDownloadHelper.autoDownloadWhenLiked(context(),song.asMediaItem)
         },
         modifier = modifier,
         disableScrollingText = disableScrollingText
@@ -270,6 +274,7 @@ fun NonQueuedMediaItemMenuLibrary(
                         System.currentTimeMillis()
                     )
                 }
+                MyDownloadHelper.autoDownloadWhenLiked(context,mediaItem)
             },
             modifier = modifier,
             disableScrollingText = disableScrollingText
@@ -303,6 +308,7 @@ fun NonQueuedMediaItemMenuLibrary(
                         System.currentTimeMillis()
                     )
                 }
+                MyDownloadHelper.autoDownloadWhenLiked(context,mediaItem)
             },
             modifier = modifier,
             disableScrollingText = disableScrollingText
@@ -445,6 +451,7 @@ fun QueuedMediaItemMenu(
                         System.currentTimeMillis()
                     )
                 }
+                MyDownloadHelper.autoDownloadWhenLiked(context,mediaItem)
             },
             disableScrollingText = disableScrollingText
         )
@@ -479,6 +486,7 @@ fun QueuedMediaItemMenu(
                         System.currentTimeMillis()
                     )
                 }
+                MyDownloadHelper.autoDownloadWhenLiked(context,mediaItem)
             },
             disableScrollingText = disableScrollingText
         )
@@ -1107,6 +1115,7 @@ fun MediaItemMenu(
                                         insert(mediaItem, Song::toggleLike)
                                     }
                                 }
+                                MyDownloadHelper.autoDownloadWhenLiked(context(),mediaItem)
                             },
                             modifier = Modifier
                                 .padding(all = 4.dp)

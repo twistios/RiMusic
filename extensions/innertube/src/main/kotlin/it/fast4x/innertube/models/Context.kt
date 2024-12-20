@@ -136,11 +136,11 @@ data class Context(
             client = Client(
                 clientName = "IOS",
                 clientVersion = "19.29.1",
-                deviceMake = "Apple",
-                deviceModel = "iPhone16,2",
-                osName = "iOS",
+                //deviceMake = "Apple",
+                //deviceModel = "iPhone16,2",
+                //osName = "iOS",
                 osVersion = "17.5.1.21F90",
-                acceptHeader = "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
+                //acceptHeader = "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
                 userAgent = USER_AGENT_IOS,
                 api_key = "AIzaSyB-63vPrdThhKuerbB2N_l7Kwwcxj6yUAc"
             )
@@ -150,7 +150,8 @@ data class Context(
             client = Client(
                 clientName = "TVHTML5_SIMPLY_EMBEDDED_PLAYER",
                 clientVersion = "2.0",
-                platform = "TV",
+                api_key = "AIzaSyDCU8hByM-4DrUqRUYnGn-3llEO78bcxq8",
+                //platform = "TV",
                 userAgent = USER_AGENT_PLAYSTATION
             )
         )

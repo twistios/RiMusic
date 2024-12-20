@@ -267,6 +267,8 @@ import it.fast4x.rimusic.utils.thumbnailFadeKey
 import it.fast4x.rimusic.colorPalette
 import it.fast4x.rimusic.thumbnailShape
 import it.fast4x.rimusic.typography
+import it.fast4x.rimusic.ui.styling.AlbumPalette
+import it.fast4x.rimusic.ui.styling.dynamicPaletteOf
 import it.fast4x.rimusic.utils.topPaddingKey
 
 
@@ -710,9 +712,19 @@ fun Player(
             }
         }
     }
+    val defaultPalette = AlbumPalette(
+        dominant = Color.Magenta,
+        vibrant = Color.Cyan,
+        lightVibrant = Color(0xFF9E03FF),
+        darkVibrant = Color(0xFF11D36E),
+        muted = Color.White,
+        darkMuted = Color.Red,
+        lightMuted = Color.Transparent,
+    )
 
     val color = colorPalette()
     var dynamicColorPalette by remember { mutableStateOf( color ) }
+    var dynamicPalette by remember { mutableStateOf( defaultPalette ) }
     val colorPaletteMode by rememberPreference(colorPaletteModeKey, ColorPaletteMode.Dark)
     val playerBackgroundColors by rememberPreference(
         playerBackgroundColorsKey,
@@ -722,7 +734,8 @@ fun Player(
         playerBackgroundColors == PlayerBackgroundColors.ThemeColorGradient ||
                 playerBackgroundColors == PlayerBackgroundColors.CoverColorGradient ||
                 playerBackgroundColors == PlayerBackgroundColors.FluidThemeColorGradient ||
-                playerBackgroundColors == PlayerBackgroundColors.FluidCoverColorGradient
+                playerBackgroundColors == PlayerBackgroundColors.FluidCoverColorGradient ||
+                playerBackgroundColors == PlayerBackgroundColors.AnimatedGradient
 
 
 
@@ -734,7 +747,8 @@ fun Player(
         LaunchedEffect(mediaItem.mediaId, updateBrush) {
             if (playerBackgroundColors == PlayerBackgroundColors.CoverColorGradient ||
                 playerBackgroundColors == PlayerBackgroundColors.CoverColor ||
-                playerBackgroundColors == PlayerBackgroundColors.FluidCoverColorGradient || updateBrush
+                playerBackgroundColors == PlayerBackgroundColors.FluidCoverColorGradient ||
+                playerBackgroundColors == PlayerBackgroundColors.AnimatedGradient || updateBrush
             ) {
             try {
                 val bitmap = getBitmapFromUrl(
@@ -747,15 +761,21 @@ fun Player(
                     isSystemDarkMode
                 ) ?: color
                 println("Player INSIDE getting dynamic color ${dynamicColorPalette}")
+
+                dynamicPalette = dynamicPaletteOf(
+                    bitmap,
+                    isSystemDarkMode
+                ) ?: defaultPalette
+
             } catch (e: Exception) {
                 dynamicColorPalette = color
+                dynamicPalette = defaultPalette
                 println("Player Error getting dynamic color ${e.printStackTrace()}")
             }
 
         }
         println("Player after getting dynamic color ${dynamicColorPalette}")
     }
-
 
     /*  */
     var sizeShader by remember { mutableStateOf(Size.Zero) }
@@ -960,6 +980,19 @@ fun Player(
                         drawRect(brush = brushMask, blendMode = BlendMode.DstOut)
                         drawRect(brush = brushB, blendMode = BlendMode.DstAtop)
                     }
+            }
+
+            PlayerBackgroundColors.AnimatedGradient ->{
+                containerModifier = containerModifier
+                    .onSizeChanged {
+                        sizeShader = Size(it.width.toFloat(), it.height.toFloat())
+                    }
+                    .animatedGradient(binder.player.isPlaying,
+                        dynamicPalette.darkVibrant,
+                        dynamicPalette.lightVibrant,
+                        dynamicPalette.darkMuted,
+                        dynamicPalette.lightMuted
+                    )
             }
 
             else -> {
@@ -1608,8 +1641,7 @@ fun Player(
                                 color = colorPalette().accent,
                                 enabled = true,
                                 onClick = {
-                                    binder.stopRadio()
-                                    binder.playRadio(
+                                    binder.setupRadio(
                                         NavigationEndpoint.Endpoint.Watch(videoId = mediaItem.mediaId)
                                     )
                                 },

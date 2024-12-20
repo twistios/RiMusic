@@ -109,7 +109,7 @@ private suspend fun getInvidiousFormatUrl(
 internal suspend fun PlayerServiceModern.dataSpecProcess(
     dataSpec: DataSpec,
     context: Context,
-    metered: Boolean
+    connectionMetered: Boolean = false
 ): DataSpec {
     val songUri = dataSpec.uri.toString()
     val videoId = songUri.substringAfter("watch?v=")
@@ -119,32 +119,35 @@ internal suspend fun PlayerServiceModern.dataSpecProcess(
         cache.isCached(videoId, dataSpec.position, chunkLength) ||
         downloadCache.isCached(videoId, dataSpec.position, if (dataSpec.length >= 0) dataSpec.length else 1)
     ) {
-        println("PlayerService DataSpecProcess Playing song ${videoId} from cached or local file")
+        println("PlayerServiceModern DataSpecProcess Playing song ${videoId} from cached or local file")
         return dataSpec.withUri(Uri.parse(dataSpec.uri.toString()))
     }
 
     try {
 
-        val format = getInnerTubeFormatUrl(videoId, audioQualityFormat)
+        val format = getInnerTubeFormatUrl(videoId, audioQualityFormat, connectionMetered)
 
-        println("PlayerService DataSpecProcess Playing song ${videoId} from format $format from url=${format?.url}")
+        println("PlayerServiceModern DataSpecProcess Playing song ${videoId} from format $format from url=${format?.url}")
         return dataSpec.withUri(Uri.parse(format?.url))
 
     } catch ( e: LoginRequiredException ) {
-        try {
-            // Switch to Piped
-            val formatUrl = getPipedFormatUrl( videoId, audioQualityFormat )
-
-            println("PlayerService DataSpecProcess Playing song $videoId from url $formatUrl")
-            return dataSpec.withUri( formatUrl )
-
-        } catch ( e: NoSuchElementException ) {
-            // Switch to Invidious
-            val formatUrl = getInvidiousFormatUrl( videoId, audioQualityFormat )
-
-            println("PlayerService DataSpecProcess Playing song $videoId from url $formatUrl")
-            return dataSpec.withUri( formatUrl )
-        }
+        // Temporary disabled piped and invidious
+        println("PlayerServiceModern DataSpecProcess Playing song $videoId from url LOGIN REQUIRED ISSUE ${e.message}")
+        throw e
+//        try {
+//            // Switch to Piped
+//            val formatUrl = getPipedFormatUrl( videoId, audioQualityFormat )
+//
+//            println("PlayerServiceModern DataSpecProcess Playing song $videoId from url $formatUrl")
+//            return dataSpec.withUri( formatUrl )
+//
+//        } catch ( e: NoSuchElementException ) {
+//            // Switch to Invidious
+//            val formatUrl = getInvidiousFormatUrl( videoId, audioQualityFormat )
+//
+//            println("PlayerServiceModern DataSpecProcess Playing song $videoId from url $formatUrl")
+//            return dataSpec.withUri( formatUrl )
+//        }
 
     } catch ( e: Exception ) {
         // Rethrow exception if it's not handled
@@ -153,34 +156,12 @@ internal suspend fun PlayerServiceModern.dataSpecProcess(
 }
 
 @OptIn(UnstableApi::class)
-internal suspend fun MyDownloadHelper.dataSpecProcess(
-    dataSpec: DataSpec,
-    context: Context,
-    metered: Boolean
-): DataSpec {
-    val songUri = dataSpec.uri.toString()
-    val videoId = songUri.substringAfter("watch?v=")
-
-    if( dataSpec.isLocal ||
-        downloadCache.isCached(videoId, dataSpec.position, if (dataSpec.length >= 0) dataSpec.length else 1)
-    ) {
-        println("MyDownloadHelper DataSpecProcess Playing song ${videoId} from cached or local file")
-        return dataSpec.withUri(Uri.parse(dataSpec.uri.toString()))
-    }
-
-    val format = getInnerTubeFormatUrl(videoId, audioQualityFormat)
-
-    println("MyDownloadHelper DataSpecProcess Playing song $videoId from format $format from url=${format?.url}")
-    return dataSpec.withUri(Uri.parse(format?.url))
-
-}
-
-@OptIn(UnstableApi::class)
 suspend fun getInnerTubeFormatUrl(
     videoId: String,
-    audioQualityFormat: AudioQualityFormat
+    audioQualityFormat: AudioQualityFormat,
+    connectionMetered: Boolean,
 ): PlayerResponse.StreamingData.AdaptiveFormat? {
-    //println("PlayerService MyDownloadHelper DataSpecProcess getMediaFormat Playing song $videoId from format $audioQualityFormat")
+    //println("PlayerServiceModern MyDownloadHelper DataSpecProcess getMediaFormat Playing song $videoId from format $audioQualityFormat")
     return Innertube.player(
         body = PlayerBody(videoId = videoId),
         withLogin = appContext().preferences.getBoolean(enableYouTubeLoginKey, false),
@@ -191,7 +172,8 @@ suspend fun getInnerTubeFormatUrl(
             when(playerResponse.playabilityStatus?.status) {
                 "OK" -> {
                     when (audioQualityFormat) {
-                        AudioQualityFormat.Auto -> playerResponse.streamingData?.autoMaxQualityFormat
+                        AudioQualityFormat.Auto -> if (!connectionMetered) playerResponse.streamingData?.autoMaxQualityFormat
+                        else playerResponse.streamingData?.lowestQualityFormat
                         AudioQualityFormat.High -> playerResponse.streamingData?.highestQualityFormat
                         AudioQualityFormat.Medium -> playerResponse.streamingData?.mediumQualityFormat
                         AudioQualityFormat.Low -> playerResponse.streamingData?.lowestQualityFormat
@@ -199,7 +181,7 @@ suspend fun getInnerTubeFormatUrl(
                         // Specify range to avoid YouTube's throttling
                         it?.copy(url = "${it.url}&range=0-${it.contentLength ?: 10000000}")
                     }.also {
-                        //println("PlayerService MyDownloadHelper DataSpecProcess getMediaFormat before upsert format $it")
+                        //println("PlayerServiceModern MyDownloadHelper DataSpecProcess getMediaFormat before upsert format $it")
                         Database.asyncTransaction {
                             if (songExist(videoId) > 0)
                                 upsert(
@@ -210,11 +192,11 @@ suspend fun getInnerTubeFormatUrl(
                                         contentLength = it?.contentLength,
                                         bitrate = it?.bitrate?.toLong(),
                                         lastModified = it?.lastModified,
-                                        loudnessDb = playerResponse.playerConfig?.audioConfig?.loudnessDb,
+                                        loudnessDb = it?.loudnessDb?.toFloat()
                                     )
                                 )
                         }
-                        //println("PlayerService MyDownloadHelper DataSpecProcess getMediaFormat after upsert format $it")
+                        //println("PlayerServiceModern MyDownloadHelper DataSpecProcess getMediaFormat after upsert format $it")
                     }
                 }
                 "LOGIN_REQUIRED" -> throw LoginRequiredException()
@@ -233,7 +215,7 @@ suspend fun getInnerTubeFormatUrl(
                 }
 
                 else -> {
-                    println("PlayerService MyDownloadHelper DataSpecProcess Error: ${throwable.stackTraceToString()}")
+                    println("PlayerServiceModern MyDownloadHelper DataSpecProcess Error: ${throwable.stackTraceToString()}")
                     throw throwable
                 }
             }

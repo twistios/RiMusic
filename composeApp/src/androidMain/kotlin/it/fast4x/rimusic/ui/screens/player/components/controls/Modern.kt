@@ -85,6 +85,8 @@ import it.fast4x.rimusic.utils.textCopyToClipboard
 import it.fast4x.rimusic.utils.textoutlineKey
 import it.fast4x.rimusic.appContext
 import it.fast4x.rimusic.colorPalette
+import it.fast4x.rimusic.context
+import it.fast4x.rimusic.service.MyDownloadHelper
 import it.fast4x.rimusic.typography
 
 
@@ -234,6 +236,9 @@ fun InfoAlbumAndArtistModern(
                                  ?.let {
                                      insert(currentMediaItem, Song::toggleLike)
                                  }
+                             if (currentMediaItem != null) {
+                                 MyDownloadHelper.autoDownloadWhenLiked(context(),currentMediaItem)
+                             }
                          }
                      }
                      if (effectRotationEnabled) isRotated = !isRotated

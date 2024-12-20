@@ -332,7 +332,7 @@ class MediaLibrarySessionCallback @Inject constructor(
                             }
                             ID_DOWNLOADED -> {
                                 val downloads = downloadHelper.downloads.value
-                                database.listAllSongs( -1 )
+                                database.listAllSongs( 1 )
                                         .flowOn( Dispatchers.IO )
                                         .map { list ->
                                             list.map { it.song }

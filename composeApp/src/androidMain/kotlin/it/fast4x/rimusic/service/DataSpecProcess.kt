@@ -102,7 +102,7 @@ private suspend fun getInvidiousFormatUrl(
 internal suspend fun PlayerService.dataSpecProcess(
     dataSpec: DataSpec,
     context: Context,
-    metered: Boolean
+    connectionMetered: Boolean
 ): DataSpec {
     val songUri = dataSpec.uri.toString()
     val videoId = songUri.substringAfter("watch?v=")
@@ -118,7 +118,7 @@ internal suspend fun PlayerService.dataSpecProcess(
 
     try {
 
-        val format = getInnerTubeFormatUrl(videoId, audioQualityFormat)
+        val format = getInnerTubeFormatUrl(videoId, audioQualityFormat, connectionMetered)
 
         println("PlayerService DataSpecProcess Playing song ${videoId} from format $format from url=${format?.url}")
         return dataSpec.withUri(Uri.parse(format?.url))
@@ -149,7 +149,7 @@ internal suspend fun PlayerService.dataSpecProcess(
 internal suspend fun MyDownloadHelper.dataSpecProcess(
     dataSpec: DataSpec,
     context: Context,
-    metered: Boolean
+    connectionMetered: Boolean = false
 ): DataSpec {
     val songUri = dataSpec.uri.toString()
     val videoId = songUri.substringAfter("watch?v=")
@@ -161,7 +161,7 @@ internal suspend fun MyDownloadHelper.dataSpecProcess(
         return dataSpec.withUri(Uri.parse(dataSpec.uri.toString()))
     }
 
-    val format = getInnerTubeFormatUrl(videoId, audioQualityFormat)
+    val format = getInnerTubeFormatUrl(videoId, audioQualityFormat, connectionMetered)
 
     println("MyDownloadHelper DataSpecProcess Playing song $videoId from format $format from url=${format?.url}")
     return dataSpec.withUri(Uri.parse(format?.url))
@@ -171,8 +171,9 @@ internal suspend fun MyDownloadHelper.dataSpecProcess(
 @OptIn(UnstableApi::class)
 suspend fun getInnerTubeFormatUrl(
     videoId: String,
-    audioQualityFormat: AudioQualityFormat
-): PlayerResponse.StreamingData.AdaptiveFormat? {
+    audioQualityFormat: AudioQualityFormat,
+    connectionMetered: Boolean,
+    ): PlayerResponse.StreamingData.AdaptiveFormat? {
     //println("PlayerService MyDownloadHelper DataSpecProcess getMediaFormat Playing song $videoId from format $audioQualityFormat")
     return Innertube.player(
         body = PlayerBody(videoId = videoId),
@@ -184,7 +185,8 @@ suspend fun getInnerTubeFormatUrl(
             when(playerResponse.playabilityStatus?.status) {
                 "OK" -> {
                     when (audioQualityFormat) {
-                        AudioQualityFormat.Auto -> playerResponse.streamingData?.autoMaxQualityFormat
+                        AudioQualityFormat.Auto -> if (!connectionMetered) playerResponse.streamingData?.autoMaxQualityFormat
+                        else playerResponse.streamingData?.lowestQualityFormat
                         AudioQualityFormat.High -> playerResponse.streamingData?.highestQualityFormat
                         AudioQualityFormat.Medium -> playerResponse.streamingData?.mediumQualityFormat
                         AudioQualityFormat.Low -> playerResponse.streamingData?.lowestQualityFormat

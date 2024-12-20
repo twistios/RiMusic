@@ -825,7 +825,12 @@
     <string name="notification_type_advanced">Pokročilé</string>
     <string name="notification_type_info">Způsob zpracování přehrávače v oznamovací oblasti a na zamykací obrazovce.</string>
     <string name="action_bar_show_start_radio_button">Spustit tlačítko rádia</string>
+    <string name="tab_accounts">Accounts</string>
     <string name="blankspace">Prázdné místo nahoře</string>
+    <string name="settings_enable_autodownload_song">Enable auto download song</string>
+    <string name="settings_enable_autodownload_song_when_liked">Auto download song when liked</string>
+    <string name="settings_enable_autodownload_song_when_album_bookmarked">Auto download song when album bookmarked</string>
+    <string name="tab_general">General</string>
     <string name="queue_and_local_playlists_left_swipe">Fronta a místní playlisty přejetím vlevo</string>
     <string name="queue_and_local_playlists_right_swipe">Fronta a místní playlisty přejetím vpravo</string>
     <string name="playlist_left_swipe">Playlist přejetím vlevo</string>
@@ -834,4 +839,5 @@
     <string name="album_right_swipe">Album přejetím vpravo</string>
     <string name="bookmark">Záložka</string>
     <string name="downloading_videos_not_supported">Stahování videí není podporováno</string>
+    <string name="animatedgradient">Animated Gradient</string>
 </resources>

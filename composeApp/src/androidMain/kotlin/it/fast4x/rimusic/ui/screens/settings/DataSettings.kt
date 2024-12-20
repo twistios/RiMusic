@@ -440,8 +440,8 @@ fun DataSettings() {
                         else -> Formatter.formatShortFileSize(context, diskCacheSize) +
                                 " ${stringResource(R.string.used)}" +
                                 when (val size = exoPlayerDiskCacheMaxSize) {
-                                    ExoPlayerDiskCacheMaxSize.Unlimited -> {}
-                                    ExoPlayerDiskCacheMaxSize.Custom -> {} // only needed because of UNLIMITED
+                                    ExoPlayerDiskCacheMaxSize.Unlimited -> ""
+                                    ExoPlayerDiskCacheMaxSize.Custom -> "" // only needed because of UNLIMITED
                                     else -> " (${diskCacheSize * 100 / size.bytes}%)"
                                 }
                     },
@@ -512,7 +512,7 @@ fun DataSettings() {
                     else -> Formatter.formatShortFileSize(context, diskDownloadCacheSize) +
                         " ${stringResource(R.string.used)}" +
                             when (val size = exoPlayerDiskDownloadCacheMaxSize) {
-                                ExoPlayerDiskDownloadCacheMaxSize.Unlimited -> {}
+                                ExoPlayerDiskDownloadCacheMaxSize.Unlimited -> ""
                                 else -> " (${diskDownloadCacheSize * 100 / size.bytes}%)"
                             }
                 },

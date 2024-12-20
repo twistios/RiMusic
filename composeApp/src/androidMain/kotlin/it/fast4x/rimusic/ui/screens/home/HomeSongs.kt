@@ -165,6 +165,7 @@ import it.fast4x.rimusic.ui.components.tab.toolbar.DownloadAllDialog
 import it.fast4x.rimusic.ui.components.tab.toolbar.SongsShuffle
 import it.fast4x.rimusic.thumbnailShape
 import it.fast4x.rimusic.typography
+import okhttp3.internal.filterList
 import timber.log.Timber
 import java.util.Optional
 import kotlin.math.max
@@ -364,17 +365,24 @@ fun HomeSongs(
 
     // This phrase loads all songs across types into [itemsOffShelve]
     // No filtration applied to this stage, only sort
-    LaunchedEffect( builtInPlaylist, songSort.sortBy, songSort.sortOrder, hiddenSongs.isShown() ) {
+    LaunchedEffect( builtInPlaylist, topPlaylists.period.duration, songSort.sortBy, songSort.sortOrder, hiddenSongs.isShown() ) {
         if( builtInPlaylist == BuiltInPlaylist.OnDevice ) return@LaunchedEffect
 
         when( builtInPlaylist ) {
-            BuiltInPlaylist.All, BuiltInPlaylist.Downloaded -> {
-                val showHidden = if( builtInPlaylist == BuiltInPlaylist.All ) hiddenSongs.isShown() else 0
-                Database.listAllSongs( songSort.sortBy, songSort.sortOrder, showHidden )
+            BuiltInPlaylist.All -> {
+                Database.listAllSongs( sortBy = songSort.sortBy, sortOrder = songSort.sortOrder, showHidden = hiddenSongs.isShown(), filterList = emptyList() )
+            }
+            BuiltInPlaylist.Downloaded -> {
+                val filterList = MyDownloadHelper.downloads.value.values.filter {
+                        it.state == Download.STATE_COMPLETED
+                    }.map { it.request.id }
+                println("HomeSongs: filterList: ${filterList.size} total downloads ${MyDownloadHelper.downloads.value.size}")
+                Database.listAllSongs( sortBy = songSort.sortBy, sortOrder = songSort.sortOrder, showHidden = hiddenSongs.isShown(), filterList = filterList )
             }
             BuiltInPlaylist.Favorites -> Database.listFavoriteSongs( songSort.sortBy, songSort.sortOrder )
             BuiltInPlaylist.Offline -> Database.listOfflineSongs( songSort.sortBy, songSort.sortOrder )
             BuiltInPlaylist.Top -> {
+                println("HomeSongs: topPlaylists period: ${topPlaylists.period.duration}")
                 if (topPlaylists.period.duration == Duration.INFINITE)
                     Database.songsEntityByPlayTimeWithLimitDesc(limit = maxTopPlaylistItems.number.toInt())
                 else
@@ -448,8 +456,10 @@ fun HomeSongs(
             }
 
             BuiltInPlaylist.Downloaded -> { song ->
-                val downloads = MyDownloadHelper.downloads.value
-                downloads[song.song.id]?.state == Download.STATE_COMPLETED
+                // not necessary, songs are filtered from db
+//                val downloads = MyDownloadHelper.downloads.value
+//                downloads[song.song.id]?.state == Download.STATE_COMPLETED
+                true
             }
 
             BuiltInPlaylist.Top -> { songs ->
@@ -576,7 +586,7 @@ fun HomeSongs(
                     this.add( downloadAllDialog )
                     this.add( deleteDownloadsDialog )
                     //this.add( deleteSongDialog )
-                    if (builtInPlaylist == BuiltInPlaylist.All)
+                    if (builtInPlaylist == BuiltInPlaylist.All || builtInPlaylist == BuiltInPlaylist.Downloaded)
                         this.add( hiddenSongs )
                     this.add( shuffle )
                     if (builtInPlaylist == BuiltInPlaylist.Favorites)

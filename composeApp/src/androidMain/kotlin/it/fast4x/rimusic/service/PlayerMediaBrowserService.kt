@@ -467,7 +467,7 @@ class PlayerMediaBrowserService : MediaBrowserServiceCompat(), ServiceConnection
 
                     MediaId.downloaded -> {
                         val downloads = MyDownloadHelper.downloads.value
-                        Database.listAllSongs( -1 )
+                        Database.listAllSongs( 1 )
                                 .first()
                                 .map( SongEntity::song )
                                 .filter {

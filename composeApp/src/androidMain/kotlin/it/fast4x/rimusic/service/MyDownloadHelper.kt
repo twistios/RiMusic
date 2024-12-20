@@ -1,7 +1,5 @@
 package it.fast4x.rimusic.service
 
-
-//import androidx.media3.datasource.HttpDataSource
 import android.annotation.SuppressLint
 import android.content.Context
 import android.net.Uri
@@ -16,13 +14,19 @@ import androidx.media3.exoplayer.offline.Download
 import androidx.media3.exoplayer.offline.DownloadManager
 import androidx.media3.exoplayer.offline.DownloadNotificationHelper
 import androidx.media3.exoplayer.offline.DownloadRequest
+import androidx.media3.exoplayer.offline.DownloadService
+import androidx.media3.exoplayer.offline.DownloadService.sendAddDownload
+import androidx.media3.exoplayer.offline.DownloadService.sendRemoveDownload
 import androidx.media3.exoplayer.scheduler.Requirements
 import it.fast4x.rimusic.Database
 import it.fast4x.rimusic.enums.AudioQualityFormat
 import it.fast4x.rimusic.utils.audioQualityFormatKey
-import it.fast4x.rimusic.utils.download
+import it.fast4x.rimusic.utils.autoDownloadSongKey
+import it.fast4x.rimusic.utils.autoDownloadSongWhenAlbumBookmarkedKey
+import it.fast4x.rimusic.utils.autoDownloadSongWhenLikedKey
 import it.fast4x.rimusic.utils.getEnum
 import it.fast4x.rimusic.utils.preferences
+import it.fast4x.rimusic.utils.removeDownload
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
@@ -38,22 +42,25 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import timber.log.Timber
 import java.io.File
+import java.util.Timer
+import java.util.concurrent.Executor
 import java.util.concurrent.Executors
+import kotlin.concurrent.schedule
 
 @UnstableApi
 object MyDownloadHelper {
-    private val executor = Executors.newCachedThreadPool()
-    private val coroutineScope = CoroutineScope(
-        executor.asCoroutineDispatcher() +
-                SupervisorJob() +
-                CoroutineName("MyDownloadService-Executor-Scope")
-    )
+//    private val executor = Executors.newCachedThreadPool()
+//    private val coroutineScope = CoroutineScope(
+//        executor.asCoroutineDispatcher() +
+//                SupervisorJob() +
+//                CoroutineName("MyDownloadService-Executor-Scope")
+//    )
 
     // While the class is not a singleton (lifecycle), there should only be one download state at a time
-    private val mutableDownloadState = MutableStateFlow(false)
-    val downloadState = mutableDownloadState.asStateFlow()
-    private val downloadQueue =
-        Channel<DownloadManager>(onBufferOverflow = BufferOverflow.DROP_OLDEST)
+//    private val mutableDownloadState = MutableStateFlow(false)
+//    val downloadState = mutableDownloadState.asStateFlow()
+//    private val downloadQueue =
+//        Channel<DownloadManager>(onBufferOverflow = BufferOverflow.DROP_OLDEST)
 
     const val DOWNLOAD_NOTIFICATION_CHANNEL_ID = "download_channel"
 
@@ -152,23 +159,23 @@ object MyDownloadHelper {
                 getDatabaseProvider(context),
                 getDownloadCache(context),
                 createDataSourceFactory(),
-                executor
+                Executor(Runnable::run)
             ).apply {
-                maxParallelDownloads = 6
-                minRetryCount = 2
-                requirements = Requirements(Requirements.NETWORK)
+                maxParallelDownloads = 3
+                //minRetryCount = 2
+                //requirements = Requirements(Requirements.NETWORK)
 
                 addListener(
                     object : DownloadManager.Listener {
-                        override fun onIdle(downloadManager: DownloadManager) =
-                            mutableDownloadState.update { false }
+//                        override fun onIdle(downloadManager: DownloadManager) =
+//                            mutableDownloadState.update { false }
 
                         override fun onDownloadChanged(
                             downloadManager: DownloadManager,
                             download: Download,
                             finalException: Exception?
                         ) = run {
-                            downloadQueue.trySend(downloadManager).let { }
+                            //downloadQueue.trySend(downloadManager).let { }
                             syncDownloads(download)
                         }
 
@@ -176,7 +183,7 @@ object MyDownloadHelper {
                             downloadManager: DownloadManager,
                             download: Download
                         ) = run {
-                            downloadQueue.trySend(downloadManager).let { }
+                            //downloadQueue.trySend(downloadManager).let { }
                             syncDownloads(download)
                         }
                     }
@@ -219,7 +226,7 @@ object MyDownloadHelper {
     }
 
 
-        fun scheduleDownload(context: Context, mediaItem: MediaItem) {
+        fun addDownload(context: Context, mediaItem: MediaItem) {
             if (mediaItem.isLocal) return
 
             val downloadRequest = DownloadRequest
@@ -229,7 +236,6 @@ object MyDownloadHelper {
                         ?: Uri.parse("https://music.youtube.com/watch?v=${mediaItem.mediaId}")
                 )
                 .setCustomCacheKey(mediaItem.mediaId)
-                //.setData(mediaItem.mediaId.encodeToByteArray())
                 .setData("${mediaItem.mediaMetadata.artist.toString()} - ${mediaItem.mediaMetadata.title.toString()}".encodeToByteArray()) // Title in notification
                 .build()
 
@@ -237,17 +243,64 @@ object MyDownloadHelper {
                 runCatching {
                     insert(mediaItem)
                 }.also { if (it.isFailure) return@asyncTransaction }
+            }
 
-                coroutineScope.launch {
-                    context.download<MyDownloadService>(downloadRequest).exceptionOrNull()?.let {
-                        if (it is CancellationException) throw it
+            sendAddDownload(
+                context,MyDownloadService::class.java,downloadRequest,false
+            )
 
-                        Timber.e(it.stackTraceToString())
-                        println("MyDownloadHelper scheduleDownload exception ${it.stackTraceToString()}")
-                    }
-                }
+                //coroutineScope.launch {
+//                    context.download<MyDownloadService>(downloadRequest).exceptionOrNull()?.let {
+//                        if (it is CancellationException) throw it
+//
+//                        Timber.e(it.stackTraceToString())
+//                        println("MyDownloadHelper scheduleDownload exception ${it.stackTraceToString()}")
+//                    }
+                //}
+
+        }
+
+    fun removeDownload(context: Context, mediaItem: MediaItem) {
+        if (mediaItem.isLocal) return
+
+        sendRemoveDownload(context,MyDownloadService::class.java,mediaItem.mediaId,false)
+        //coroutineScope.launch {
+//            context.removeDownload<MyDownloadService>(mediaItem.mediaId).exceptionOrNull()?.let {
+//                if (it is CancellationException) throw it
+//
+//                Timber.e(it.stackTraceToString())
+//                println("MyDownloadHelper removeDownload exception ${it.stackTraceToString()}")
+//            }
+        //}
+    }
+
+    fun resumeDownloads(context: Context){
+        DownloadService.sendResumeDownloads(
+            context,
+            MyDownloadService::class.java,
+            false)
+    }
+
+    fun autoDownload(context: Context, mediaItem: MediaItem){
+        if (context.preferences.getBoolean(autoDownloadSongKey, false)) {
+            if (downloads.value[mediaItem.mediaId]?.state != Download.STATE_COMPLETED)
+                addDownload(context, mediaItem)
+        }
+    }
+
+    fun autoDownloadWhenLiked(context: Context, mediaItem: MediaItem){
+        if (context.preferences.getBoolean(autoDownloadSongWhenLikedKey, false)) {
+                autoDownload(context, mediaItem)
+        }
+    }
+
+    fun autoDownloadWhenAlbumBookmarked(context: Context, mediaItems: List<MediaItem>){
+        if (context.preferences.getBoolean(autoDownloadSongWhenAlbumBookmarkedKey, false)) {
+            mediaItems.forEach { mediaItem ->
+                autoDownload(context, mediaItem)
             }
         }
+    }
 
 
 }

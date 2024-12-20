@@ -52,7 +52,14 @@ data class PlayerResponse(
             val contentLength: Long?,
             val approxDurationMs: Long?,
             val lastModified: Long?,
+            val loudnessDb: Double?,
             val width: Int?,
+            val fps: Int?,
+            val quality: String?,
+            val qualityLabel: String?,
+            val audioQuality: String?,
+            val audioSampleRate: Int?,
+            val audioChannels: Int?,
             @SerialName("mimeType")
             val mimeTypeCodec: String,
             override val itag: UShort,
@@ -75,6 +82,16 @@ data class PlayerResponse(
 
     @Serializable
     data class VideoDetails(
-        val videoId: String?
+        val videoId: String?,
+        val title: String?,
+        val author: String?,
+        val channelId: String?,
+        val authorAvatar: String?,
+        val authorSubCount: String?,
+        val lengthSeconds: String?,
+        val musicVideoType: String?,
+        val viewCount: String?,
+        val thumbnail: Thumbnails?,
+        val description: String?,
     )
 }

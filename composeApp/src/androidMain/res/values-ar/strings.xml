@@ -825,7 +825,9 @@
     <string name="notification_type_advanced">Advanced</string>
     <string name="notification_type_info">The way the player is handled in the notification area and lockscreen.</string>
     <string name="action_bar_show_start_radio_button">Start radio button</string>
+    <string name="tab_accounts">Accounts</string>
     <string name="blankspace">Blank Space at Top</string>
+    <string name="tab_general">General</string>
     <string name="queue_and_local_playlists_left_swipe">Queue and Local Playlists Left Swipe</string>
     <string name="queue_and_local_playlists_right_swipe">Queue and Local Playlists Right Swipe</string>
     <string name="playlist_left_swipe">Playlist Left Swipe</string>
@@ -834,4 +836,8 @@
     <string name="album_right_swipe">Album Right Swipe</string>
     <string name="bookmark">Bookmark</string>
     <string name="downloading_videos_not_supported">Downloading videos not supported</string>
+    <string name="settings_enable_autodownload_song">Enable auto download song</string>
+    <string name="settings_enable_autodownload_song_when_liked">Auto download song when liked</string>
+    <string name="settings_enable_autodownload_song_when_album_bookmarked">Auto download song when album bookmarked</string>
+    <string name="animatedgradient">Animated Gradient</string>
 </resources>

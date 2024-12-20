@@ -58,6 +58,7 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -121,6 +122,7 @@ import it.fast4x.rimusic.enums.PipModule
 import it.fast4x.rimusic.enums.PlayerBackgroundColors
 import it.fast4x.rimusic.enums.PopupType
 import it.fast4x.rimusic.enums.ThumbnailRoundness
+import it.fast4x.rimusic.extensions.connectivity.InternetConnectivityObserver
 import it.fast4x.rimusic.extensions.pip.PipEventContainer
 import it.fast4x.rimusic.extensions.pip.PipModuleContainer
 import it.fast4x.rimusic.extensions.pip.PipModuleCover
@@ -252,7 +254,7 @@ class MainActivity :
     MonetColorsChangedListener
 //,PersistMapOwner
 {
-    var downloadUtil = MyDownloadHelper
+    var downloadHelper = MyDownloadHelper
 
     var client = OkHttpClient()
     var request = OkHttpRequest(client)
@@ -349,14 +351,14 @@ class MainActivity :
         checkIfAppIsRunningInBackground()
 
         // Fetch Piped & Invidious instances
-        lifecycleScope.launch(Dispatchers.IO) {
-            try {
-                Piped.fetchInstances()
-                Invidious.fetchInstances()
-            } catch (e: Exception) {
-                Timber.e(e, "MainActivity Error fetching Piped & Invidious instances")
-            }
-        }
+//        lifecycleScope.launch(Dispatchers.IO) {
+//            try {
+//                Piped.fetchInstances()
+//                Invidious.fetchInstances()
+//            } catch (e: Exception) {
+//                Timber.e(e, "MainActivity Error fetching Piped & Invidious instances")
+//            }
+//        }
     }
 
     private fun checkIfAppIsRunningInBackground() {
@@ -485,6 +487,10 @@ class MainActivity :
                     exitProcess(0)
                 }
             }
+
+            val internetConnectivityObserver = InternetConnectivityObserver(this)
+            val internetConnected by internetConnectivityObserver.networkStatus.collectAsState(false)
+            if (internetConnected) downloadHelper.resumeDownloads(this)
 
             if (preferences.getEnum(
                     checkUpdateStateKey,
@@ -1046,9 +1052,10 @@ class MainActivity :
                             LocalPlayerServiceBinder provides binder,
                             LocalPlayerAwareWindowInsets provides playerAwareWindowInsets,
                             LocalLayoutDirection provides LayoutDirection.Ltr,
-                            LocalDownloader provides downloadUtil,
+                            LocalDownloadHelper provides downloadHelper,
                             LocalPlayerSheetState provides playerState,
-                            LocalMonetCompat provides monet
+                            LocalMonetCompat provides monet,
+                            LocalInternetConnected provides internetConnected
                         ) {
 
                             AppNavigation(
@@ -1367,7 +1374,7 @@ class MainActivity :
 
     override fun onResume() {
         super.onResume()
-        kotlin.runCatching {
+        runCatching {
             sensorManager?.registerListener(
                 sensorListener, sensorManager!!.getDefaultSensor(
                     Sensor.TYPE_ACCELEROMETER
@@ -1475,11 +1482,11 @@ val LocalPlayerServiceBinder = staticCompositionLocalOf<PlayerServiceModern.Bind
 
 val LocalPlayerAwareWindowInsets = staticCompositionLocalOf<WindowInsets> { TODO() }
 
-val LocalDownloader = staticCompositionLocalOf<MyDownloadHelper> { error("No Downloader provided") }
+val LocalDownloadHelper = staticCompositionLocalOf<MyDownloadHelper> { error("No Downloader provided") }
 
 @OptIn(ExperimentalMaterial3Api::class)
 val LocalPlayerSheetState =
     staticCompositionLocalOf<SheetState> { error("No player sheet state provided") }
 
-
+val LocalInternetConnected = staticCompositionLocalOf<Boolean> { error("No Network Status provided") }
 

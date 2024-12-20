@@ -16,8 +16,12 @@ import androidx.navigation.NavController
 import it.fast4x.innertube.models.NavigationEndpoint
 import it.fast4x.rimusic.Database
 import it.fast4x.rimusic.R
+import it.fast4x.rimusic.context
 import it.fast4x.rimusic.enums.MenuStyle
+import it.fast4x.rimusic.service.MyDownloadHelper
 import it.fast4x.rimusic.service.modern.PlayerServiceModern
+import it.fast4x.rimusic.utils.asMediaItem
+import it.fast4x.rimusic.utils.forcePlay
 import it.fast4x.rimusic.utils.menuStyleKey
 import it.fast4x.rimusic.utils.rememberEqualizerLauncher
 import it.fast4x.rimusic.utils.rememberPreference
@@ -159,6 +163,7 @@ fun MiniPlayerMenu(
                         System.currentTimeMillis()
                     )
                 }
+                MyDownloadHelper.autoDownloadWhenLiked(context(),mediaItem)
             },
             onDismiss = onDismiss,
             disableScrollingText = disableScrollingText
@@ -177,6 +182,7 @@ fun MiniPlayerMenu(
                         System.currentTimeMillis()
                     )
                 }
+                MyDownloadHelper.autoDownloadWhenLiked(context(),mediaItem)
             },
             onDismiss = onDismiss,
             disableScrollingText = disableScrollingText

@@ -44,7 +44,7 @@ class HiddenSongs private constructor(
             field = value
         }
 
-    fun isShown() = if( isFirstIcon ) -1 else 0
+    fun isShown() = if( isFirstIcon ) 0 else 1
 
     override fun onShortClick() { isFirstIcon = !isFirstIcon }
 }

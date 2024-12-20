@@ -84,23 +84,27 @@ fun SettingsScreen(
                 onTabChanged,
                 miniPlayer,
                 navBarContent = { item ->
-                    item(0, stringResource(R.string.ui_tab), R.drawable.ui)
-                    item(1, stringResource(R.string.player_appearance), R.drawable.color_palette)
-                    item(2, stringResource(R.string.quick_picks), R.drawable.sparkles)
-                    item(3, stringResource(R.string.tab_data), R.drawable.server)
-                    item(4, stringResource(R.string.tab_miscellaneous), R.drawable.equalizer)
-                    item(5, stringResource(R.string.about), R.drawable.information)
+                    item(0, stringResource(R.string.tab_general), R.drawable.app_icon)
+                    item(1, stringResource(R.string.ui_tab), R.drawable.ui)
+                    item(2, stringResource(R.string.player_appearance), R.drawable.color_palette)
+                    item(3, stringResource(R.string.quick_picks), R.drawable.sparkles)
+                    item(4, stringResource(R.string.tab_data), R.drawable.server)
+                    item(5, stringResource(R.string.tab_accounts), R.drawable.person)
+                    item(6, stringResource(R.string.tab_miscellaneous), R.drawable.equalizer)
+                    item(7, stringResource(R.string.about), R.drawable.information)
 
                 }
             ) { currentTabIndex ->
                 saveableStateHolder.SaveableStateProvider(currentTabIndex) {
                     when (currentTabIndex) {
-                        0 -> UiSettings(navController = navController)
-                        1 -> AppearanceSettings(navController = navController)
-                        2 -> QuickPicsSettings()
-                        3 -> DataSettings()
-                        4 -> OtherSettings()
-                        5 -> About()
+                        0 -> GeneralSettings(navController = navController)
+                        1 -> UiSettings(navController = navController)
+                        2 -> AppearanceSettings(navController = navController)
+                        3 -> QuickPicsSettings()
+                        4 -> DataSettings()
+                        5 -> AccountsSettings()
+                        6 -> OtherSettings()
+                        7 -> About()
 
                     }
                 }

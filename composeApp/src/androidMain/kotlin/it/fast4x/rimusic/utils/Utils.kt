@@ -6,6 +6,7 @@ import android.content.ContentUris
 import android.content.Context
 import android.content.pm.PackageManager
 import android.net.ConnectivityManager
+import android.net.NetworkCapabilities
 import android.net.Uri
 import android.os.Build
 import android.provider.MediaStore
@@ -478,62 +479,15 @@ fun CheckAvailableNewVersion(
     }
 }
 
-@Composable
-fun isAvailableUpdate(): String {
-    var newVersion = ""
-    val file = File(LocalContext.current.filesDir, "RiMusicUpdatedVersion.ver")
-    if (file.exists()) {
-        newVersion = file.readText().substring(0, file.readText().length - 1)
-        //Log.d("updatedVersion","${file.readText().length.toString()} ${file.readText().substring(0,file.readText().length-1)}")
-        //Log.d("updatedVersion","${file.readText().length} ${newVersion.length}")
-    } else newVersion = ""
-
-    return if (newVersion == getVersionName() || newVersion == "") "" else newVersion
-    //return if (newVersion == BuildConfig.VERSION_NAME || newVersion == "") "" else newVersion
-}
-
-@Composable
-fun checkInternetConnection(): Boolean {
-    val client = OkHttpClient()
-    val request = OkHttpRequest(client)
-    val coroutineScope = CoroutineScope(Dispatchers.Main)
-    val url = "https://raw.githubusercontent.com/fast4x/RiMusic/master/updatedVersion/updatedVersionCode.ver"
-
-    var check by remember {
-        mutableStateOf("")
-    }
-
-    request.GET(url, object : Callback {
-        override fun onResponse(call: Call, response: Response) {
-            val responseData = response.body?.string()
-            coroutineScope.launch {
-                try {
-                    responseData.let { check = it.toString() }
-                    //Log.d("CheckInternet",check.substring(0,5))
-                } catch (e: JSONException) {
-                    e.printStackTrace()
-                }
-            }
-        }
-
-        override fun onFailure(call: Call, e: java.io.IOException) {
-            //Log.d("CheckInternet","Check failure")
-        }
-    })
-
-    //Log.d("CheckInternetRet",check)
-    return check.isNotEmpty()
-}
-
-
 fun isNetworkAvailable(context: Context): Boolean {
     val cm = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
         ?: return false
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-        val networkInfo = cm.activeNetwork
+        val networkInfo = cm.getNetworkCapabilities(cm.activeNetwork)
         // if no network is available networkInfo will be null
-        // otherwise check if we are connected
-        return networkInfo != null
+        // otherwise check if we are connected to internet
+        //return networkInfo != null
+        return networkInfo?.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET) ?: false
     } else {
         return try {
             if (cm.activeNetworkInfo == null) {
@@ -554,10 +508,10 @@ fun isNetworkAvailableComposable(): Boolean {
     val cm = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
         ?: return false
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-        val networkInfo = cm.activeNetwork
+        val networkInfo = cm.getNetworkCapabilities(cm.activeNetwork)
         // if no network is available networkInfo will be null
         // otherwise check if we are connected
-        return networkInfo != null
+        return networkInfo?.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET) ?: false
     } else {
         return try {
             if (cm.activeNetworkInfo == null) {

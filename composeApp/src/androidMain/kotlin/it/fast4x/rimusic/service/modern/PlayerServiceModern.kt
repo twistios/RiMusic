@@ -190,6 +190,8 @@ import kotlinx.coroutines.plus
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import it.fast4x.rimusic.appContext
+import it.fast4x.rimusic.utils.asMediaItem
+import it.fast4x.rimusic.utils.autoDownloadSongWhenLikedKey
 import timber.log.Timber
 import java.io.IOException
 import java.io.ObjectInputStream
@@ -1767,6 +1769,9 @@ class PlayerServiceModern : MediaLibraryService(),
                     currentSong.debounce(1000).collect(coroutineScope) { updateDefaultNotification() }
                 }
             }
+
+            currentSong.value
+                ?.let { MyDownloadHelper.autoDownloadWhenLiked(this@PlayerServiceModern, it.asMediaItem) }
         }
 
         fun toggleDownload() {

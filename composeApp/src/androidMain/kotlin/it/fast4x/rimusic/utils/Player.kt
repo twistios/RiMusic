@@ -41,14 +41,25 @@ inline val Timeline.windows: List<Timeline.Window>
 val Player.shouldBePlaying: Boolean
     get() = !(playbackState == Player.STATE_ENDED || !playWhenReady)
 
+fun Player.removeMediaItems(range: IntRange) = removeMediaItems(range.first, range.last + 1)
+
+//fun Player.seamlessPlay(mediaItem: MediaItem) {
+//    if (mediaItem.mediaId == currentMediaItem?.mediaId) {
+//        if (currentMediaItemIndex > 0) removeMediaItems(0, currentMediaItemIndex)
+//        if (currentMediaItemIndex < mediaItemCount - 1) removeMediaItems(currentMediaItemIndex + 1, mediaItemCount)
+//    } else {
+//        forcePlay(mediaItem)
+//    }
+//}
+
 fun Player.seamlessPlay(mediaItem: MediaItem) {
     if (mediaItem.mediaId == currentMediaItem?.mediaId) {
-        if (currentMediaItemIndex > 0) removeMediaItems(0, currentMediaItemIndex)
-        if (currentMediaItemIndex < mediaItemCount - 1) removeMediaItems(currentMediaItemIndex + 1, mediaItemCount)
-    } else {
-        forcePlay(mediaItem)
-    }
+        if (currentMediaItemIndex > 0) removeMediaItems(0 until currentMediaItemIndex)
+        if (currentMediaItemIndex < mediaItemCount - 1)
+            removeMediaItems(currentMediaItemIndex + 1 until mediaItemCount)
+    } else forcePlay(mediaItem)
 }
+
 
 fun Player.shuffleQueue() {
     val mediaItems = currentTimeline.mediaItems.toMutableList().apply { removeAt(currentMediaItemIndex) }

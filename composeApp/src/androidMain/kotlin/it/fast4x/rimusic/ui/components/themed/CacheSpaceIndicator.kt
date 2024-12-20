@@ -50,6 +50,16 @@ fun CacheSpaceIndicator(
         ExoPlayerDiskDownloadCacheMaxSize.`2GB`
     )
 
+    when (cacheType) {
+        CacheType.Images -> {}
+        CacheType.CachedSongs -> {
+            if (exoPlayerDiskCacheMaxSize == ExoPlayerDiskCacheMaxSize.Unlimited) return
+        }
+        CacheType.DownloadedSongs -> {
+            if (exoPlayerDiskDownloadCacheMaxSize == ExoPlayerDiskDownloadCacheMaxSize.Unlimited) return
+        }
+    }
+
     val context = LocalContext.current
     val binder = LocalPlayerServiceBinder.current
 

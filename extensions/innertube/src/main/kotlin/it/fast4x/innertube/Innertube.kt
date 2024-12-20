@@ -451,8 +451,14 @@ object Innertube {
         parameter("prettyPrint", false)
     }
 
+    suspend fun pipedStreams(videoId: String) =
+        client.get("https://pipedapi.kavin.rocks/streams/${videoId}") {
+            contentType(ContentType.Application.Json)
+        }
+
     private const val VISITOR_DATA_PREFIX = "Cgt"
 
-    const val DEFAULT_VISITOR_DATA = "CgtsZG1ySnZiQWtSbyiMjuGSBg%3D%3D"
+    //const val DEFAULT_VISITOR_DATA = "CgtsZG1ySnZiQWtSbyiMjuGSBg%3D%3D"
+    const val DEFAULT_VISITOR_DATA = "CgtMN0FkbDFaWERfdyi8t4u7BjIKCgJWThIEGgAgWQ%3D%3D"
 
 }

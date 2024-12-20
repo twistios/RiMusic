@@ -76,23 +76,6 @@ class MyDownloadService : DownloadService(
         */
         .build()
 
-    /*
-    override fun getForegroundNotification(
-        downloads: MutableList<Download>,
-        notMetRequirements: Int
-    ): Notification {
-        return MyDownloadHelper.getDownloadNotificationHelper(this)
-            .buildProgressNotification(
-                this,
-                R.drawable.download,
-                null,
-                "My Music",
-                downloads,
-                notMetRequirements
-            )
-    }
-     */
-
     /**
      * Creates and displays notifications for downloads when they complete or fail.
      *
@@ -101,11 +84,10 @@ class MyDownloadService : DownloadService(
      * It is static to avoid leaking the first [MyDownloadService] instance.
      */
     private class TerminalStateNotificationHelper(
-        context: Context,
+        private val context: Context,
         private val notificationHelper: DownloadNotificationHelper,
         firstNotificationId: Int
     ) : DownloadManager.Listener {
-        private val context: Context = context.applicationContext
         private var nextNotificationId: Int = firstNotificationId
 
         /*

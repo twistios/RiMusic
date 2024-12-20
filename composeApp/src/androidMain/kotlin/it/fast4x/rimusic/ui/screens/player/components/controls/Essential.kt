@@ -91,6 +91,8 @@ import it.fast4x.rimusic.utils.textCopyToClipboard
 import it.fast4x.rimusic.utils.textoutlineKey
 import it.fast4x.rimusic.appContext
 import it.fast4x.rimusic.colorPalette
+import it.fast4x.rimusic.context
+import it.fast4x.rimusic.service.MyDownloadHelper
 import it.fast4x.rimusic.typography
 
 
@@ -213,7 +215,6 @@ fun InfoAlbumAndArtistEssential(
                  IconButton(
                      color = colorPalette().favoritesIcon,
                      icon = getLikeState(mediaId),
-                     //icon = if (likedAt == null) getUnlikedIcon() else getLikedIcon(),
                      onClick = {
                          val currentMediaItem = binder.player.currentMediaItem
                          Database.asyncTransaction {
@@ -223,6 +224,9 @@ fun InfoAlbumAndArtistEssential(
                                      ?.let {
                                          insert(currentMediaItem, Song::toggleLike)
                                      }
+                                 if (currentMediaItem != null) {
+                                     MyDownloadHelper.autoDownloadWhenLiked(context(),currentMediaItem)
+                                 }
                              }
                          }
                          if (effectRotationEnabled) isRotated = !isRotated
