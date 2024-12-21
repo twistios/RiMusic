@@ -825,8 +825,8 @@
     <string name="notification_type_advanced">Qabaqcıl</string>
     <string name="notification_type_info">Bildiriş sahəsində və kilid ekranında oynadıcı işləmə üsulu.</string>
     <string name="action_bar_show_start_radio_button">Radio düyməsin başlat</string>
-    <string name="blankspace">Üzərindəki Boş Sahə</string>
     <string name="tab_accounts">Accounts</string>
+    <string name="blankspace">Üzərindəki Boş Sahə</string>
     <string name="settings_enable_autodownload_song">Enable auto download song</string>
     <string name="settings_enable_autodownload_song_when_liked">Auto download song when liked</string>
     <string name="settings_enable_autodownload_song_when_album_bookmarked">Auto download song when album bookmarked</string>

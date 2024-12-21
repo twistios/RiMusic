@@ -127,6 +127,7 @@ import it.fast4x.rimusic.utils.thumbnailSpacingKey
 import kotlinx.coroutines.delay
 import it.fast4x.rimusic.colorPalette
 import it.fast4x.rimusic.typography
+import it.fast4x.rimusic.utils.thumbnailFadeExKey
 import it.fast4x.rimusic.utils.thumbnailSpacingLKey
 
 @Composable
@@ -1282,6 +1283,7 @@ fun BlurParamsDialog(
         spacingValue: (Float) -> Unit,
         spacingValueL: (Float) -> Unit,
         fadeValue: (Float) -> Unit,
+        fadeValueEx: (Float) -> Unit,
         imageCoverSizeValue: (Float) -> Unit
     ) {
         val defaultFade = 5f
@@ -1290,6 +1292,7 @@ fun BlurParamsDialog(
         var thumbnailSpacing by rememberPreference(thumbnailSpacingKey, defaultSpacing)
         var thumbnailSpacingL by rememberPreference(thumbnailSpacingLKey, defaultSpacing)
         var thumbnailFade by rememberPreference(thumbnailFadeKey, defaultFade)
+        var thumbnailFadeEx by rememberPreference(thumbnailFadeExKey, defaultFade)
         var fadingedge by rememberPreference(fadingedgeKey, false)
         var imageCoverSize by rememberPreference(VinylSizeKey, defaultImageCoverSize)
         val showCoverThumbnailAnimation by rememberPreference(showCoverThumbnailAnimationKey, false)
@@ -1299,6 +1302,7 @@ fun BlurParamsDialog(
                 spacingValue(thumbnailSpacing)
                 spacingValueL(thumbnailSpacingL)
                 fadeValue(thumbnailFade)
+                fadeValueEx(thumbnailFadeEx)
                 imageCoverSizeValue(imageCoverSize)
                 onDismiss()
             }
@@ -1334,32 +1338,33 @@ fun BlurParamsDialog(
             }
 
             if(fadingedge && !isLandscape) {
-                Row(
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                ) {
-                    IconButton(
-                        onClick = {
-                            thumbnailFade = defaultFade
-                        },
-                        icon = R.drawable.droplet,
-                        color = colorPalette().favoritesIcon,
+                if (expandedplayer) {
+                    Row(
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically,
                         modifier = Modifier
-                            .size(24.dp)
-                    )
+                            .fillMaxWidth()
+                    ) {
+                        IconButton(
+                            onClick = {
+                                thumbnailFadeEx = defaultFade
+                            },
+                            icon = R.drawable.droplet,
+                            color = colorPalette().favoritesIcon,
+                            modifier = Modifier
+                                .size(24.dp)
+                        )
 
-                    SliderControl(
-                        state = thumbnailFade,
-                        onSlide = { thumbnailFade = it },
-                        onSlideComplete = {},
-                        toDisplay = { "%.0f".format(it) },
-                        steps = 10,
-                        range = 0f..10f
-                    )
+                        SliderControl(
+                            state = thumbnailFadeEx,
+                            onSlide = { thumbnailFadeEx = it },
+                            onSlideComplete = {},
+                            toDisplay = { "%.0f".format(it) },
+                            steps = 10,
+                            range = 0f..10f
+                        )
 
-                    /*
+                        /*
                 CustomSlider(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -1416,6 +1421,33 @@ fun BlurParamsDialog(
                     }
                 )
                 */
+                    }
+                } else {
+                    Row(
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                    ) {
+                        IconButton(
+                            onClick = {
+                                thumbnailFade = defaultFade
+                            },
+                            icon = R.drawable.droplet,
+                            color = colorPalette().favoritesIcon,
+                            modifier = Modifier
+                                .size(24.dp)
+                        )
+
+                        SliderControl(
+                            state = thumbnailFade,
+                            onSlide = { thumbnailFade = it },
+                            onSlideComplete = {},
+                            toDisplay = { "%.0f".format(it) },
+                            steps = 10,
+                            range = 0f..10f
+                        )
+                    }
                 }
             }
             if (expandedplayer && !isLandscape) {
@@ -1517,6 +1549,7 @@ fun BlurParamsDialog(
                         color = colorPalette().favoritesIcon,
                         modifier = Modifier
                             .size(24.dp)
+                            .rotate(90f)
                     )
 
                     SliderControl(
