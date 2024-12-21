@@ -512,14 +512,11 @@ interface Database {
         FROM Song 
         LEFT JOIN SongAlbumMap ON Song.id = SongAlbumMap.songId 
         LEFT JOIN Album ON Album.id = SongAlbumMap.albumId 
-        LEFT JOIN Format ON Format.songId = Song.id and Song.id in (:filterList)
-        WHERE Song.totalPlayTimeMs >= :showHidden 
+        LEFT JOIN Format ON Format.songId = Song.id
+        WHERE Song.id in (:filterList)
         ORDER BY Song.ROWID
     """)
-    fun sortAllSongsByRowId_Filtered(
-        @MagicConstant(intValues = [1, 0]) showHidden: Int,
-        filterList: List<String>
-    ): Flow<List<SongEntity>>
+    fun sortAllSongsByRowId_Filtered(filterList: List<String>): Flow<List<SongEntity>>
 
     @Query("""
         SELECT DISTINCT Song.*, Format.contentLength, Album.title
@@ -545,7 +542,7 @@ interface Database {
         LEFT JOIN SongAlbumMap ON Song.id = SongAlbumMap.songId 
         LEFT JOIN Album ON Album.id = SongAlbumMap.albumId 
         LEFT JOIN Format ON Format.songId = Song.id
-        WHERE Song.totalPlayTimeMs >= :showHidden and Song.id in (:filterList)
+        WHERE Song.id in (:filterList)
         ORDER BY 
             CASE
                 WHEN Song.title LIKE "$EXPLICIT_PREFIX%" THEN SUBSTR(Song.title, LENGTH('$EXPLICIT_PREFIX') + 1)
@@ -553,10 +550,7 @@ interface Database {
             END
         COLLATE NOCASE
     """)
-    fun sortAllSongsByTitle_Filtered(
-        @MagicConstant(intValues = [1, 0]) showHidden: Int,
-        filterList: List<String>
-    ): Flow<List<SongEntity>>
+    fun sortAllSongsByTitle_Filtered(filterList: List<String>): Flow<List<SongEntity>>
 
     @Query("""
         SELECT DISTINCT Song.*, Format.contentLength, Album.title
@@ -577,13 +571,11 @@ interface Database {
         LEFT JOIN SongAlbumMap ON Song.id = SongAlbumMap.songId 
         LEFT JOIN Album ON Album.id = SongAlbumMap.albumId 
         LEFT JOIN Format ON Format.songId = Song.id
-        WHERE Song.totalPlayTimeMs >= :showHidden and Song.id in (:filterList)
+        WHERE Song.id in (:filterList)
         ORDER BY Song.totalPlayTimeMs
     """)
     fun sortAllSongsByPlayTime_Filtered(
-        @MagicConstant(intValues = [1, 0]) showHidden: Int,
-        filterList: List<String>
-    ): Flow<List<SongEntity>>
+        filterList: List<String>): Flow<List<SongEntity>>
 
     @Query("""
         SELECT DISTINCT Song.*, Format.contentLength, Album.title
@@ -606,13 +598,10 @@ interface Database {
         LEFT JOIN SongAlbumMap ON Song.id = SongAlbumMap.songId 
         LEFT JOIN Album ON Album.id = SongAlbumMap.albumId 
         LEFT JOIN Format ON Format.songId = Song.id
-        WHERE Song.totalPlayTimeMs >= :showHidden and Song.id in (:filterList)
+        WHERE Song.id in (:filterList)
         ORDER BY E.timestamp
     """)
-    fun sortAllSongsByDatePlayed_Filtered(
-        @MagicConstant(intValues = [1, 0]) showHidden: Int,
-        filterList: List<String>
-    ): Flow<List<SongEntity>>
+    fun sortAllSongsByDatePlayed_Filtered(filterList: List<String>): Flow<List<SongEntity>>
 
     @Query("""
         SELECT DISTINCT Song.*, Format.contentLength, Album.title
@@ -632,14 +621,11 @@ interface Database {
         FROM Song 
         LEFT JOIN SongAlbumMap ON Song.id = SongAlbumMap.songId 
         LEFT JOIN Album ON Album.id = SongAlbumMap.albumId 
-        LEFT JOIN Format ON Format.songId = Song.id and Song.id in (:filterList)
-        WHERE Song.totalPlayTimeMs >= :showHidden 
+        LEFT JOIN Format ON Format.songId = Song.id
+        WHERE Song.id in (:filterList)
         ORDER BY Song.likedAt
     """)
-    fun sortAllSongsByLikedAt_Filtered(
-        @MagicConstant(intValues = [1, 0]) showHidden: Int,
-        filterList: List<String>
-    ): Flow<List<SongEntity>>
+    fun sortAllSongsByLikedAt_Filtered(filterList: List<String>): Flow<List<SongEntity>>
 
     @Query("""
         SELECT DISTINCT Song.*, Format.contentLength, Album.title
@@ -660,13 +646,10 @@ interface Database {
         LEFT JOIN SongAlbumMap ON Song.id = SongAlbumMap.songId 
         LEFT JOIN Album ON Album.id = SongAlbumMap.albumId 
         LEFT JOIN Format ON Format.songId = Song.id
-        WHERE Song.totalPlayTimeMs >= :showHidden and Song.id in (:filterList)
+        WHERE Song.id in (:filterList)
         ORDER BY Song.artistsText COLLATE NOCASE
     """)
-    fun sortAllSongsByArtist_Filtered(
-        @MagicConstant(intValues = [1, 0]) showHidden: Int,
-        filterList: List<String>
-    ): Flow<List<SongEntity>>
+    fun sortAllSongsByArtist_Filtered(filterList: List<String>): Flow<List<SongEntity>>
 
     @Query("""
         SELECT DISTINCT Song.*, Format.contentLength, Album.title
@@ -687,13 +670,10 @@ interface Database {
         LEFT JOIN SongAlbumMap ON Song.id = SongAlbumMap.songId 
         LEFT JOIN Album ON Album.id = SongAlbumMap.albumId 
         LEFT JOIN Format ON Format.songId = Song.id
-        WHERE Song.totalPlayTimeMs >= :showHidden and Song.id in (:filterList)
+        WHERE Song.id in (:filterList)
         ORDER BY Song.durationText
     """)
-    fun sortAllSongsByDuration_Filtered(
-        @MagicConstant(intValues = [1, 0]) showHidden: Int,
-        filterList: List<String>
-    ): Flow<List<SongEntity>>
+    fun sortAllSongsByDuration_Filtered(filterList: List<String>): Flow<List<SongEntity>>
 
     @Query("""
         SELECT DISTINCT Song.*, Format.contentLength, Album.title
@@ -714,13 +694,10 @@ interface Database {
         LEFT JOIN SongAlbumMap ON Song.id = SongAlbumMap.songId 
         LEFT JOIN Album ON Album.id = SongAlbumMap.albumId 
         LEFT JOIN Format ON Format.songId = Song.id
-        WHERE Song.totalPlayTimeMs >= :showHidden and Song.id in (:filterList)
+        WHERE Song.id in (:filterList)
         ORDER BY Album.title COLLATE NOCASE
     """)
-    fun sortAllSongsByAlbum_Filtered(
-        @MagicConstant(intValues = [1, 0]) showHidden: Int,
-        filterList: List<String>
-    ): Flow<List<SongEntity>>
+    fun sortAllSongsByAlbum_Filtered(filterList: List<String>): Flow<List<SongEntity>>
 
     /**
      * Fetch all songs from the database and sort them
@@ -756,21 +733,21 @@ interface Database {
         // Due to the unknown amount of songs, letting SQLite handle
         // the sorting is a better idea
         SongSortBy.PlayTime -> if (filterList.isEmpty()) sortAllSongsByPlayTime( showHidden )
-        else sortAllSongsByPlayTime_Filtered( showHidden, filterList )
+        else sortAllSongsByPlayTime_Filtered(filterList )
         SongSortBy.Title -> if (filterList.isEmpty()) sortAllSongsByTitle( showHidden )
-        else sortAllSongsByTitle_Filtered( showHidden, filterList )
+        else sortAllSongsByTitle_Filtered(filterList )
         SongSortBy.DateAdded -> if (filterList.isEmpty()) sortAllSongsByRowId( showHidden )
-        else sortAllSongsByRowId_Filtered( showHidden, filterList )
+        else sortAllSongsByRowId_Filtered(filterList )
         SongSortBy.DatePlayed -> if (filterList.isEmpty()) sortAllSongsByDatePlayed( showHidden )
-        else sortAllSongsByDatePlayed_Filtered( showHidden, filterList )
+        else sortAllSongsByDatePlayed_Filtered(filterList )
         SongSortBy.DateLiked -> if (filterList.isEmpty()) sortAllSongsByLikedAt( showHidden )
-        else sortAllSongsByLikedAt_Filtered( showHidden, filterList )
+        else sortAllSongsByLikedAt_Filtered(filterList )
         SongSortBy.Artist -> if (filterList.isEmpty()) sortAllSongsByArtist( showHidden )
-        else sortAllSongsByArtist_Filtered( showHidden, filterList )
+        else sortAllSongsByArtist_Filtered(filterList )
         SongSortBy.Duration -> if (filterList.isEmpty()) sortAllSongsByDuration( showHidden )
-        else sortAllSongsByDuration_Filtered( showHidden, filterList )
+        else sortAllSongsByDuration_Filtered(filterList )
         SongSortBy.AlbumName -> if (filterList.isEmpty()) sortAllSongsByAlbum( showHidden )
-        else sortAllSongsByAlbum_Filtered( showHidden, filterList )
+        else sortAllSongsByAlbum_Filtered(filterList )
     }.map( sortOrder::applyTo )
 
     /**
