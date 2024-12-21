@@ -363,7 +363,7 @@ fun DataSettings() {
         SettingsDescription(text = stringResource(R.string.cache_cleared))
 
         Coil.imageLoader(context).diskCache?.let { diskCache ->
-            val diskCacheSize = remember(diskCache) {
+            val diskCacheSize = remember(diskCache.size, cleanCacheImages) {
                 diskCache.size
             }
 
@@ -435,7 +435,7 @@ fun DataSettings() {
         }
 
         binder?.cache?.let { cache ->
-            val diskCacheSize = remember(cache) {
+            val diskCacheSize = remember(cache.cacheSpace, cleanCacheOfflineSongs) {
                     cache.cacheSpace
             }
 
@@ -512,7 +512,7 @@ fun DataSettings() {
         }
 
         binder?.downloadCache?.let { downloadCache ->
-            val diskDownloadCacheSize = remember(downloadCache) {
+            val diskDownloadCacheSize = remember(downloadCache.cacheSpace, cleanDownloadCache) {
                     downloadCache.cacheSpace
             }
 
