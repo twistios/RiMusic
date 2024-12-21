@@ -127,6 +127,7 @@ import it.fast4x.rimusic.utils.thumbnailSpacingKey
 import kotlinx.coroutines.delay
 import it.fast4x.rimusic.colorPalette
 import it.fast4x.rimusic.typography
+import it.fast4x.rimusic.utils.thumbnailSpacingLKey
 
 @Composable
 fun TextFieldDialog(
@@ -1279,14 +1280,15 @@ fun BlurParamsDialog(
     fun ThumbnailOffsetDialog(
         onDismiss: () -> Unit,
         spacingValue: (Float) -> Unit,
+        spacingValueL: (Float) -> Unit,
         fadeValue: (Float) -> Unit,
         imageCoverSizeValue: (Float) -> Unit
     ) {
         val defaultFade = 5f
-        val defaultOffset = 0f
         val defaultSpacing = 0f
         val defaultImageCoverSize = 50f
-        var thumbnailSpacing by rememberPreference(thumbnailSpacingKey, defaultOffset)
+        var thumbnailSpacing by rememberPreference(thumbnailSpacingKey, defaultSpacing)
+        var thumbnailSpacingL by rememberPreference(thumbnailSpacingLKey, defaultSpacing)
         var thumbnailFade by rememberPreference(thumbnailFadeKey, defaultFade)
         var fadingedge by rememberPreference(fadingedgeKey, false)
         var imageCoverSize by rememberPreference(VinylSizeKey, defaultImageCoverSize)
@@ -1295,6 +1297,7 @@ fun BlurParamsDialog(
         DefaultDialog(
             onDismiss = {
                 spacingValue(thumbnailSpacing)
+                spacingValueL(thumbnailSpacingL)
                 fadeValue(thumbnailFade)
                 imageCoverSizeValue(imageCoverSize)
                 onDismiss()
@@ -1415,7 +1418,7 @@ fun BlurParamsDialog(
                 */
                 }
             }
-            if (expandedplayer || isLandscape) {
+            if (expandedplayer && !isLandscape) {
                 Row(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically,
@@ -1497,6 +1500,32 @@ fun BlurParamsDialog(
                     }
                 )
                  */
+                }
+            }
+            if (isLandscape) {
+                Row(
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                ) {
+                    IconButton(
+                        onClick = {
+                            thumbnailSpacingL = defaultSpacing
+                        },
+                        icon = R.drawable.burger,
+                        color = colorPalette().favoritesIcon,
+                        modifier = Modifier
+                            .size(24.dp)
+                    )
+
+                    SliderControl(
+                        state = thumbnailSpacingL,
+                        onSlide = { thumbnailSpacingL = it },
+                        onSlideComplete = {},
+                        toDisplay = { "%.0f".format(it) },
+                        range = -50f..50f
+                    )
                 }
             }
         }

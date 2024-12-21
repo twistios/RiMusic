@@ -254,6 +254,7 @@ const val thumbnailFadeKey = "thumbnailFade"
 const val carouselKey = "carousel"
 const val carouselSizeKey = "carouselSize"
 const val thumbnailSpacingKey = "thumbnailSpacing"
+const val thumbnailSpacingLKey = "thumbnailSpacingL"
 const val autosyncKey = "autosync"
 const val queueTypeKey = "queueType"
 

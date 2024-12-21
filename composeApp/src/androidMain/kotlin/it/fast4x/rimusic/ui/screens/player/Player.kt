@@ -185,8 +185,10 @@ import kotlin.math.absoluteValue
 import androidx.compose.ui.unit.times
 import androidx.compose.ui.util.lerp
 import androidx.compose.ui.zIndex
+import androidx.core.graphics.ColorUtils.colorToHSL
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Timeline
+import androidx.palette.graphics.Palette
 import dev.chrisbanes.haze.HazeDefaults
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.haze
@@ -267,8 +269,8 @@ import it.fast4x.rimusic.utils.thumbnailFadeKey
 import it.fast4x.rimusic.colorPalette
 import it.fast4x.rimusic.thumbnailShape
 import it.fast4x.rimusic.typography
-import it.fast4x.rimusic.ui.styling.AlbumPalette
-import it.fast4x.rimusic.ui.styling.dynamicPaletteOf
+import it.fast4x.rimusic.utils.seamlessPlay
+import it.fast4x.rimusic.utils.thumbnailSpacingLKey
 import it.fast4x.rimusic.utils.topPaddingKey
 
 
@@ -326,6 +328,7 @@ fun Player(
     val defaultImageCoverSize = 50f
     var blurStrength by rememberPreference(blurStrengthKey, defaultStrength)
     var thumbnailSpacing  by rememberPreference(thumbnailSpacingKey, defaultSpacing)
+    var thumbnailSpacingL  by rememberPreference(thumbnailSpacingLKey, defaultSpacing)
     var thumbnailFade  by rememberPreference(thumbnailFadeKey, defaultFade)
     var imageCoverSize by rememberPreference(VinylSizeKey, defaultImageCoverSize)
     var blurDarkenFactor by rememberPreference(blurDarkenFactorKey, defaultDarkenFactor)
@@ -359,6 +362,7 @@ fun Player(
         ThumbnailOffsetDialog(
             onDismiss = { showThumbnailOffsetDialog = false},
             spacingValue = { thumbnailSpacing = it },
+            spacingValueL = { thumbnailSpacingL = it },
             fadeValue = { thumbnailFade = it },
             imageCoverSizeValue = { imageCoverSize = it }
         )
@@ -712,20 +716,30 @@ fun Player(
             }
         }
     }
-    val defaultPalette = AlbumPalette(
-        dominant = Color.Magenta,
-        vibrant = Color.Cyan,
-        lightVibrant = Color(0xFF9E03FF),
-        darkVibrant = Color(0xFF11D36E),
-        muted = Color.White,
-        darkMuted = Color.Red,
-        lightMuted = Color.Transparent,
-    )
 
     val color = colorPalette()
     var dynamicColorPalette by remember { mutableStateOf( color ) }
-    var dynamicPalette by remember { mutableStateOf( defaultPalette ) }
+    var dominant by remember{ mutableStateOf(0) }
+    var vibrant by remember{ mutableStateOf(0) }
+    var lightVibrant by remember{ mutableStateOf(0) }
+    var darkVibrant by remember{ mutableStateOf(0) }
+    var muted by remember{ mutableStateOf(0) }
+    var lightMuted by remember{ mutableStateOf(0) }
+    var darkMuted by remember{ mutableStateOf(0) }
+
+
+
     val colorPaletteMode by rememberPreference(colorPaletteModeKey, ColorPaletteMode.Dark)
+
+    @Composable
+    fun saturate(color : Int): Color {
+        val colorHSL by remember { mutableStateOf(floatArrayOf(0f, 0f, 0f)) }
+        var lightTheme = colorPaletteMode == ColorPaletteMode.Light || (colorPaletteMode == ColorPaletteMode.System && (!isSystemInDarkTheme()))
+        colorToHSL(color,colorHSL)
+        colorHSL[1] = (colorHSL[1] + if (lightTheme) 0f else 0.35f).coerceIn(0f,1f)
+        return Color.hsl(colorHSL[0],colorHSL[1],colorHSL[2])
+    }
+
     val playerBackgroundColors by rememberPreference(
         playerBackgroundColorsKey,
         PlayerBackgroundColors.BlurredCoverColor
@@ -762,14 +776,18 @@ fun Player(
                 ) ?: color
                 println("Player INSIDE getting dynamic color ${dynamicColorPalette}")
 
-                dynamicPalette = dynamicPaletteOf(
-                    bitmap,
-                    isSystemDarkMode
-                ) ?: defaultPalette
+                val palette = Palette.from(bitmap).generate()
+
+                dominant = palette.getDominantColor(0)
+                vibrant = palette.getVibrantColor(0)
+                lightVibrant = palette.getLightVibrantColor(0)
+                darkVibrant = palette.getDarkVibrantColor(0)
+                muted = palette.getMutedColor(0)
+                lightMuted = palette.getLightMutedColor(0)
+                darkMuted = palette.getDarkMutedColor(0)
 
             } catch (e: Exception) {
                 dynamicColorPalette = color
-                dynamicPalette = defaultPalette
                 println("Player Error getting dynamic color ${e.printStackTrace()}")
             }
 
@@ -777,7 +795,6 @@ fun Player(
         println("Player after getting dynamic color ${dynamicColorPalette}")
     }
 
-    /*  */
     var sizeShader by remember { mutableStateOf(Size.Zero) }
 
     val shaderA = LinearGradientShader(
@@ -987,11 +1004,15 @@ fun Player(
                     .onSizeChanged {
                         sizeShader = Size(it.width.toFloat(), it.height.toFloat())
                     }
-                    .animatedGradient(binder.player.isPlaying,
-                        dynamicPalette.darkVibrant,
-                        dynamicPalette.lightVibrant,
-                        dynamicPalette.darkMuted,
-                        dynamicPalette.lightMuted
+                    .animatedGradient(
+                        binder.player.isPlaying,
+                        saturate(dominant),
+                        saturate(vibrant),
+                        saturate(lightVibrant),
+                        saturate(darkVibrant),
+                        saturate(muted),
+                        saturate(lightMuted),
+                        saturate(darkMuted)
                     )
             }
 
@@ -1641,6 +1662,8 @@ fun Player(
                                 color = colorPalette().accent,
                                 enabled = true,
                                 onClick = {
+                                    binder.stopRadio()
+                                    binder.player.seamlessPlay(mediaItem)
                                     binder.setupRadio(
                                         NavigationEndpoint.Endpoint.Watch(videoId = mediaItem.mediaId)
                                     )
@@ -1983,7 +2006,7 @@ fun Player(
                                      HorizontalPager(
                                          state = pagerState,
                                          pageSize = PageSize.Fixed(thumbnailSizeDp),
-                                         pageSpacing = thumbnailSpacing.toInt()*0.01*(screenWidth) - (2.5*playerThumbnailSize.size.dp),
+                                         pageSpacing = thumbnailSpacingL.toInt()*0.01*(screenWidth) - (2.5*playerThumbnailSize.size.dp),
                                          contentPadding = PaddingValues(start = (maxWidth - maxHeight)/2),
                                          beyondViewportPageCount = 3,
                                          flingBehavior = fling,
@@ -2477,6 +2500,11 @@ fun Player(
                 if (topPadding && !showTopActionsBar) {
                     Spacer(
                         modifier = Modifier
+                            .padding(
+                                windowInsets
+                                    .only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal)
+                                    .asPaddingValues()
+                            )
                             .height(35.dp)
                     )
                 }
@@ -2859,6 +2887,8 @@ fun Player(
 
                         )
                     } else {
+                                val index = if (pagerState.currentPage > binder.player.currentTimeline.windowCount) 0 else
+                                pagerState.currentPage
                                 Controls(
                                     navController = navController,
                                     onCollapse = onDismiss,
@@ -2869,8 +2899,8 @@ fun Player(
                                     isShowingLyrics = isShowingLyrics,
                                     media = mediaItem.toUiMedia(positionAndDuration.second),
                                     mediaId = mediaItem.mediaId,
-                                    title = player.getMediaItemAt(pagerState.currentPage).mediaMetadata.title?.toString(),
-                                    artist = player.getMediaItemAt(pagerState.currentPage).mediaMetadata.artist?.toString(),
+                                    title = player.getMediaItemAt(index).mediaMetadata.title?.toString(),
+                                    artist = player.getMediaItemAt(index).mediaMetadata.artist?.toString(),
                                     artistIds = artistsInfo,
                                     albumId = albumId,
                                     shouldBePlaying = shouldBePlaying,
