@@ -80,6 +80,7 @@ import java.io.FileInputStream
 import java.io.FileOutputStream
 import java.text.SimpleDateFormat
 import java.util.Date
+import java.util.concurrent.CancellationException
 import kotlin.system.exitProcess
 
 @SuppressLint("SuspiciousIndentation")
@@ -305,9 +306,9 @@ fun DataSettings() {
 
                     CoroutineScope(Dispatchers.IO).launch {
                         Database.song(song).collect {
-                            val mediaItem = it?.asMediaItem ?: return@collect
+                            val mediaItem = it?.asMediaItem ?: throw CancellationException()
                             MyDownloadHelper.removeDownload(context, mediaItem)
-                            return@collect
+                            throw CancellationException()
                         }
                     }
                 }
