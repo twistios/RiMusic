@@ -73,7 +73,9 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
 import it.fast4x.rimusic.colorPalette
+import it.fast4x.rimusic.service.MyDownloadHelper
 import it.fast4x.rimusic.typography
+import it.fast4x.rimusic.utils.asMediaItem
 import java.io.FileInputStream
 import java.io.FileOutputStream
 import java.text.SimpleDateFormat
@@ -300,6 +302,14 @@ fun DataSettings() {
             onConfirm = {
                 binder?.downloadCache?.keys?.forEach { song ->
                     binder.downloadCache.removeResource(song)
+
+                    CoroutineScope(Dispatchers.IO).launch {
+                        Database.song(song).collect {
+                            val mediaItem = it?.asMediaItem ?: return@collect
+                            MyDownloadHelper.removeDownload(context, mediaItem)
+                            return@collect
+                        }
+                    }
                 }
             }
         )
