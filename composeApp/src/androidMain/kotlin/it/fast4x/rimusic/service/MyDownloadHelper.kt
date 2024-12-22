@@ -202,7 +202,7 @@ object MyDownloadHelper {
                 set(download.request.id, download)
             }
         }
-        getDownloads()
+        // getDownloads()
     }
 
     @Synchronized
