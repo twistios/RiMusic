@@ -370,14 +370,14 @@ fun HomeSongs(
 
         when( builtInPlaylist ) {
             BuiltInPlaylist.All -> {
-                Database.listAllSongs( sortBy = songSort.sortBy, sortOrder = songSort.sortOrder, showHidden = hiddenSongs.isShown(), filterList = emptyList() )
+                Database.listAllSongs( sortBy = songSort.sortBy, sortOrder = songSort.sortOrder, showHidden = hiddenSongs.isShown(), filterList = emptyList(), BuiltInPlaylist.All)
             }
             BuiltInPlaylist.Downloaded -> {
                 val filterList = MyDownloadHelper.downloads.value.values.filter {
                         it.state == Download.STATE_COMPLETED
                     }.map { it.request.id }
                 println("HomeSongs: filterList: ${filterList.size} total downloads ${MyDownloadHelper.downloads.value.size}")
-                Database.listAllSongs( sortBy = songSort.sortBy, sortOrder = songSort.sortOrder, showHidden = hiddenSongs.isShown(), filterList = filterList )
+                Database.listAllSongs( sortBy = songSort.sortBy, sortOrder = songSort.sortOrder, showHidden = hiddenSongs.isShown(), filterList = filterList, BuiltInPlaylist.Downloaded)
             }
             BuiltInPlaylist.Favorites -> Database.listFavoriteSongs( songSort.sortBy, songSort.sortOrder )
             BuiltInPlaylist.Offline -> Database.listOfflineSongs( songSort.sortBy, songSort.sortOrder )

@@ -34,6 +34,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase
 import androidx.sqlite.db.SupportSQLiteQuery
 import it.fast4x.rimusic.enums.AlbumSortBy
 import it.fast4x.rimusic.enums.ArtistSortBy
+import it.fast4x.rimusic.enums.BuiltInPlaylist
 import it.fast4x.rimusic.enums.PlaylistSongSortBy
 import it.fast4x.rimusic.enums.PlaylistSortBy
 import it.fast4x.rimusic.enums.SongSortBy
@@ -728,25 +729,26 @@ interface Database {
         sortBy: SongSortBy,
         sortOrder: SortOrder,
         @MagicConstant(intValues = [1, 0]) showHidden: Int,
-        filterList: List<String>
+        filterList: List<String>,
+        playList: BuiltInPlaylist
     ): Flow<List<SongEntity>> = when( sortBy ) {
         // Due to the unknown amount of songs, letting SQLite handle
         // the sorting is a better idea
-        SongSortBy.PlayTime -> if (filterList.isEmpty()) sortAllSongsByPlayTime( showHidden )
+        SongSortBy.PlayTime -> if (filterList.isEmpty() && playList != BuiltInPlaylist.Downloaded) sortAllSongsByPlayTime( showHidden )
         else sortAllSongsByPlayTime_Filtered(filterList )
-        SongSortBy.Title -> if (filterList.isEmpty()) sortAllSongsByTitle( showHidden )
+        SongSortBy.Title -> if (filterList.isEmpty() && playList != BuiltInPlaylist.Downloaded) sortAllSongsByTitle( showHidden )
         else sortAllSongsByTitle_Filtered(filterList )
-        SongSortBy.DateAdded -> if (filterList.isEmpty()) sortAllSongsByRowId( showHidden )
+        SongSortBy.DateAdded -> if (filterList.isEmpty() && playList != BuiltInPlaylist.Downloaded) sortAllSongsByRowId( showHidden )
         else sortAllSongsByRowId_Filtered(filterList )
-        SongSortBy.DatePlayed -> if (filterList.isEmpty()) sortAllSongsByDatePlayed( showHidden )
+        SongSortBy.DatePlayed -> if (filterList.isEmpty() && playList != BuiltInPlaylist.Downloaded) sortAllSongsByDatePlayed( showHidden )
         else sortAllSongsByDatePlayed_Filtered(filterList )
-        SongSortBy.DateLiked -> if (filterList.isEmpty()) sortAllSongsByLikedAt( showHidden )
+        SongSortBy.DateLiked -> if (filterList.isEmpty() && playList != BuiltInPlaylist.Downloaded) sortAllSongsByLikedAt( showHidden )
         else sortAllSongsByLikedAt_Filtered(filterList )
-        SongSortBy.Artist -> if (filterList.isEmpty()) sortAllSongsByArtist( showHidden )
+        SongSortBy.Artist -> if (filterList.isEmpty() && playList != BuiltInPlaylist.Downloaded) sortAllSongsByArtist( showHidden )
         else sortAllSongsByArtist_Filtered(filterList )
-        SongSortBy.Duration -> if (filterList.isEmpty()) sortAllSongsByDuration( showHidden )
+        SongSortBy.Duration -> if (filterList.isEmpty() && playList != BuiltInPlaylist.Downloaded) sortAllSongsByDuration( showHidden )
         else sortAllSongsByDuration_Filtered(filterList )
-        SongSortBy.AlbumName -> if (filterList.isEmpty()) sortAllSongsByAlbum( showHidden )
+        SongSortBy.AlbumName -> if (filterList.isEmpty() && playList != BuiltInPlaylist.Downloaded) sortAllSongsByAlbum( showHidden )
         else sortAllSongsByAlbum_Filtered(filterList )
     }.map( sortOrder::applyTo )
 
