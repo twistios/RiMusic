@@ -66,7 +66,6 @@ import it.fast4x.rimusic.utils.disablePlayerHorizontalSwipeKey
 import it.fast4x.rimusic.utils.disableScrollingTextKey
 import it.fast4x.rimusic.utils.effectRotationKey
 import it.fast4x.rimusic.utils.enableWallpaperKey
-import it.fast4x.rimusic.utils.expandedlyricsKey
 import it.fast4x.rimusic.utils.expandedplayerKey
 import it.fast4x.rimusic.utils.expandedplayertoggleKey
 import it.fast4x.rimusic.utils.fadingedgeKey
@@ -294,8 +293,6 @@ fun DefaultAppearanceSettings() {
     thumbnailType = ThumbnailType.Modern
     var showvisthumbnail by rememberPreference(showvisthumbnailKey, false)
     showvisthumbnail = false
-    var expandedlyrics by rememberPreference(expandedlyricsKey, true)
-    expandedlyrics = true
     var buttonzoomout by rememberPreference(buttonzoomoutKey, false)
     buttonzoomout = false
     var thumbnailpause by rememberPreference(thumbnailpauseKey, false)
@@ -464,7 +461,6 @@ fun AppearanceSettings(
     var actionspacedevenly by rememberPreference(actionspacedevenlyKey, false)
     var thumbnailType by rememberPreference(thumbnailTypeKey, ThumbnailType.Modern)
     var showvisthumbnail by rememberPreference(showvisthumbnailKey, false)
-    var expandedlyrics by rememberPreference(expandedlyricsKey, true)
     var buttonzoomout by rememberPreference(buttonzoomoutKey, false)
     var thumbnailpause by rememberPreference(thumbnailpauseKey, false)
     var showsongs by rememberPreference(showsongsKey, SongsNumber.`2`)
@@ -548,8 +544,6 @@ fun AppearanceSettings(
             thumbnailpause = false
             //keepPlayerMinimized = false
         }
-
-        if (showlyricsthumbnail) expandedlyrics = false
 
         if (!isLandscape) {
             if (search.input.isBlank() || stringResource(R.string.show_player_top_actions_bar).contains(
@@ -878,19 +872,6 @@ fun AppearanceSettings(
                     onCheckedChange = { statsfornerds = it }
                 )
         }
-
-        if (!showlyricsthumbnail && !isLandscape)
-            if (search.input.isBlank() || stringResource(R.string.expandedlyrics).contains(
-                    search.input,
-                    true
-                )
-            )
-                SwitchSettingEntry(
-                    title = stringResource(R.string.expandedlyrics),
-                    text = stringResource(R.string.expandedlyricsinfo),
-                    isChecked = expandedlyrics,
-                    onCheckedChange = { expandedlyrics = it }
-                )
 
         if (search.input.isBlank() || stringResource(R.string.timelinesize).contains(
                 search.input,
@@ -1503,7 +1484,7 @@ fun AppearanceSettings(
                 onCheckedChange = { showButtonPlayerLyrics = it }
             )
         if (!isLandscape || !showthumbnail) {
-            if (!showlyricsthumbnail and !expandedlyrics) {
+            if (!showlyricsthumbnail) {
                 if (search.input.isBlank() || stringResource(R.string.expandedplayer).contains(
                         search.input,
                         true
@@ -1578,7 +1559,7 @@ fun AppearanceSettings(
                 onCheckedChange = { showButtonPlayerMenu = it }
             )
 
-        if (!showlyricsthumbnail && (expandedplayertoggle || expandedplayer || expandedlyrics)) {
+        if (!showlyricsthumbnail) {
             SettingsGroupSpacer()
             SettingsEntryGroupText(title = stringResource(R.string.full_screen_lyrics_components))
 

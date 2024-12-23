@@ -231,7 +231,6 @@ import it.fast4x.rimusic.utils.coverThumbnailAnimationKey
 import it.fast4x.rimusic.utils.disableScrollingTextKey
 import it.fast4x.rimusic.utils.discoverKey
 import it.fast4x.rimusic.utils.doubleShadowDrop
-import it.fast4x.rimusic.utils.expandedlyricsKey
 import it.fast4x.rimusic.utils.extraspaceKey
 import it.fast4x.rimusic.utils.fadingedgeKey
 import it.fast4x.rimusic.utils.horizontalFadingEdge
@@ -352,7 +351,6 @@ fun Player(
     var isShowingVisualizer by remember {
         mutableStateOf(false)
     }
-    val expandedlyrics by rememberPreference(expandedlyricsKey, true)
 
     if (showBlurPlayerDialog) {
 
@@ -478,10 +476,6 @@ fun Player(
 
     var updateBrush by remember { mutableStateOf(false) }
 
-    if (expandedlyrics && !isLandscape) {
-        if ((isShowingLyrics && !showlyricsthumbnail) || (isShowingVisualizer && !showvisthumbnail)) expandedplayer = true
-        else expandedplayer = false
-    }
     if (showlyricsthumbnail) expandedplayer = false
 
     LaunchedEffect(mediaItem.mediaId) {
@@ -1180,7 +1174,7 @@ fun Player(
                 !expandedplayertoggle &&
                 !showButtonPlayerDiscover &&
                 !showButtonPlayerVideo) ||
-                (expandedplayer && isShowingLyrics && !actionExpanded)
+                (!showlyricsthumbnail && isShowingLyrics && !actionExpanded)
             ) {
                 Row(
                 ) {
@@ -1189,7 +1183,7 @@ fun Player(
             Row(
                 modifier = Modifier
                     .align(if (isLandscape) Alignment.BottomEnd else Alignment.BottomCenter)
-                    .requiredHeight(if (showNextSongsInPlayer && (!expandedplayer || !isShowingLyrics || miniQueueExpanded)) 90.dp else 50.dp)
+                    .requiredHeight(if (showNextSongsInPlayer && (showlyricsthumbnail || (!isShowingLyrics || miniQueueExpanded))) 90.dp else 50.dp)
                     .fillMaxWidth(if (isLandscape) 0.8f else 1f)
                     .conditional(tapqueue) { clickable { showQueue = true } }
                     .background(
@@ -1213,7 +1207,7 @@ fun Player(
                     modifier = Modifier.fillMaxSize()
                 ) {
                     if (showNextSongsInPlayer) {
-                        if (!expandedplayer || !isShowingLyrics || miniQueueExpanded) {
+                        if (showlyricsthumbnail || !isShowingLyrics || miniQueueExpanded) {
                             Row(
                                 verticalAlignment = Alignment.Bottom,
                                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -1584,7 +1578,7 @@ fun Player(
                                     .size(24.dp),
                             )
                         if (!isLandscape || ((playerType == PlayerType.Essential) && !showthumbnail))
-                         if (expandedplayertoggle && (!showlyricsthumbnail) && !expandedlyrics)
+                         if (expandedplayertoggle && !showlyricsthumbnail)
                             IconButton(
                                 icon = R.drawable.minmax,
                                 color = if (expandedplayer) colorPalette().accent else Color.Gray,
@@ -2517,8 +2511,8 @@ fun Player(
                 BoxWithConstraints(
                     contentAlignment = Alignment.Center,
                     modifier = Modifier
-                        .conditional((screenWidth <= (screenHeight / 2)) && !expandedplayer) {height(screenWidth)}
-                        .conditional((screenWidth > (screenHeight / 2)) || expandedplayer) {weight(1f)}
+                        .conditional((screenWidth <= (screenHeight / 2)) && (showlyricsthumbnail || (!expandedplayer && !isShowingLyrics))) {height(screenWidth)}
+                        .conditional((screenWidth > (screenHeight / 2)) || expandedplayer || (isShowingLyrics && !showlyricsthumbnail)) {weight(1f)}
                 ) {
 
                       if (showthumbnail) {
@@ -2550,17 +2544,11 @@ fun Player(
                                      beyondViewportPageCount = 2,
                                      flingBehavior = fling,
                                      modifier = modifier
-                                         //.padding(top = if (expandedplayer) 0.dp else 8.dp)
                                          .padding(
                                              all = (if (expandedplayer) 0.dp else if (thumbnailType == ThumbnailType.Modern) -(10.dp) else 0.dp).coerceAtLeast(
                                                  0.dp
                                              )
                                          )
-                                         /*.conditional(fadingedge && !expandedplayer) {
-                                             padding(
-                                                 vertical = 2.5.dp
-                                             )
-                                         }*/
                                          .conditional(fadingedge) {
                                              VerticalfadingEdge2(fade = (if (expandedplayer) thumbnailFadeEx else thumbnailFade)*0.05f,showTopActionsBar,topPadding,expandedplayer)
                                          }
@@ -2681,94 +2669,6 @@ fun Player(
                                                  }
                                              }
                                          }
-                                     /*
-                                     AsyncImage(
-                                         model = ImageRequest.Builder(LocalContext.current)
-                                             .data(binder.player.getMediaItemAt(it).mediaMetadata.artworkUri.toString().resize(1200, 1200))
-                                             .build(),
-                                         contentDescription = "",
-                                         contentScale = ContentScale.Fit,
-                                         modifier = Modifier
-                                             .fillMaxWidth()
-                                             .padding(all = if (expandedplayer) carouselSize.size.dp else playerThumbnailSize.size.dp)
-                                             .zIndex(
-                                                 if (it == pagerState.currentPage) 1f
-                                                 else if (it == (pagerState.currentPage + 1) || it == (pagerState.currentPage - 1)) 0.85f
-                                                 else if (it == (pagerState.currentPage + 2) || it == (pagerState.currentPage - 2)) 0.78f
-                                                 else if (it == (pagerState.currentPage + 3) || it == (pagerState.currentPage - 3)) 0.73f
-                                                 else if (it == (pagerState.currentPage + 4) || it == (pagerState.currentPage - 4)) 0.68f
-                                                 else if (it == (pagerState.currentPage + 5) || it == (pagerState.currentPage - 5)) 0.63f
-                                                 else 0.57f
-                                             )
-                                             .conditional(carousel)
-                                             {
-                                                 graphicsLayer {
-                                                     val pageOffSet =
-                                                         ((pagerState.currentPage - it) + pagerState.currentPageOffsetFraction).absoluteValue
-                                                     alpha = lerp(
-                                                         start = 0.9f,
-                                                         stop = 1f,
-                                                         fraction = 1f - pageOffSet.coerceIn(0f, 1f)
-                                                     )
-                                                     scaleY = lerp(
-                                                         start = if (it == (pagerState.currentPage + 1) || it == (pagerState.currentPage - 1)) 0.85f
-                                                         else if (it == (pagerState.currentPage + 2) || it == (pagerState.currentPage - 2)) 0.78f
-                                                         else if (it == (pagerState.currentPage + 3) || it == (pagerState.currentPage - 3)) 0.73f
-                                                         else if (it == (pagerState.currentPage + 4) || it == (pagerState.currentPage - 4)) 0.68f
-                                                         else if (it == (pagerState.currentPage + 5) || it == (pagerState.currentPage - 5)) 0.63f
-                                                         else 0.57f,
-                                                         stop = 1f,
-                                                         fraction = 1f - pageOffSet.coerceIn(0f, 1f)
-                                                     )
-                                                     scaleX = lerp(
-                                                         start = if (it == (pagerState.currentPage + 1) || it == (pagerState.currentPage - 1)) 0.85f
-                                                         else if (it == (pagerState.currentPage + 2) || it == (pagerState.currentPage - 2)) 0.78f
-                                                         else if (it == (pagerState.currentPage + 3) || it == (pagerState.currentPage - 3)) 0.73f
-                                                         else if (it == (pagerState.currentPage + 4) || it == (pagerState.currentPage - 4)) 0.68f
-                                                         else if (it == (pagerState.currentPage + 5) || it == (pagerState.currentPage - 5)) 0.63f
-                                                         else 0.57f,
-                                                         stop = 1f,
-                                                         fraction = 1f - pageOffSet.coerceIn(0f, 1f)
-                                                     )
-                                                 }
-                                             }
-                                             .conditional(thumbnailType == ThumbnailType.Modern) {
-                                                 padding(
-                                                     all = 10.dp
-                                                 )
-                                             }
-                                             .conditional(thumbnailType == ThumbnailType.Modern) {
-                                                 doubleShadowDrop(
-                                                     thumbnailRoundness.shape(),
-                                                     4.dp,
-                                                     8.dp
-                                                 )
-                                             }
-                                             .clip(thumbnailRoundness.shape())
-                                             .combinedClickable(
-                                                 interactionSource = remember { MutableInteractionSource() },
-                                                 indication = null,
-                                                 onClick = {
-                                                     if (it == pagerState.settledPage && thumbnailTapEnabled) {
-                                                         if (isShowingVisualizer) isShowingVisualizer =
-                                                             false
-                                                         isShowingLyrics = !isShowingLyrics
-                                                     }
-                                                     if (it != pagerState.settledPage) {
-                                                         binder.player.forcePlayAtIndex(
-                                                             mediaItems,
-                                                             it
-                                                         )
-                                                     }
-                                                 },
-                                                 onLongClick = {
-                                                     if (it == pagerState.settledPage)
-                                                         showThumbnailOffsetDialog = true
-                                                 }
-                                             )
-
-                                     )
-                                     */
                                  }
                              } else {
                                  thumbnailContent()
@@ -2824,7 +2724,7 @@ fun Player(
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     modifier = Modifier
-                    .conditional(!expandedplayer){weight(1f)}
+                    .conditional(!expandedplayer && (!isShowingLyrics || showlyricsthumbnail)){weight(1f)}
                 ){
                 if (!expandedplayer || !isShowingLyrics || queueDurationExpanded) {
                     if (showTotalTimeQueue)
@@ -2885,7 +2785,7 @@ fun Player(
                     )
                 }
                 Box(modifier = Modifier
-                    .conditional(!expandedplayer){weight(1f)}) {
+                    .conditional(!expandedplayer && (!isShowingLyrics || showlyricsthumbnail)){weight(1f)}) {
                     if (playerType == PlayerType.Essential || isShowingLyrics || isShowingVisualizer) {
                         controlsContent(
                             Modifier

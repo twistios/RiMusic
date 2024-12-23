@@ -226,7 +226,7 @@ fun Controls(
         modifier = Modifier
             .animateContentSize()
     ) {
-        if ((!isLandscape) and (expandedplayer && !showlyricsthumbnail))
+        if ((!isLandscape) and ((expandedplayer || isShowingLyrics) && !showlyricsthumbnail))
             Column(
                 horizontalAlignment = Alignment.Start,
                 verticalArrangement = Arrangement.Bottom,
