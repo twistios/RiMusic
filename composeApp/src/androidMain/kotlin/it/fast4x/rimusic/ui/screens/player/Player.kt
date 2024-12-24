@@ -736,9 +736,10 @@ fun Player(
     @Composable
     fun saturate(color : Int): Color {
         val colorHSL by remember { mutableStateOf(floatArrayOf(0f, 0f, 0f)) }
-        var lightTheme = colorPaletteMode == ColorPaletteMode.Light || (colorPaletteMode == ColorPaletteMode.System && (!isSystemInDarkTheme()))
+        val lightTheme = colorPaletteMode == ColorPaletteMode.Light || (colorPaletteMode == ColorPaletteMode.System && (!isSystemInDarkTheme()))
         colorToHSL(color,colorHSL)
         colorHSL[1] = (colorHSL[1] + if (lightTheme) 0f else 0.35f).coerceIn(0f,1f)
+        colorHSL[2] = if (lightTheme) {colorHSL[2].coerceIn(0.5f,1f)} else colorHSL[2]
         return Color.hsl(colorHSL[0],colorHSL[1],colorHSL[2])
     }
 
@@ -1249,9 +1250,9 @@ fun Player(
                                                 onClick = {
                                                     scope.launch {
                                                         if (!appRunningInBackground) {
-                                                            pagerState.animateScrollToPage(binder.player.currentMediaItemIndex + 1)
+                                                            pagerStateQueue.animateScrollToPage(binder.player.currentMediaItemIndex + 1)
                                                         } else {
-                                                            pagerState.scrollToPage(binder.player.currentMediaItemIndex + 1)
+                                                            pagerStateQueue.scrollToPage(binder.player.currentMediaItemIndex + 1)
                                                         }
                                                     }
                                                 }
@@ -2006,7 +2007,7 @@ fun Player(
                                          state = pagerState,
                                          pageSize = PageSize.Fixed(thumbnailSizeDp),
                                          pageSpacing = thumbnailSpacingL.toInt()*0.01*(screenWidth) - (2.5*playerThumbnailSizeL.size.dp),
-                                         contentPadding = PaddingValues(start = (maxWidth - maxHeight)/2, end = (maxWidth - maxHeight)/2 + if (pageSpacing < 0.dp) (-(pageSpacing)) else 0.dp),
+                                         contentPadding = PaddingValues(start = ((maxWidth - maxHeight)/2).coerceAtLeast(0.dp), end = ((maxWidth - maxHeight)/2 + if (pageSpacing < 0.dp) (-(pageSpacing)) else 0.dp).coerceAtLeast(0.dp)),
                                          beyondViewportPageCount = 3,
                                          flingBehavior = fling,
                                          modifier = Modifier
@@ -2493,6 +2494,11 @@ fun Player(
                     Spacer(
                         modifier = Modifier
                             .height(5.dp)
+                            .padding(
+                                windowInsets
+                                    .only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal)
+                                    .asPaddingValues()
+                            )
                     )
                 }
 
@@ -2825,7 +2831,7 @@ fun Player(
                 }
 
                 if (!showthumbnail || playerType == PlayerType.Modern) {
-                    if (!expandedplayer || !isShowingLyrics || statsExpanded) {
+                    if (!isShowingLyrics || statsExpanded) {
                         StatsForNerds(
                             mediaId = mediaItem.mediaId,
                             isDisplayed = statsfornerds,

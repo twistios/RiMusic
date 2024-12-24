@@ -65,6 +65,7 @@ import androidx.compose.ui.graphics.TileMode
 import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalView
@@ -710,7 +711,7 @@ fun Lyrics(
                     LaunchedEffect(synchronizedLyrics, density) {
                         //val centerOffset = with(density) { (-thumbnailSize / 3).roundToPx() }
                         val centerOffset = with(density) {
-                            (-thumbnailSize.div(if (expandedplayer && !showlyricsthumbnail && !isLandscape) if (trailingContent == null) 2 else 1
+                            (-thumbnailSize.div(if (!showlyricsthumbnail && !isLandscape) if (trailingContent == null) 2 else 1
                                                 else if (trailingContent == null) 3 else 2))
                                 .roundToPx()
                         }

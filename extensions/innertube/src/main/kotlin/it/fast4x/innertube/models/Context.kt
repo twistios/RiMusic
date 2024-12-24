@@ -25,7 +25,7 @@ data class Context(
         val gl: String? = "US",
         //val hl: String = Locale.getDefault().toLanguageTag(), //"en",
         //val hl: String = Innertube.localeHl,
-        val visitorData: String = Innertube.DEFAULT_VISITOR_DATA,
+        val visitorData: String? = null, // = Innertube.DEFAULT_VISITOR_DATA,
         val androidSdkVersion: Int? = null,
         val userAgent: String? = null,
         val referer: String? = null,
@@ -101,12 +101,12 @@ data class Context(
         val DefaultWebWithLocale = DefaultWeb.copy(
             client = DefaultWeb.client.copy(hl = hl)
         )
-        /*
-        val DefaultWebWithLocale = Context(
+
+        val DefaultWebRemix = Context(
             client = Client(
                 clientName = "WEB_REMIX",
-                //clientVersion = "1.20220606.03.00",
-                clientVersion = "1.20230731.00.00",
+                clientVersion = "1.20220606.03.00",
+                //clientVersion = "1.20230731.00.00",
                 userAgent = USER_AGENT_WEB,
                 referer = REFERER_YOUTUBE_MUSIC,
                 hl = hl,
@@ -114,7 +114,7 @@ data class Context(
                 api_key = "AIzaSyC9XL3ZjWddXya6X74dJoCTL-WEYFDNX30"
             )
         )
-         */
+
 
 
         val DefaultAndroid = Context(
@@ -136,11 +136,11 @@ data class Context(
             client = Client(
                 clientName = "IOS",
                 clientVersion = "19.29.1",
-                //deviceMake = "Apple",
-                //deviceModel = "iPhone16,2",
-                //osName = "iOS",
+                deviceMake = "Apple",
+                deviceModel = "iPhone16,2",
+                osName = "iOS",
                 osVersion = "17.5.1.21F90",
-                //acceptHeader = "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
+                acceptHeader = "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
                 userAgent = USER_AGENT_IOS,
                 api_key = "AIzaSyB-63vPrdThhKuerbB2N_l7Kwwcxj6yUAc"
             )
@@ -151,7 +151,7 @@ data class Context(
                 clientName = "TVHTML5_SIMPLY_EMBEDDED_PLAYER",
                 clientVersion = "2.0",
                 api_key = "AIzaSyDCU8hByM-4DrUqRUYnGn-3llEO78bcxq8",
-                //platform = "TV",
+                platform = "TV",
                 userAgent = USER_AGENT_PLAYSTATION
             )
         )

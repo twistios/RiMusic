@@ -63,7 +63,7 @@ data class PlayerResponse(
             @SerialName("mimeType")
             val mimeTypeCodec: String,
             override val itag: UShort,
-            override val url: String,
+            override val url: String?,
             override val bitrate: UInt
         ): AudioFormat {
 

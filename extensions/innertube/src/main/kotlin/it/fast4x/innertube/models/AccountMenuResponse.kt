@@ -33,13 +33,11 @@ data class AccountMenuResponse(
                             val email: Runs?,
                             val channelHandle: Runs?,
                         ) {
-                            fun toAccountInfo() = accountName.runs.first().text?.let {
-                                AccountInfo(
-                                    name = it,
-                                    email = email?.runs?.first()?.text,
-                                    channelHandle = channelHandle?.runs?.first()?.text
-                                )
-                            }
+                            fun toAccountInfo() = AccountInfo(
+                                name = accountName.runs.first().text ?: "",
+                                email = email?.runs?.first()?.text,
+                                channelHandle = channelHandle?.runs?.first()?.text
+                            )
                         }
                     }
                 }

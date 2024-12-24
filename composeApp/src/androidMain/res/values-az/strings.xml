@@ -825,12 +825,12 @@
     <string name="notification_type_advanced">Qabaqcıl</string>
     <string name="notification_type_info">Bildiriş sahəsində və kilid ekranında oynadıcı işləmə üsulu.</string>
     <string name="action_bar_show_start_radio_button">Radio düyməsin başlat</string>
-    <string name="tab_accounts">Accounts</string>
+    <string name="tab_accounts">Hesablar</string>
     <string name="blankspace">Üzərindəki Boş Sahə</string>
-    <string name="settings_enable_autodownload_song">Enable auto download song</string>
-    <string name="settings_enable_autodownload_song_when_liked">Auto download song when liked</string>
-    <string name="settings_enable_autodownload_song_when_album_bookmarked">Auto download song when album bookmarked</string>
-    <string name="tab_general">General</string>
+    <string name="settings_enable_autodownload_song">Avtomatik mahnı yükləməni aktivləşdir</string>
+    <string name="settings_enable_autodownload_song_when_liked">Bəyənildikdə mahnını birbaşa yüklə</string>
+    <string name="settings_enable_autodownload_song_when_album_bookmarked">Albom əlfəcinlənəndə mahnını birbaşa yüklə</string>
+    <string name="tab_general">Ümumi</string>
     <string name="queue_and_local_playlists_left_swipe">Növbə və Yerli Pleylistlərin Sola Sürüşdür</string>
     <string name="queue_and_local_playlists_right_swipe">Növbə və Yerli Pleylistlərin Sağa Sürüşdür</string>
     <string name="playlist_left_swipe">Pleylist Sola Sürüşdürmə</string>
@@ -839,5 +839,5 @@
     <string name="album_right_swipe">Albom Sağa Sürüşdürmə</string>
     <string name="bookmark">Əlfəcin</string>
     <string name="downloading_videos_not_supported">Videoların endirilməsi dəstəklənmir</string>
-    <string name="animatedgradient">Animated Gradient</string>
+    <string name="animatedgradient">Dəyişkən Animasiyalı</string>
 </resources>

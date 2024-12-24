@@ -82,11 +82,6 @@ internal fun MyDownloadHelper.createDataSourceFactory(): DataSource.Factory {
         try {
             return@Factory runBlocking {
                 dataSpecProcess(dataSpec, appContext(), appContext().isConnectionMetered())
-                /*
-                .also {
-                //loudnessEnhancer?.update(current_song, context)
-                }
-                 */
             }
         }
         catch (e: Throwable) {

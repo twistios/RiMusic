@@ -150,7 +150,7 @@ fun LocalPlaylistScreen(
                         ) { currentTabIndex ->
                             saveableStateHolder.SaveableStateProvider(currentTabIndex) {
                                 when (currentTabIndex) {
-                                    0 -> LocalPlaylistSongs(
+                                    0 -> LocalPlaylistSongsModern(
                                         navController = navController,
                                         playlistId = playlistId,
                                         onDelete = {} //pop

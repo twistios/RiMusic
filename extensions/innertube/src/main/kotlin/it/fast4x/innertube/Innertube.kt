@@ -48,6 +48,12 @@ import java.net.Proxy
 import java.util.Locale
 
 object Innertube {
+
+    private const val VISITOR_DATA_PREFIX = "Cgt"
+
+    //const val DEFAULT_VISITOR_DATA = "CgtsZG1ySnZiQWtSbyiMjuGSBg%3D%3D"
+    const val DEFAULT_VISITOR_DATA = "CgtMN0FkbDFaWERfdyi8t4u7BjIKCgJWThIEGgAgWQ%3D%3D"
+
     val client = HttpClient(OkHttp) {
         BrowserUserAgent()
 
@@ -104,7 +110,7 @@ object Innertube {
         }
 
         install(ContentEncoding) {
-            brotli(1.0F)
+            //brotli(1.0F)
             gzip(0.9F)
             deflate(0.8F)
         }
@@ -128,17 +134,12 @@ object Innertube {
     )
     var visitorData: String = YoutubePreferences.preference?.visitordata.toString()
     var cookieMap = emptyMap<String, String>()
+    //var cookie: String? = YoutubePreferences.preference?.cookie
     var cookie: String? = YoutubePreferences.preference?.cookie
-        /*
         set(value) {
             field = value
             cookieMap = if (value == null) emptyMap() else parseCookieString(value)
         }
-         */
-
-
-    //var localeHl =  "en"
-    //var localeHl =  Locale.getDefault().toLanguageTag() //"en"
 
     internal const val browse = "/youtubei/v1/browse"
     internal const val next = "/youtubei/v1/next"
@@ -431,11 +432,11 @@ object Innertube {
                 append("Referer", client.referer)
             }
             if (setLogin) {
-                cookieMap = parseCookieString(cookie!!)
-                println("YoutubeLogin Innertube ytClient cookie: $cookie")
-                println("YoutubeLogin Innertube ytClient SAPISID in cookie: ${"SAPISID" in cookieMap}")
-                println("YoutubeLogin Innertube ytClient cookieMap: $cookieMap")
                 cookie?.let { cookie ->
+                    cookieMap = parseCookieString(cookie)
+                    println("YoutubeLogin Innertube ytClient cookie: $cookie")
+                    println("YoutubeLogin Innertube ytClient SAPISID in cookie: ${"SAPISID" in cookieMap}")
+                    println("YoutubeLogin Innertube ytClient cookieMap: $cookieMap")
                     append("cookie", cookie)
                     if ("SAPISID" !in cookieMap) return@let
                     val currentTime = System.currentTimeMillis() / 1000
@@ -451,14 +452,6 @@ object Innertube {
         parameter("prettyPrint", false)
     }
 
-    suspend fun pipedStreams(videoId: String) =
-        client.get("https://pipedapi.kavin.rocks/streams/${videoId}") {
-            contentType(ContentType.Application.Json)
-        }
 
-    private const val VISITOR_DATA_PREFIX = "Cgt"
-
-    const val DEFAULT_VISITOR_DATA = "CgtsZG1ySnZiQWtSbyiMjuGSBg%3D%3D"
-    //const val DEFAULT_VISITOR_DATA = "CgtMN0FkbDFaWERfdyi8t4u7BjIKCgJWThIEGgAgWQ%3D%3D"
 
 }

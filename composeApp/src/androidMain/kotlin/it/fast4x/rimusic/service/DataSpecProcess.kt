@@ -177,7 +177,7 @@ suspend fun getInnerTubeFormatUrl(
     //println("PlayerService MyDownloadHelper DataSpecProcess getMediaFormat Playing song $videoId from format $audioQualityFormat")
     return Innertube.player(
         body = PlayerBody(videoId = videoId),
-        withLogin = appContext().preferences.getBoolean(enableYouTubeLoginKey, false),
+        withLogin = false // TODO manage login appContext().preferences.getBoolean(enableYouTubeLoginKey, false),
         //pipedSession = getPipedSession().toApiSession()
     ).fold(
         { playerResponse ->

@@ -488,9 +488,10 @@ class MainActivity :
                 }
             }
 
-            val internetConnectivityObserver = InternetConnectivityObserver(this)
-            val internetConnected by internetConnectivityObserver.networkStatus.collectAsState(false)
-            if (internetConnected) downloadHelper.resumeDownloads(this)
+            //TODO: Check internet connection
+//            val internetConnectivityObserver = InternetConnectivityObserver(this)
+//            val internetConnected by internetConnectivityObserver.networkStatus.collectAsState(false)
+//            if (internetConnected) downloadHelper.resumeDownloads(this)
 
             if (preferences.getEnum(
                     checkUpdateStateKey,
@@ -536,28 +537,51 @@ class MainActivity :
                     gl = ""
                     //gl = "US" // US IMPORTANT
                 )
+                //TODO Manage login
+//            if (preferences.getBoolean(enableYouTubeLoginKey, false)) {
+//                    var visitorData by rememberEncryptedPreference(
+//                        key = ytVisitorDataKey,
+//                        defaultValue = Innertube.DEFAULT_VISITOR_DATA
+//                    )
+//
+//                    if (visitorData.isEmpty()) runBlocking {
+//                        Innertube.visitorData().getOrNull()?.also {
+//                            visitorData = it
+//                        }
+//                    }
+//
+//                    YoutubePreferences.preference =
+//                        YoutubePreferenceItem(
+//                            cookie = encryptedPreferences.getString(ytCookieKey, ""),
+//                            visitordata = visitorData
+//                                .takeIf { it != "null" }
+//                                ?: Innertube.DEFAULT_VISITOR_DATA
+//
+//                        )
+//            }
 
-            if (preferences.getBoolean(enableYouTubeLoginKey, false)
-                && encryptedPreferences.getString(ytCookieKey, "") != ""
-            ) {
 
-                var visitorData by rememberEncryptedPreference(
-                    key = ytVisitorDataKey,
-                    defaultValue = Innertube.DEFAULT_VISITOR_DATA
-                )
-
-                if (visitorData.isEmpty()) runBlocking {
-                    Innertube.visitorData().getOrNull()?.also {
-                        visitorData = it
-                    }
-                }
-
-                YoutubePreferences.preference =
-                    YoutubePreferenceItem(
-                        cookie = encryptedPreferences.getString(ytCookieKey, ""),
-                        visitordata = visitorData
-                    )
-            }
+//            if (preferences.getBoolean(enableYouTubeLoginKey, false)
+//                && encryptedPreferences.getString(ytCookieKey, "") != ""
+//            ) {
+//
+//                var visitorData by rememberEncryptedPreference(
+//                    key = ytVisitorDataKey,
+//                    defaultValue = Innertube.DEFAULT_VISITOR_DATA
+//                )
+//
+//                if (visitorData.isEmpty()) runBlocking {
+//                    Innertube.visitorData().getOrNull()?.also {
+//                        visitorData = it
+//                    }
+//                }
+//
+//                YoutubePreferences.preference =
+//                    YoutubePreferenceItem(
+//                        cookie = encryptedPreferences.getString(ytCookieKey, ""),
+//                        visitordata = visitorData
+//                    )
+//            }
 
             preferences.getEnum(audioQualityFormatKey, AudioQualityFormat.Auto)
 
@@ -1055,7 +1079,7 @@ class MainActivity :
                             LocalDownloadHelper provides downloadHelper,
                             LocalPlayerSheetState provides playerState,
                             LocalMonetCompat provides monet,
-                            LocalInternetConnected provides internetConnected
+                            //LocalInternetConnected provides internetConnected
                         ) {
 
                             AppNavigation(
@@ -1488,5 +1512,5 @@ val LocalDownloadHelper = staticCompositionLocalOf<MyDownloadHelper> { error("No
 val LocalPlayerSheetState =
     staticCompositionLocalOf<SheetState> { error("No player sheet state provided") }
 
-val LocalInternetConnected = staticCompositionLocalOf<Boolean> { error("No Network Status provided") }
+//val LocalInternetConnected = staticCompositionLocalOf<Boolean> { error("No Network Status provided") }
 

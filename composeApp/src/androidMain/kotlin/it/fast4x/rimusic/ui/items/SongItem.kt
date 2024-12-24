@@ -351,6 +351,8 @@ fun SongItem(
     var songPlaylist by remember {
         mutableIntStateOf(0)
     }
+
+    // TODO improve playlist indicator without recompose
     if (playlistindicator)
         LaunchedEffect(Unit, forceRecompose) {
             withContext(Dispatchers.IO) {

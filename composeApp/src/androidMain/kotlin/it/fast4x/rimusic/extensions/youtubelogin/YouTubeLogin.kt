@@ -44,6 +44,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import timber.log.Timber
 
+@OptIn(DelicateCoroutinesApi::class)
 @SuppressLint("SetJavaScriptEnabled")
 @Composable
 fun YouTubeLogin(
@@ -69,9 +70,9 @@ fun YouTubeLogin(
                 //cookieManager.flush()
                 //WebStorage.getInstance().deleteAllData()
                 println("YoutubeLogin Cookie: $cookie")
-                scope.launch {
+                GlobalScope.launch {
                     Innertube.accountInfo().onSuccess {
-                        accountName = it.name
+                        accountName = it.name.orEmpty()
                         accountEmail = it.email.orEmpty()
                         accountChannelHandle = it.channelHandle.orEmpty()
                         println("YoutubeLogin webClient AccountInfo: $it")
@@ -91,7 +92,7 @@ fun YouTubeLogin(
         modifier = Modifier.fillMaxSize().windowInsetsPadding(LocalPlayerAwareWindowInsets.current)
     ) {
         //Row(modifier = Modifier.fillMaxWidth()) {
-            Title("Login to YouTube Music", icon = R.drawable.chevron_down, onClick = { onLogin(false) })
+            Title("Login to YouTube Music", icon = R.drawable.chevron_down, onClick = { onLogin(true) })
         //}
 
         AndroidView(
@@ -102,13 +103,23 @@ fun YouTubeLogin(
                 WebView(context).apply {
                     webViewClient = object : WebViewClient() {
                         override fun doUpdateVisitedHistory(view: WebView, url: String, isReload: Boolean) {
-                            println("YoutubeLogin webClient doUpdateVisitedHistory: $url")
-                            processData(url)
+                            if (url.startsWith("https://music.youtube.com")) {
+                                cookie = CookieManager.getInstance().getCookie(url)
+                                GlobalScope.launch {
+                                    Innertube.accountInfo().onSuccess {
+                                        accountName = it.name.orEmpty()
+                                        accountEmail = it.email.orEmpty()
+                                        accountChannelHandle = it.channelHandle.orEmpty()
+                                        onLogin(true)
+                                    }.onFailure {
+                                        Timber.e("Error YoutubeLogin: $it.stackTraceToString()")
+                                        println("Error YoutubeLogin: ${it.stackTraceToString()}")
+                                    }
+                                }
+                            }
                         }
 
                         override fun onPageFinished(view: WebView, url: String?) {
-                            println("YoutubeLogin webClient onPageFinished: $url")
-                            processData(url.orEmpty())
                             loadUrl("javascript:Android.onRetrieveVisitorData(window.yt.config_.VISITOR_DATA)")
                         }
                     }
@@ -130,19 +141,6 @@ fun YouTubeLogin(
                 }
             }
         )
-
-        /*
-        TopAppBar(
-            title = { Text("Login to YouTube") },
-            navigationIcon = {
-                IconButton(
-                    icon = R.drawable.chevron_back,
-                    onClick = navController::navigateUp,
-                    color = Color.White
-                )
-            }
-        )
-         */
 
         BackHandler(enabled = webView?.canGoBack() == true) {
             webView?.goBack()

@@ -15,10 +15,14 @@ import it.fast4x.piped.models.Session
 
 suspend fun Innertube.player(body: PlayerBody, withLogin: Boolean = false): Result<PlayerResponse> = runCatching {
 
-    val response = client.post(player) {
+    val clientHttp = if (withLogin) ytHttpClient else client
+
+    val response = clientHttp.post(player) {
         if (withLogin) {
             ytClient(YouTubeClient.ANDROID_MUSIC, setLogin = true)
-            setBody(body)
+            setBody(body.copy(
+                context = YouTubeClient.ANDROID_MUSIC.toContext(locale, visitorData)
+            ))
         } else {
             setBody(body.copy(context = Context.DefaultIOS))
         }
@@ -33,7 +37,7 @@ suspend fun Innertube.player(body: PlayerBody, withLogin: Boolean = false): Resu
 
     // Try again with android music client DefaultRestrictionBypass
     val context = Context.DefaultRestrictionBypass
-    val safePlayerResponse = client.post(player) {
+    val safePlayerResponse = clientHttp.post(player) {
         setBody(
             body.copy(
                 context = context.copy(

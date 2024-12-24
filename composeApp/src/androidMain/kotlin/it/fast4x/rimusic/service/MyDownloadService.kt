@@ -90,21 +90,6 @@ class MyDownloadService : DownloadService(
     ) : DownloadManager.Listener {
         private var nextNotificationId: Int = firstNotificationId
 
-        /*
-        override fun onDownloadChanged(
-            downloadManager: DownloadManager,
-            download: Download,
-            finalException: Exception?) {
-            MyDownloadHelper.downloads.update { map ->
-                map.toMutableMap().apply {
-                    set(download.request.id, download)
-                }
-            }
-            MyDownloadHelper.getDownloads()
-        }
-        */
-
-
         override fun onDownloadChanged(
             downloadManager: DownloadManager,
             download: Download,
