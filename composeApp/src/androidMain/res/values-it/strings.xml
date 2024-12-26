@@ -840,4 +840,17 @@
     <string name="bookmark">Segnalibro</string>
     <string name="downloading_videos_not_supported">Download video non supportato</string>
     <string name="animatedgradient">Gradiente animato</string>
+    <string name="linear">Linear Gradient</string>
+    <string name="mesh">Mesh Gradient</string>
+    <string name="mesmerizinglens">Mesmerizing Lens</string>
+    <string name="glossygradient">Glossy Gradient</string>
+    <string name="gradientflow">Gradient Flow</string>
+    <string name="purpleliquid">Purple Liquid</string>
+    <string name="stage">Stage</string>
+    <string name="inkflow">Ink Flow</string>
+    <string name="goldenmagma">Golden Magma</string>
+    <string name="oilflow">Oil Flow</string>
+    <string name="icereflection">Ice Reflection</string>
+    <string name="blackcherrycosmos">Black Cherry Cosmos</string>
+    <string name="gradienttype">Gradient Type</string>
 </resources>

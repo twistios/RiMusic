@@ -310,6 +310,8 @@ dependencies {
     implementation(libs.glance.widgets)
     implementation(libs.kizzy.rpc)
     implementation(libs.gson)
+    implementation (libs.hypnoticcanvas)
+    implementation (libs.hypnoticcanvas.shaders)
 
     implementation(libs.room)
     ksp(libs.room.compiler)

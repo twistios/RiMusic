@@ -84,8 +84,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.LinearGradientShader
 import androidx.compose.ui.graphics.StrokeJoin
+import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onSizeChanged
@@ -189,6 +191,18 @@ import androidx.core.graphics.ColorUtils.colorToHSL
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Timeline
 import androidx.palette.graphics.Palette
+import com.mikepenz.hypnoticcanvas.shaderBackground
+import com.mikepenz.hypnoticcanvas.shaders.BlackCherryCosmos
+import com.mikepenz.hypnoticcanvas.shaders.GlossyGradients
+import com.mikepenz.hypnoticcanvas.shaders.GoldenMagma
+import com.mikepenz.hypnoticcanvas.shaders.GradientFlow
+import com.mikepenz.hypnoticcanvas.shaders.IceReflection
+import com.mikepenz.hypnoticcanvas.shaders.InkFlow
+import com.mikepenz.hypnoticcanvas.shaders.MeshGradient
+import com.mikepenz.hypnoticcanvas.shaders.MesmerizingLens
+import com.mikepenz.hypnoticcanvas.shaders.OilFlow
+import com.mikepenz.hypnoticcanvas.shaders.PurpleLiquid
+import com.mikepenz.hypnoticcanvas.shaders.Stage
 import dev.chrisbanes.haze.HazeDefaults
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.haze
@@ -266,8 +280,10 @@ import it.fast4x.rimusic.utils.showCoverThumbnailAnimationKey
 import it.fast4x.rimusic.utils.statsExpandedKey
 import it.fast4x.rimusic.utils.thumbnailFadeKey
 import it.fast4x.rimusic.colorPalette
+import it.fast4x.rimusic.enums.AnimatedGradient
 import it.fast4x.rimusic.thumbnailShape
 import it.fast4x.rimusic.typography
+import it.fast4x.rimusic.utils.animatedGradientKey
 import it.fast4x.rimusic.utils.playerThumbnailSizeLKey
 import it.fast4x.rimusic.utils.seamlessPlay
 import it.fast4x.rimusic.utils.thumbnailFadeExKey
@@ -743,15 +759,29 @@ fun Player(
         return Color.hsl(colorHSL[0],colorHSL[1],colorHSL[2])
     }
 
+    var lightTheme = colorPaletteMode == ColorPaletteMode.Light || (colorPaletteMode == ColorPaletteMode.System && (!isSystemInDarkTheme()))
+    var ratio = if (lightTheme) 1f else 0.5f
+
+    fun Color.darkenBy(): Color {
+        return copy(
+            red = red * ratio,
+            green = green * ratio,
+            blue = blue * ratio,
+            alpha = alpha
+        )
+    }
+
     val playerBackgroundColors by rememberPreference(
         playerBackgroundColorsKey,
         PlayerBackgroundColors.BlurredCoverColor
     )
+    val animatedGradient by rememberPreference(
+        animatedGradientKey,
+        AnimatedGradient.Linear
+    )
     val isGradientBackgroundEnabled =
         playerBackgroundColors == PlayerBackgroundColors.ThemeColorGradient ||
                 playerBackgroundColors == PlayerBackgroundColors.CoverColorGradient ||
-                playerBackgroundColors == PlayerBackgroundColors.FluidThemeColorGradient ||
-                playerBackgroundColors == PlayerBackgroundColors.FluidCoverColorGradient ||
                 playerBackgroundColors == PlayerBackgroundColors.AnimatedGradient
 
 
@@ -764,7 +794,6 @@ fun Player(
         LaunchedEffect(mediaItem.mediaId, updateBrush) {
             if (playerBackgroundColors == PlayerBackgroundColors.CoverColorGradient ||
                 playerBackgroundColors == PlayerBackgroundColors.CoverColor ||
-                playerBackgroundColors == PlayerBackgroundColors.FluidCoverColorGradient ||
                 playerBackgroundColors == PlayerBackgroundColors.AnimatedGradient || updateBrush
             ) {
             try {
@@ -781,13 +810,13 @@ fun Player(
 
                 val palette = Palette.from(bitmap).generate()
 
-                dominant = palette.getDominantColor(0)
-                vibrant = palette.getVibrantColor(0)
-                lightVibrant = palette.getLightVibrantColor(0)
-                darkVibrant = palette.getDarkVibrantColor(0)
-                muted = palette.getMutedColor(0)
-                lightMuted = palette.getLightMutedColor(0)
-                darkMuted = palette.getDarkMutedColor(0)
+                dominant = palette.getDominantColor(dynamicColorPalette.accent.toArgb())
+                vibrant = palette.getVibrantColor(dynamicColorPalette.accent.toArgb())
+                lightVibrant = palette.getLightVibrantColor(dynamicColorPalette.accent.toArgb())
+                darkVibrant = palette.getDarkVibrantColor(dynamicColorPalette.accent.toArgb())
+                muted = palette.getMutedColor(dynamicColorPalette.accent.toArgb())
+                lightMuted = palette.getLightMutedColor(dynamicColorPalette.accent.toArgb())
+                darkMuted = palette.getDarkMutedColor(dynamicColorPalette.accent.toArgb())
 
             } catch (e: Exception) {
                 dynamicColorPalette = color
@@ -989,34 +1018,153 @@ fun Player(
         }
     } else {
         when (playerBackgroundColors) {
-            PlayerBackgroundColors.FluidThemeColorGradient,
-            PlayerBackgroundColors.FluidCoverColorGradient -> {
-                containerModifier = containerModifier
-                    .onSizeChanged {
-                        sizeShader = Size(it.width.toFloat(), it.height.toFloat())
-                    }
-                    .drawBehind {
-                        drawRect(brush = brushA)
-                        drawRect(brush = brushMask, blendMode = BlendMode.DstOut)
-                        drawRect(brush = brushB, blendMode = BlendMode.DstAtop)
-                    }
-            }
 
-            PlayerBackgroundColors.AnimatedGradient ->{
-                containerModifier = containerModifier
-                    .onSizeChanged {
-                        sizeShader = Size(it.width.toFloat(), it.height.toFloat())
-                    }
-                    .animatedGradient(
-                        binder.player.isPlaying,
-                        saturate(dominant),
-                        saturate(vibrant),
-                        saturate(lightVibrant),
-                        saturate(darkVibrant),
-                        saturate(muted),
-                        saturate(lightMuted),
-                        saturate(darkMuted)
-                    )
+            PlayerBackgroundColors.AnimatedGradient -> {
+                if (animatedGradient == AnimatedGradient.FluidCoverColorGradient ||
+                    animatedGradient == AnimatedGradient.FluidThemeColorGradient) {
+                    containerModifier = containerModifier
+                            .onSizeChanged {
+                                sizeShader = Size(it.width.toFloat(), it.height.toFloat())
+                            }
+                            .drawBehind {
+                                drawRect(brush = brushA)
+                                drawRect(brush = brushMask, blendMode = BlendMode.DstOut)
+                                drawRect(brush = brushB, blendMode = BlendMode.DstAtop)
+                            }
+                }
+
+                else if (animatedGradient == AnimatedGradient.Mesh) {
+                    containerModifier = containerModifier
+                        .onSizeChanged {
+                            sizeShader = Size(it.width.toFloat(), it.height.toFloat())
+                        }
+                        .shaderBackground(
+                            MeshGradient(
+                                arrayOf(
+                                    saturate(dominant).darkenBy(),
+                                    saturate(vibrant).compositeOver(Color(dominant)).darkenBy(),
+                                    saturate(lightVibrant).compositeOver(Color(dominant))
+                                        .darkenBy(),
+                                    saturate(darkVibrant).compositeOver(Color(dominant)).darkenBy(),
+                                    saturate(muted).compositeOver(Color(dominant)).darkenBy(),
+                                    saturate(lightMuted).compositeOver(Color(dominant)).darkenBy(),
+                                    saturate(darkMuted).compositeOver(Color(dominant)).darkenBy()
+                                ),
+                                scale = 1f
+                            )
+                        )
+                }
+                else if (animatedGradient == AnimatedGradient.Linear){
+                    containerModifier = containerModifier
+                        .onSizeChanged {
+                            sizeShader = Size(it.width.toFloat(), it.height.toFloat())
+                        }
+                        .animatedGradient(
+                            binder.player.isPlaying,
+                            saturate(dominant).darkenBy(),
+                            saturate(vibrant).compositeOver(Color(dominant)).darkenBy(),
+                            saturate(lightVibrant).compositeOver(Color(dominant)).darkenBy(),
+                            saturate(darkVibrant).compositeOver(Color(dominant)).darkenBy(),
+                            saturate(muted).compositeOver(Color(dominant)).darkenBy(),
+                            saturate(lightMuted).compositeOver(Color(dominant)).darkenBy(),
+                            saturate(darkMuted).compositeOver(Color(dominant)).darkenBy()
+                        )
+                }
+                else if (animatedGradient == AnimatedGradient.GradientFlow){
+                    containerModifier = containerModifier
+                        .onSizeChanged {
+                            sizeShader = Size(it.width.toFloat(), it.height.toFloat())
+                        }
+                        .shaderBackground(
+                            GradientFlow
+                        )
+                        .background(if (!lightTheme) Color.Black.copy(0.2f) else Color.Transparent)
+                }
+                else if (animatedGradient == AnimatedGradient.Stage){
+                    containerModifier = containerModifier
+                        .onSizeChanged {
+                            sizeShader = Size(it.width.toFloat(), it.height.toFloat())
+                        }
+                        .shaderBackground(
+                            Stage
+                        )
+                        .background(if (!lightTheme) Color.Black.copy(0.3f) else Color.Transparent)
+                }
+                else if (animatedGradient == AnimatedGradient.InkFlow){
+                    containerModifier = containerModifier
+                        .onSizeChanged {
+                            sizeShader = Size(it.width.toFloat(), it.height.toFloat())
+                        }
+                        .shaderBackground(
+                            InkFlow
+                        )
+                }
+                else if (animatedGradient == AnimatedGradient.BlackCherryCosmos){
+                    containerModifier = containerModifier
+                        .onSizeChanged {
+                            sizeShader = Size(it.width.toFloat(), it.height.toFloat())
+                        }
+                        .shaderBackground(
+                            BlackCherryCosmos
+                        )
+                }
+                else if (animatedGradient == AnimatedGradient.GlossyGradients){
+                    containerModifier = containerModifier
+                        .onSizeChanged {
+                            sizeShader = Size(it.width.toFloat(), it.height.toFloat())
+                        }
+                        .shaderBackground(
+                            GlossyGradients
+                        )
+                        .background(if (!lightTheme) Color.Black.copy(0.2f) else Color.Transparent)
+                }
+                else if (animatedGradient == AnimatedGradient.GoldenMagma){
+                    containerModifier = containerModifier
+                        .onSizeChanged {
+                            sizeShader = Size(it.width.toFloat(), it.height.toFloat())
+                        }
+                        .shaderBackground(
+                            GoldenMagma
+                        )
+                        .background(if (!lightTheme) Color.Black.copy(0.2f) else Color.Transparent)
+                }
+                else if (animatedGradient == AnimatedGradient.IceReflection){
+                    containerModifier = containerModifier
+                        .onSizeChanged {
+                            sizeShader = Size(it.width.toFloat(), it.height.toFloat())
+                        }
+                        .shaderBackground(
+                            IceReflection
+                        )
+                        .background(if (!lightTheme) Color.Black.copy(0.3f) else Color.Transparent)
+                }
+                else if (animatedGradient == AnimatedGradient.MesmerizingLens){
+                    containerModifier = containerModifier
+                        .onSizeChanged {
+                            sizeShader = Size(it.width.toFloat(), it.height.toFloat())
+                        }
+                        .shaderBackground(
+                            MesmerizingLens
+                        )
+                }
+                else if (animatedGradient == AnimatedGradient.OilFlow){
+                    containerModifier = containerModifier
+                        .onSizeChanged {
+                            sizeShader = Size(it.width.toFloat(), it.height.toFloat())
+                        }
+                        .shaderBackground(
+                            OilFlow
+                        )
+                }
+                else if (animatedGradient == AnimatedGradient.PurpleLiquid){
+                    containerModifier = containerModifier
+                        .onSizeChanged {
+                            sizeShader = Size(it.width.toFloat(), it.height.toFloat())
+                        }
+                        .shaderBackground(
+                            PurpleLiquid
+                        )
+                }
             }
 
             else -> {

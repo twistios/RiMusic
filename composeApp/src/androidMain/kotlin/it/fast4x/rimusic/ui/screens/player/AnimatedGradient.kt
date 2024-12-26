@@ -37,18 +37,6 @@ fun Modifier.animatedGradient(
     DM: Color
     ): Modifier = composed {
     val rotation = remember { Animatable(0f) }
-    val colorPaletteMode by rememberPreference(colorPaletteModeKey, ColorPaletteMode.Dark)
-    var lightTheme = colorPaletteMode == ColorPaletteMode.Light || (colorPaletteMode == ColorPaletteMode.System && (!isSystemInDarkTheme()))
-    var ratio = if (lightTheme) 1f else 0.3f
-
-    fun Color.darkenBy(): Color {
-        return copy(
-            red = red * ratio,
-            green = green * ratio,
-            blue = blue * ratio,
-            alpha = alpha
-        )
-    }
 
     LaunchedEffect(rotation, animating) {
         if (!animating) return@LaunchedEffect
@@ -72,25 +60,25 @@ fun Modifier.animatedGradient(
         )
 
         val brush1 = Brush.linearGradient(
-            0f to D.darkenBy(),
-            0.33f to LV.compositeOver(D).darkenBy(),
-            0.66f to V.compositeOver(D).darkenBy(),
-            1f to DV.compositeOver(D).darkenBy(),
+            0f to D,
+            0.33f to LV,
+            0.66f to V,
+            1f to DV,
             start = topLeft,
             end = Offset(rectSize * 0.7f, rectSize * 0.7f),
         )
 
         val brush2 = Brush.linearGradient(
-            0f to D.darkenBy(),
-            0.33f to LM.compositeOver(D).darkenBy(),
-            0.66f to M.compositeOver(D).darkenBy(),
-            1f to DM.compositeOver(D).darkenBy(),
+            0f to D,
+            0.33f to LM,
+            0.66f to M,
+            1f to DM,
             start = Offset(rectSize, 0f),
             end = Offset(0f, rectSize),
         )
 
         val maskBrush = Brush.linearGradient(
-            0f to D.darkenBy(),
+            0f to D,
             1f to Color.Transparent,
             start = Offset(rectSize / 2f, 0f),
             end = Offset(rectSize / 2f, rectSize),

@@ -840,4 +840,17 @@
     <string name="bookmark">Marchează</string>
     <string name="downloading_videos_not_supported">Descărcarea videoclipurilor nu este suportată</string>
     <string name="animatedgradient">Gradient animat</string>
+    <string name="linear">Gradient liniar</string>
+    <string name="mesh">Gradient de plasă</string>
+    <string name="mesmerizinglens">Lentilă fascinantă</string>
+    <string name="glossygradient">Gradient lucios</string>
+    <string name="gradientflow">Flux de gradient</string>
+    <string name="purpleliquid">Lichid mov</string>
+    <string name="stage">Scenă</string>
+    <string name="inkflow">Fluxul de cerneală</string>
+    <string name="goldenmagma">Magma de aur</string>
+    <string name="oilflow">Fluxul de ulei</string>
+    <string name="icereflection">Reflecție de gheață</string>
+    <string name="blackcherrycosmos">Cosmos de cireșe negre</string>
+    <string name="gradienttype">Tip gradient</string>
 </resources>

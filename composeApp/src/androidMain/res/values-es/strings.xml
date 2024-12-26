@@ -840,4 +840,17 @@
     <string name="bookmark">Marcador</string>
     <string name="downloading_videos_not_supported">La descarga de vídeos no está soportada</string>
     <string name="animatedgradient">Degradado animado</string>
+    <string name="linear">Degradado lineal</string>
+    <string name="mesh">Degradado de malla</string>
+    <string name="mesmerizinglens">Mesmerizing Lens</string>
+    <string name="glossygradient">Degradado brillante</string>
+    <string name="gradientflow">Flujo del degradado</string>
+    <string name="purpleliquid">Purple Liquid</string>
+    <string name="stage">Stage</string>
+    <string name="inkflow">Ink Flow</string>
+    <string name="goldenmagma">Golden Magma</string>
+    <string name="oilflow">Oil Flow</string>
+    <string name="icereflection">Ice Reflection</string>
+    <string name="blackcherrycosmos">Black Cherry Cosmos</string>
+    <string name="gradienttype">Tipo de degradado</string>
 </resources>

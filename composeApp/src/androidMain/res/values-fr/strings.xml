@@ -368,7 +368,7 @@
     <string name="add_folder">Ajouter un dossier</string>
     <string name="this_folder_already_exists">Ce dossier existe déjà.</string>
     <string name="are_you_sure_you_want_to_remove_this_folder_from_the_blacklist">Êtes-vous sûr de vouloir supprimer ce dossier de la liste noire ?</string>
-    <string name="player_appearance">Apparence du lecteur</string>
+    <string name="player_appearance">Apparence du Lecteur</string>
     <string name="player_action_bar">BARRE D\'ACTION DU LECTEUR</string>
     <string name="tab_data">Données</string>
     <string name="image_cache_max_size">Taille maximale du cache des images</string>
@@ -842,4 +842,17 @@
     <string name="bookmark">Signet</string>
     <string name="downloading_videos_not_supported">Le téléchargement de vidéos n\'est pas pris en charge</string>
     <string name="animatedgradient">Dégradé Animé</string>
+    <string name="linear">Dégradé linéaire</string>
+    <string name="mesh">Dégradé de maillage</string>
+    <string name="mesmerizinglens">Objectif hypnotisant</string>
+    <string name="glossygradient">Dégradé brillant</string>
+    <string name="gradientflow">Flux dégradé</string>
+    <string name="purpleliquid">Liquide violet</string>
+    <string name="stage">Étape</string>
+    <string name="inkflow">Débit d\'encre</string>
+    <string name="goldenmagma">Magma doré</string>
+    <string name="oilflow">Débit d\'huile</string>
+    <string name="icereflection">Reflet de glace</string>
+    <string name="blackcherrycosmos">Cosmos à la cerise noire</string>
+    <string name="gradienttype">Type de dégradé</string>
 </resources>

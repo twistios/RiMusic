@@ -840,4 +840,17 @@
     <string name="bookmark">Əlfəcin</string>
     <string name="downloading_videos_not_supported">Videoların endirilməsi dəstəklənmir</string>
     <string name="animatedgradient">Dəyişkən Animasiyalı</string>
+    <string name="linear">Dəyişkən Xətti</string>
+    <string name="mesh">Dəyişkən Tor</string>
+    <string name="mesmerizinglens">Süni Linza</string>
+    <string name="glossygradient">Dəyişkən Parlaq</string>
+    <string name="gradientflow">Dəyişkən Qabarma</string>
+    <string name="purpleliquid">Bənövşəyi Maye</string>
+    <string name="stage">Səhnə</string>
+    <string name="inkflow">Mürəkkəb Qabarma</string>
+    <string name="goldenmagma">Qızılı Maqma</string>
+    <string name="oilflow">Neft Axını</string>
+    <string name="icereflection">Buz Əksi</string>
+    <string name="blackcherrycosmos">Qara Albalı Kainat</string>
+    <string name="gradienttype">Dəyişmə Növü</string>
 </resources>
