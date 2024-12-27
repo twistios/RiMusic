@@ -14,5 +14,6 @@ enum class AnimatedGradient {
     IceReflection,
     Stage,
     GoldenMagma,
-    BlackCherryCosmos
+    BlackCherryCosmos,
+    Random;
 }

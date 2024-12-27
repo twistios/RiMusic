@@ -853,4 +853,6 @@
     <string name="icereflection">Ice Reflection</string>
     <string name="blackcherrycosmos">Black Cherry Cosmos</string>
     <string name="gradienttype">Gradient Type</string>
+    <string name="random">Random</string>
+    <string name="colorpalette">Color Palette</string>
 </resources>

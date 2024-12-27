@@ -401,7 +401,7 @@ fun StatsForNerds(
                               BasicText(
                                   text = stringResource(R.string.id) + " : " + mediaId,
                                   maxLines = 1,
-                                  style = typography().xs.medium.color(colorPalette().onOverlay)
+                                  style = typography().xs.medium.color(colorPalette().text)
                               )
                           }
                           if (format?.songId?.startsWith(LOCAL_KEY_PREFIX) == false) {
@@ -415,7 +415,7 @@ fun StatsForNerds(
                                               R.string.audio_quality_format_unknown
                                           )),
                                       maxLines = 1,
-                                      style = typography().xs.medium.color(colorPalette().onOverlay)
+                                      style = typography().xs.medium.color(colorPalette().text)
                                   )
                               }
                           }
@@ -436,7 +436,7 @@ fun StatsForNerds(
                                   BasicText(
                                       text = stringResource(R.string.cached) + " : " + "100%",
                                       maxLines = 1,
-                                      style = typography().xs.medium.color(colorPalette().onOverlay)
+                                      style = typography().xs.medium.color(colorPalette().text)
                                   )
                               }
                           }
@@ -463,7 +463,7 @@ fun StatsForNerds(
                                           }
                                       ,
                                       maxLines = 1,
-                                      style = typography().xs.medium.color(colorPalette().onOverlay)
+                                      style = typography().xs.medium.color(colorPalette().text)
                                   )
                               }
                               Box(
@@ -480,7 +480,7 @@ fun StatsForNerds(
                                               R.string.audio_quality_format_unknown
                                           )),
                                       maxLines = 1,
-                                      style = typography().xs.medium.color(colorPalette().onOverlay)
+                                      style = typography().xs.medium.color(colorPalette().text)
                                   )
                               }
                           }

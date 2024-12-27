@@ -1105,6 +1105,7 @@ fun AppearanceSettings(
                         PlayerBackgroundColors.CoverColorGradient -> stringResource(R.string.bg_colors_gradient_background_from_cover)
                         PlayerBackgroundColors.ThemeColorGradient -> stringResource(R.string.bg_colors_gradient_background_from_theme)
                         PlayerBackgroundColors.BlurredCoverColor -> stringResource(R.string.bg_colors_blurred_cover_background)
+                        PlayerBackgroundColors.ColorPalette -> stringResource(R.string.colorpalette)
                         PlayerBackgroundColors.AnimatedGradient -> stringResource(R.string.animatedgradient)
                     }
                 },
@@ -1138,6 +1139,7 @@ fun AppearanceSettings(
                             AnimatedGradient.OilFlow -> stringResource(R.string.oilflow)
                             AnimatedGradient.IceReflection -> stringResource(R.string.icereflection)
                             AnimatedGradient.BlackCherryCosmos -> stringResource(R.string.blackcherrycosmos)
+                            AnimatedGradient.Random -> stringResource(R.string.random)
                         }
                     },
                     modifier = Modifier.padding(start = if (playerBackgroundColors == PlayerBackgroundColors.AnimatedGradient) 25.dp else 0.dp)
