@@ -712,16 +712,16 @@ class PlayerServiceModern : MediaLibraryService(),
         loadFromRadio(reason)
 
         with(bitmapProvider) {
-            when {
-                mediaItem == null -> load(null, {
-                    updateDefaultNotification()
-                    updateWidgets()})
-                mediaItem.mediaMetadata.artworkUri == lastUri -> bitmapProvider.load(lastUri, {
-                    updateDefaultNotification()
-                    updateWidgets()})
+            var newUriForLoad = binder.player.currentMediaItem?.mediaMetadata?.artworkUri
+            if(lastUri == binder.player.currentMediaItem?.mediaMetadata?.artworkUri) {
+                newUriForLoad = null
             }
-        }
 
+            load(newUriForLoad, {
+                updateDefaultNotification()
+                updateWidgets()
+            })
+        }
     }
 
     override fun onTimelineChanged(timeline: Timeline, reason: Int) {

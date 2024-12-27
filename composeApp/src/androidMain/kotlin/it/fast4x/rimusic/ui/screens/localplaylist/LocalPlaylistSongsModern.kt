@@ -180,9 +180,12 @@ import it.fast4x.rimusic.PINNED_PREFIX
 import it.fast4x.rimusic.PIPED_PREFIX
 import it.fast4x.rimusic.EXPLICIT_PREFIX
 import it.fast4x.rimusic.ui.components.themed.NowPlayingSongIndicator
+import it.fast4x.rimusic.utils.checkFileExists
+import it.fast4x.rimusic.utils.deleteFileIfExists
 import it.fast4x.rimusic.utils.disableScrollingTextKey
 import it.fast4x.rimusic.utils.isDownloadedSong
 import it.fast4x.rimusic.utils.isNowPlaying
+import it.fast4x.rimusic.utils.saveImageToInternalStorage
 import kotlinx.coroutines.flow.map
 
 
@@ -200,6 +203,7 @@ fun LocalPlaylistSongsModern(
     playlistId: Long,
     onDelete: () -> Unit,
 ) {
+    val context = LocalContext.current
     val (colorPalette, typography, thumbnailShape) = LocalAppearance.current
     val binder = LocalPlayerServiceBinder.current
     val menuState = LocalMenuState.current
@@ -207,6 +211,7 @@ fun LocalPlaylistSongsModern(
 
     var playlistSongs by persistList<Song>("localPlaylist/$playlistId/songs")
     var playlistPreview by persist<PlaylistPreview?>("localPlaylist/playlist")
+    val thumbnailUrl = remember { mutableStateOf("") }
 
 
     var sortBy by rememberPreference(playlistSongSortByKey, PlaylistSongSortBy.Title)
@@ -223,6 +228,14 @@ fun LocalPlaylistSongsModern(
 
     LaunchedEffect(Unit) {
         Database.singlePlaylistPreview(playlistId).collect { playlistPreview = it }
+    }
+
+    LaunchedEffect( playlistPreview?.playlist?.name ) {
+        val thumbnailName = "thumbnail/playlist_${playlistId}"
+        val presentThumbnailUrl: String? = checkFileExists(context, thumbnailName)
+        if (presentThumbnailUrl != null) {
+            thumbnailUrl.value = presentThumbnailUrl
+        }
     }
 
     //**** SMART RECOMMENDATION
@@ -319,8 +332,6 @@ fun LocalPlaylistSongsModern(
     val isPipedEnabled by rememberPreference(isPipedEnabledKey, false)
     val coroutineScope = rememberCoroutineScope()
     val pipedSession = getPipedSession()
-    val context = LocalContext.current
-
 
     if (isDeleting) {
         ConfirmationDialog(
@@ -661,6 +672,37 @@ fun LocalPlaylistSongsModern(
         playlistPreview?.playlist?.name?.startsWith(PIPED_PREFIX, 0, true) == false
     val hapticFeedback = LocalHapticFeedback.current
 
+    val editThumbnailLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.GetContent()
+    ) { uri ->
+        // Callback is invoked after the user selects a media item or closes the
+        // photo picker.
+        if (uri != null) {
+            val thumbnailName = "playlist_${playlistPreview?.playlist?.id}"
+            val permaUri = saveImageToInternalStorage(context, uri, "thumbnail", thumbnailName)
+            thumbnailUrl.value = permaUri.toString()
+        } else {
+            SmartMessage(context.resources.getString(R.string.thumbnail_not_selected), context = context)
+        }
+    }
+    fun openEditThumbnailPicker() {
+        editThumbnailLauncher.launch("image/*")
+    }
+
+    fun resetThumbnail() {
+        if(thumbnailUrl.value == ""){
+            SmartMessage(context.resources.getString(R.string.no_thumbnail_present), context = context)
+            return
+        }
+        val thumbnailName = "thumbnail/playlist_${playlistPreview?.playlist?.id}"
+        val retVal = deleteFileIfExists(context, thumbnailName)
+        if(retVal == true){
+            SmartMessage(context.resources.getString(R.string.removed_thumbnail), context = context)
+            thumbnailUrl.value = ""
+        } else {
+            SmartMessage(context.resources.getString(R.string.failed_to_remove_thumbnail), context = context)
+        }
+    }
 
     Box(
         modifier = Modifier
@@ -729,7 +771,8 @@ fun LocalPlaylistSongsModern(
                             showName = false,
                             modifier = Modifier
                                 .padding(top = 14.dp),
-                            disableScrollingText = disableScrollingText
+                            disableScrollingText = disableScrollingText,
+                            thumbnailUrl = if (thumbnailUrl.value == "") null else thumbnailUrl.value
                         )
                     }
 
@@ -1249,6 +1292,12 @@ fun LocalPlaylistSongsModern(
                                         },
                                         onExport = {
                                             isExporting = true
+                                        },
+                                        onEditThumbnail = {
+                                            openEditThumbnailPicker()
+                                        },
+                                        onResetThumbnail = {
+                                            resetThumbnail()
                                         },
                                         onGoToPlaylist = {
                                             navController.navigate("${NavRoutes.localPlaylist.name}/$it")
