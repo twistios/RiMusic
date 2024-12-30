@@ -147,6 +147,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import it.fast4x.rimusic.colorPalette
+import it.fast4x.rimusic.relativePlayTime
 import it.fast4x.rimusic.thumbnailShape
 import it.fast4x.rimusic.typography
 import java.text.SimpleDateFormat
@@ -302,6 +303,7 @@ fun BuiltInPlaylistSongs(
                     SongSortBy.DatePlayed -> {}
                     SongSortBy.DateLiked -> songs = songs.sortedBy { it.likedAt }
                     SongSortBy.DateAdded -> {}
+                    SongSortBy.RelativePlayTime -> songs = songs.sortedBy { it.relativePlayTime() }
                 }
             }
             SortOrder.Descending -> {
@@ -313,6 +315,7 @@ fun BuiltInPlaylistSongs(
                     SongSortBy.DatePlayed -> {}
                     SongSortBy.DateLiked -> songs = songs.sortedByDescending { it.likedAt }
                     SongSortBy.DateAdded -> {}
+                    SongSortBy.RelativePlayTime -> songs = songs.sortedByDescending { it.relativePlayTime() }
                 }
             }
         }
@@ -1013,6 +1016,8 @@ fun BuiltInPlaylistSongs(
                                 SongSortBy.Title, SongSortBy.AlbumName -> stringResource(R.string.sort_title)
                                 SongSortBy.DatePlayed -> stringResource(R.string.sort_date_played)
                                 SongSortBy.PlayTime -> stringResource(R.string.sort_listening_time)
+                                SongSortBy.RelativePlayTime ->
+                                    stringResource(R.string.sort_relative_listening_time)
                                 SongSortBy.DateAdded -> stringResource(R.string.sort_date_added)
                                 SongSortBy.DateLiked -> stringResource(R.string.sort_date_liked)
                                 SongSortBy.Artist -> stringResource(R.string.sort_artist)
@@ -1032,6 +1037,7 @@ fun BuiltInPlaylistSongs(
                                             onDatePlayed = { sortBy = SongSortBy.DatePlayed },
                                             onDateAdded = { sortBy = SongSortBy.DateAdded },
                                             onPlayTime = { sortBy = SongSortBy.PlayTime },
+                                            onRelativePlayTime = {sortBy = SongSortBy.RelativePlayTime},
                                             onDateLiked = { sortBy = SongSortBy.DateLiked },
                                             onArtist = { sortBy = SongSortBy.Artist },
                                             onDuration = { sortBy = SongSortBy.Duration }
