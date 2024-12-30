@@ -108,7 +108,7 @@ fun colorPaletteOf(
 ): ColorPalette {
     return when (colorPaletteName) {
         ColorPaletteName.Default, ColorPaletteName.Dynamic,
-        ColorPaletteName.MaterialYou, ColorPaletteName.Customized -> when (colorPaletteMode) {
+        ColorPaletteName.MaterialYou, ColorPaletteName.Customized, ColorPaletteName.CustomColor -> when (colorPaletteMode) {
             ColorPaletteMode.Light -> DefaultLightColorPalette
             ColorPaletteMode.Dark, ColorPaletteMode.PitchBlack -> DefaultDarkColorPalette
             ColorPaletteMode.System -> when (isSystemInDarkMode) {

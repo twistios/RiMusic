@@ -853,4 +853,8 @@
     <string name="icereflection">Reflecție de gheață</string>
     <string name="blackcherrycosmos">Cosmos de cireșe negre</string>
     <string name="gradienttype">Tip gradient</string>
+    <string name="random">Aleatoriu</string>
+    <string name="colorpalette">Paletă de culori</string>
+    <string name="customcolor">Custom Color</string>
+    <string name="lyricsanimate">Animate Lyrics Size</string>
 </resources>

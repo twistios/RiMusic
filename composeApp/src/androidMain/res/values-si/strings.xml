@@ -854,4 +854,8 @@ CC-BY-SA 3.0</string>
     <string name="icereflection">Ice Reflection</string>
     <string name="blackcherrycosmos">Black Cherry Cosmos</string>
     <string name="gradienttype">Gradient Type</string>
+    <string name="random">Random</string>
+    <string name="colorpalette">Color Palette</string>
+    <string name="customcolor">Custom Color</string>
+    <string name="lyricsanimate">Animate Lyrics Size</string>
 </resources>

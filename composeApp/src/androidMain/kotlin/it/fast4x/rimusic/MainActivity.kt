@@ -159,6 +159,7 @@ import it.fast4x.rimusic.utils.checkUpdateStateKey
 import it.fast4x.rimusic.utils.closeWithBackButtonKey
 import it.fast4x.rimusic.utils.colorPaletteModeKey
 import it.fast4x.rimusic.utils.colorPaletteNameKey
+import it.fast4x.rimusic.utils.customColorKey
 import it.fast4x.rimusic.utils.customThemeDark_Background0Key
 import it.fast4x.rimusic.utils.customThemeDark_Background1Key
 import it.fast4x.rimusic.utils.customThemeDark_Background2Key
@@ -531,6 +532,8 @@ class MainActivity :
             var showPlayer by rememberSaveable { mutableStateOf(false) }
             var switchToAudioPlayer by rememberSaveable { mutableStateOf(false) }
             var animatedGradient by rememberPreference(animatedGradientKey, AnimatedGradient.Linear)
+            var customColor by rememberPreference(customColorKey, Color.Green.hashCode())
+            val lightTheme = colorPaletteMode == ColorPaletteMode.Light || (colorPaletteMode == ColorPaletteMode.System && (!isSystemInDarkTheme()))
 
 
             LocalePreferences.preference =
@@ -609,7 +612,13 @@ class MainActivity :
                     if (colorPaletteName == ColorPaletteName.MaterialYou) {
                         colorPalette = dynamicColorPaletteOf(
                             Color(monet.getAccentColor(this@MainActivity)),
-                            colorPaletteMode == ColorPaletteMode.Dark || (colorPaletteMode == ColorPaletteMode.System && isSystemInDarkTheme)
+                            !lightTheme
+                        )
+                    }
+                    if (colorPaletteName == ColorPaletteName.CustomColor) {
+                        colorPalette = dynamicColorPaletteOf(
+                            Color(customColor),
+                            !lightTheme
                         )
                     }
 
@@ -852,7 +861,7 @@ class MainActivity :
                                     if (colorPaletteName == ColorPaletteName.MaterialYou) {
                                         colorPalette = dynamicColorPaletteOf(
                                             Color(monet.getAccentColor(this@MainActivity)),
-                                            colorPaletteMode == ColorPaletteMode.Dark || (colorPaletteMode == ColorPaletteMode.System && isSystemInDarkTheme)
+                                            !lightTheme
                                         )
                                     }
 
@@ -861,6 +870,12 @@ class MainActivity :
                                             colorPalette,
                                             this@MainActivity,
                                             isSystemInDarkTheme
+                                        )
+                                    }
+                                    if (colorPaletteName == ColorPaletteName.CustomColor) {
+                                        colorPalette = dynamicColorPaletteOf(
+                                            Color(customColor),
+                                            !lightTheme
                                         )
                                     }
 

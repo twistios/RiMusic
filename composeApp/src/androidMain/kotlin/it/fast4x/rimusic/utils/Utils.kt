@@ -13,10 +13,6 @@ import android.provider.MediaStore
 import android.text.format.DateUtils
 import androidx.annotation.RequiresApi
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.net.toUri
@@ -30,6 +26,7 @@ import it.fast4x.innertube.Innertube
 import it.fast4x.innertube.models.bodies.ContinuationBody
 import it.fast4x.innertube.requests.playlistPage
 import it.fast4x.innertube.utils.ProxyPreferences
+import it.fast4x.innertube.utils.getProxy
 import it.fast4x.rimusic.Database
 import it.fast4x.rimusic.cleanPrefix
 import it.fast4x.rimusic.models.Album
@@ -38,17 +35,7 @@ import it.fast4x.rimusic.models.SongEntity
 import it.fast4x.rimusic.service.LOCAL_KEY_PREFIX
 import it.fast4x.rimusic.service.isLocal
 import it.fast4x.rimusic.ui.components.themed.NewVersionDialog
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import okhttp3.Call
-import okhttp3.Callback
-import okhttp3.OkHttpClient
-import okhttp3.Response
-import org.json.JSONException
 import java.io.File
-import java.net.InetSocketAddress
-import java.net.Proxy
 import java.text.SimpleDateFormat
 import java.time.Duration
 import java.util.Calendar
@@ -531,7 +518,7 @@ fun getHttpClient() = HttpClient() {
     }
     engine {
         ProxyPreferences.preference?.let{
-            proxy = Proxy(it.proxyMode, InetSocketAddress(it.proxyHost, it.proxyPort))
+            proxy = getProxy(it)
         }
 
     }

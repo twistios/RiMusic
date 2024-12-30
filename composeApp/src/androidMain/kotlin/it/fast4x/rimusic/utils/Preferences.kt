@@ -333,6 +333,8 @@ const val playlistSwipeLeftActionKey = "playlistSwipeLeftAction"
 const val playlistSwipeRightActionKey = "playlistSwipeRightAction"
 const val albumSwipeLeftActionKey = "albumSwipeLeftAction"
 const val albumSwipeRightActionKey = "albumSwipeRightAction"
+const val customColorKey = "customColor"
+const val lyricsSizeAnimateKey = "lyricsSizeAnimate"
 
 /*
 @PublishedApi

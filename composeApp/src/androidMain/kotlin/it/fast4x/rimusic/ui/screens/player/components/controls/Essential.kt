@@ -458,7 +458,7 @@ fun ControlsEssential(
             .background(
                 when (colorPaletteName) {
                     ColorPaletteName.Dynamic, ColorPaletteName.Default,
-                    ColorPaletteName.MaterialYou, ColorPaletteName.Customized -> {
+                    ColorPaletteName.MaterialYou, ColorPaletteName.Customized, ColorPaletteName.CustomColor -> {
                         when (playerPlayButtonType) {
                             PlayerPlayButtonType.CircularRibbed, PlayerPlayButtonType.Disabled -> Color.Transparent
                             else -> {

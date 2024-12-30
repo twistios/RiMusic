@@ -855,4 +855,6 @@
     <string name="gradienttype">Gradient Type</string>
     <string name="random">Random</string>
     <string name="colorpalette">Color Palette</string>
+    <string name="customcolor">Custom Color</string>
+    <string name="lyricsanimate">Animate Lyrics Size</string>
 </resources>

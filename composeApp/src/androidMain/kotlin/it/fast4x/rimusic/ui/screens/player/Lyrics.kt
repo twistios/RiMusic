@@ -5,8 +5,10 @@ import android.content.ActivityNotFoundException
 import android.content.Intent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.LinearOutSlowInEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
@@ -62,8 +64,10 @@ import androidx.compose.ui.graphics.ShaderBrush
 import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.TileMode
+import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
@@ -149,6 +153,8 @@ import me.bush.translator.Translator
 import it.fast4x.rimusic.colorPalette
 import it.fast4x.rimusic.thumbnailShape
 import it.fast4x.rimusic.typography
+import it.fast4x.rimusic.utils.conditional
+import it.fast4x.rimusic.utils.lyricsSizeAnimateKey
 import timber.log.Timber
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
@@ -325,6 +331,7 @@ fun Lyrics(
         }
         var lyricsHighlight by rememberPreference(lyricsHighlightKey, LyricsHighlight.None)
         var lyricsAlignment by rememberPreference(lyricsAlignmentKey, LyricsAlignment.Center)
+        var lyricsSizeAnimate by rememberPreference(lyricsSizeAnimateKey, false)
 
         fun translateLyricsWithRomanization(output: MutableState<String>, textToTranslate: String, isSync: Boolean, destinationLanguage: Language = Language.AUTO) = @Composable{
             LaunchedEffect(showSecondLine, romanization, textToTranslate, destinationLanguage){
@@ -875,6 +882,11 @@ fun Lyrics(
                                     }
                                 }
                             }
+                            val animateSizeText by animateFloatAsState(
+                                targetValue = if (index == synchronizedLyrics.index) 1.05f else 0.85f,
+                                animationSpec = tween(500, easing = LinearOutSlowInEasing),
+                                label = ""
+                            )
                             //Rainbow Shimmer
                             Box(
                                 modifier = Modifier
@@ -1001,7 +1013,17 @@ fun Lyrics(
                                         }),
                                         modifier = Modifier
                                             .padding(vertical = 4.dp, horizontal = 32.dp)
+                                            .conditional(lyricsSizeAnimate){padding(vertical = 4.dp)}
                                             .align(if (lyricsAlignment == LyricsAlignment.Left) Alignment.CenterStart else if (lyricsAlignment == LyricsAlignment.Right) Alignment.CenterEnd else Alignment.Center)
+                                            .conditional(lyricsSizeAnimate){
+                                                graphicsLayer {
+                                                    transformOrigin = if (lyricsAlignment == LyricsAlignment.Center) TransformOrigin(0.5f,0.5f)
+                                                    else if (lyricsAlignment == LyricsAlignment.Left) TransformOrigin(0f,0.5f)
+                                                    else TransformOrigin(1f,0.5f)
+                                                    scaleY = animateSizeText
+                                                    scaleX = animateSizeText
+                                                }
+                                            }
                                             .clickable {
                                                 if (clickLyricsText)
                                                     binder?.player?.seekTo(sentence.first)
@@ -1014,7 +1036,7 @@ fun Lyrics(
                                                 ) else Color.Transparent else Color.Transparent,
                                                 RoundedCornerShape(6.dp)
                                             )
-                                            .fillMaxWidth()
+                                            .conditional(lyricsHighlight != LyricsHighlight.None){fillMaxWidth()}
                                     )
                                 else
                                     BasicText(
@@ -1051,7 +1073,17 @@ fun Lyrics(
                                         ),
                                         modifier = Modifier
                                             .padding(vertical = 4.dp, horizontal = 32.dp)
+                                            .conditional(lyricsSizeAnimate){padding(vertical = 4.dp)}
                                             .align(if (lyricsAlignment == LyricsAlignment.Left) Alignment.CenterStart else if (lyricsAlignment == LyricsAlignment.Right) Alignment.CenterEnd else Alignment.Center)
+                                            .conditional(lyricsSizeAnimate){
+                                                graphicsLayer {
+                                                    transformOrigin = if (lyricsAlignment == LyricsAlignment.Center) TransformOrigin(0.5f,0.5f)
+                                                    else if (lyricsAlignment == LyricsAlignment.Left) TransformOrigin(0f,0.5f)
+                                                    else TransformOrigin(1f,0.5f)
+                                                    scaleY = if (index == synchronizedLyrics.index) 1.1f else 0.9f
+                                                    scaleX = if (index == synchronizedLyrics.index) 1.1f else 0.9f
+                                                }
+                                            }
                                             .clickable {
                                                 if (clickLyricsText)
                                                     binder?.player?.seekTo(sentence.first)
@@ -1229,7 +1261,17 @@ fun Lyrics(
                                             ),
                                             modifier = Modifier
                                                 .padding(vertical = 4.dp, horizontal = 32.dp)
+                                                .conditional(lyricsSizeAnimate){padding(vertical = 4.dp)}
                                                 .align(if (lyricsAlignment == LyricsAlignment.Left) Alignment.CenterStart else if (lyricsAlignment == LyricsAlignment.Right) Alignment.CenterEnd else Alignment.Center)
+                                                .conditional(lyricsSizeAnimate){
+                                                    graphicsLayer {
+                                                        transformOrigin = if (lyricsAlignment == LyricsAlignment.Center) TransformOrigin(0.5f,0.5f)
+                                                        else if (lyricsAlignment == LyricsAlignment.Left) TransformOrigin(0f,0.5f)
+                                                        else TransformOrigin(1f,0.5f)
+                                                        scaleY = animateSizeText
+                                                        scaleX = animateSizeText
+                                                    }
+                                                }
                                                 .clickable {
                                                     if (clickLyricsText)
                                                         binder?.player?.seekTo(sentence.first)
@@ -1277,7 +1319,17 @@ fun Lyrics(
                                             ),
                                             modifier = Modifier
                                                 .padding(vertical = 4.dp, horizontal = 32.dp)
+                                                .conditional(lyricsSizeAnimate){padding(vertical = 4.dp)}
                                                 .align(if (lyricsAlignment == LyricsAlignment.Left) Alignment.CenterStart else if (lyricsAlignment == LyricsAlignment.Right) Alignment.CenterEnd else Alignment.Center)
+                                                .conditional(lyricsSizeAnimate){
+                                                    graphicsLayer {
+                                                        transformOrigin = if (lyricsAlignment == LyricsAlignment.Center) TransformOrigin(0.5f,0.5f)
+                                                        else if (lyricsAlignment == LyricsAlignment.Left) TransformOrigin(0f,0.5f)
+                                                        else TransformOrigin(1f,0.5f)
+                                                        scaleY = animateSizeText
+                                                        scaleX = animateSizeText
+                                                    }
+                                                }
                                                 .clickable {
                                                     if (clickLyricsText)
                                                         binder?.player?.seekTo(sentence.first)
@@ -1347,11 +1399,22 @@ fun Lyrics(
                                             ),
                                             modifier = Modifier
                                                 .padding(vertical = 4.dp, horizontal = 32.dp)
+                                                .conditional(lyricsSizeAnimate){padding(vertical = 4.dp)}
                                                 .align(if (lyricsAlignment == LyricsAlignment.Left) Alignment.CenterStart else if (lyricsAlignment == LyricsAlignment.Right) Alignment.CenterEnd else Alignment.Center)
+                                                .conditional(lyricsSizeAnimate){
+                                                    graphicsLayer {
+                                                        transformOrigin = if (lyricsAlignment == LyricsAlignment.Center) TransformOrigin(0.5f,0.5f)
+                                                        else if (lyricsAlignment == LyricsAlignment.Left) TransformOrigin(0f,0.5f)
+                                                        else TransformOrigin(1f,0.5f)
+                                                        scaleY = animateSizeText
+                                                        scaleX = animateSizeText
+                                                    }
+                                                }
                                                 .clickable {
                                                     if (clickLyricsText)
                                                         binder?.player?.seekTo(sentence.first)
                                                 }
+
                                         )
                             }
                         }
@@ -2142,6 +2205,16 @@ fun Lyrics(
                                             onClick = {
                                                 menuState.hide()
                                                 showSecondLine = !showSecondLine
+                                            }
+                                        )
+
+                                        MenuEntry(
+                                            icon = if (lyricsSizeAnimate) R.drawable.checkmark else R.drawable.close,
+                                            text = stringResource(R.string.lyricsanimate),
+                                            enabled = true,
+                                            onClick = {
+                                                menuState.hide()
+                                                lyricsSizeAnimate = !lyricsSizeAnimate
                                             }
                                         )
 

@@ -842,15 +842,19 @@
     <string name="animatedgradient">Degradado animado</string>
     <string name="linear">Degradado lineal</string>
     <string name="mesh">Degradado de malla</string>
-    <string name="mesmerizinglens">Mesmerizing Lens</string>
+    <string name="mesmerizinglens">Lente hipnotizante</string>
     <string name="glossygradient">Degradado brillante</string>
     <string name="gradientflow">Flujo del degradado</string>
-    <string name="purpleliquid">Purple Liquid</string>
-    <string name="stage">Stage</string>
-    <string name="inkflow">Ink Flow</string>
-    <string name="goldenmagma">Golden Magma</string>
-    <string name="oilflow">Oil Flow</string>
-    <string name="icereflection">Ice Reflection</string>
-    <string name="blackcherrycosmos">Black Cherry Cosmos</string>
+    <string name="purpleliquid">Líquido púrpura</string>
+    <string name="stage">Escenario</string>
+    <string name="inkflow">Flujo de tinta</string>
+    <string name="goldenmagma">Magma dorado</string>
+    <string name="oilflow">Flujo de aceite</string>
+    <string name="icereflection">Reflejo de hielo</string>
+    <string name="blackcherrycosmos">Cosmos de cerezas negras</string>
     <string name="gradienttype">Tipo de degradado</string>
+    <string name="random">Aleatorio</string>
+    <string name="colorpalette">Paleta de colores</string>
+    <string name="customcolor">Custom Color</string>
+    <string name="lyricsanimate">Animate Lyrics Size</string>
 </resources>

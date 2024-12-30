@@ -855,4 +855,8 @@
     <string name="icereflection">Reflet de glace</string>
     <string name="blackcherrycosmos">Cosmos à la cerise noire</string>
     <string name="gradienttype">Type de dégradé</string>
+    <string name="random">Aléatoire</string>
+    <string name="colorpalette">Palette de couleurs</string>
+    <string name="customcolor">Couleur personnalisée</string>
+    <string name="lyricsanimate">Taille des paroles animées</string>
 </resources>

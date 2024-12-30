@@ -237,6 +237,7 @@ import it.fast4x.rimusic.typography
 import it.fast4x.rimusic.utils.autoDownloadSongKey
 import it.fast4x.rimusic.utils.autoDownloadSongWhenAlbumBookmarkedKey
 import it.fast4x.rimusic.utils.autoDownloadSongWhenLikedKey
+import it.fast4x.rimusic.utils.customColorKey
 
 @Composable
 fun DefaultUiSettings() {
@@ -752,6 +753,8 @@ fun UiSettings(
         AlbumSwipeAction.Bookmark
     )
 
+    var customColor by rememberPreference(customColorKey, Color.Green.hashCode())
+
     Column(
         modifier = Modifier
             .background(colorPalette().background0)
@@ -924,10 +927,30 @@ fun UiSettings(
                         ColorPaletteName.ModernBlack -> stringResource(R.string.theme_modern_black)
                         ColorPaletteName.MaterialYou -> stringResource(R.string.theme_material_you)
                         ColorPaletteName.Customized -> stringResource(R.string.theme_customized)
+                        ColorPaletteName.CustomColor -> stringResource(R.string.customcolor)
                     }
                 }
             )
 
+        AnimatedVisibility(visible = colorPaletteName == ColorPaletteName.CustomColor) {
+            Column{
+            ColorSettingEntry(
+                title = stringResource(R.string.customcolor),
+                text = "",
+                color = Color(customColor),
+                onColorSelected = {
+                    customColor = it.hashCode()
+                },
+                modifier = Modifier
+                    .padding(start = 25.dp)
+            )
+            ImportantSettingsDescription(
+                text = stringResource(R.string.restarting_rimusic_is_required),
+                modifier = Modifier
+                .padding(start = 25.dp)
+            )
+            }
+        }
         AnimatedVisibility(visible = colorPaletteName == ColorPaletteName.Customized) {
             Column {
                 SettingsEntryGroupText(stringResource(R.string.title_customized_light_theme_colors))

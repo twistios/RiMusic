@@ -979,7 +979,7 @@ fun Player(
                     interactionSource = remember { MutableInteractionSource() },
                     indication = null,
                     onClick = {
-                        if (thumbnailTapEnabled) {
+                        if (thumbnailTapEnabled && !showthumbnail) {
                             if (isShowingVisualizer) isShowingVisualizer = false
                             isShowingLyrics = !isShowingLyrics
                         }
