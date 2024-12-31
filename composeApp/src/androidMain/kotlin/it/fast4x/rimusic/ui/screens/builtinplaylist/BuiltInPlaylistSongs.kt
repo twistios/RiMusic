@@ -147,7 +147,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import it.fast4x.rimusic.colorPalette
-import it.fast4x.rimusic.relativePlayTime
 import it.fast4x.rimusic.thumbnailShape
 import it.fast4x.rimusic.typography
 import java.text.SimpleDateFormat

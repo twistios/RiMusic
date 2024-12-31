@@ -59,20 +59,10 @@ import it.fast4x.rimusic.models.SongPlaylistMap
 import it.fast4x.rimusic.models.SongWithContentLength
 import it.fast4x.rimusic.models.SortedSongPlaylistMap
 import it.fast4x.rimusic.service.LOCAL_KEY_PREFIX
-import it.fast4x.rimusic.utils.durationTextToMillis
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import org.intellij.lang.annotations.MagicConstant
 import kotlin.collections.sortedBy
-
-fun Song.relativePlayTime(): Double {
-    val totalPlayTimeMs = durationTextToMillis(this.durationText ?: "")
-    return if(totalPlayTimeMs > 0) this.totalPlayTimeMs.toDouble() / totalPlayTimeMs.toDouble() else 0.0
-}
-
-fun SongEntity.relativePlayTime(): Double {
-    return this.song.relativePlayTime()
-}
 
 @Dao
 interface Database {
