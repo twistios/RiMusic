@@ -126,7 +126,7 @@ fun InfoAlbumAndArtistModern(
         Row(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.Start,
-            modifier = Modifier.fillMaxWidth(0.90f)
+            modifier = Modifier.fillMaxWidth()
         ) {
 
             if (playerInfoShowIcon) {
@@ -173,7 +173,9 @@ fun InfoAlbumAndArtistModern(
             if (!disableScrollingText) modifierTitle = modifierTitle.basicMarquee()
             Row(
                 horizontalArrangement = Arrangement.spacedBy(4.dp),
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier
+                 .weight(1f)
             ) {
                 if (title?.startsWith(EXPLICIT_PREFIX) == true)
                     IconButton(
@@ -184,9 +186,9 @@ fun InfoAlbumAndArtistModern(
                         modifier = Modifier
                             .size(18.dp)
                     )
-            Box(
+             Box(
 
-            ){
+             ){
                 BasicText(
                     text = cleanPrefix(title ?: ""),
                     style = TextStyle(
@@ -220,44 +222,46 @@ fun InfoAlbumAndArtistModern(
                 }
             }
             //}
+            if (playerControlsType == PlayerControlsType.Modern)
+                Box(
+                    modifier = Modifier
+                        .weight(0.1f)
+                ){
+                    IconButton(
+                        color = colorPalette().favoritesIcon,
+                        icon = getLikeState(mediaId),
+                        onClick = {
+                            val currentMediaItem = binder.player.currentMediaItem
+                            Database.asyncTransaction {
+                                if ( like( mediaId, setLikeState(likedAt) ) == 0 ) {
+                                    currentMediaItem
+                                        ?.takeIf { it.mediaId == mediaId }
+                                        ?.let {
+                                            insert(currentMediaItem, Song::toggleLike)
+                                        }
+                                    if (currentMediaItem != null) {
+                                        MyDownloadHelper.autoDownloadWhenLiked(context(),currentMediaItem)
+                                    }
+                                }
+                            }
+                            if (effectRotationEnabled) isRotated = !isRotated
+                        },
+                        modifier = Modifier
+                            .padding(start = 5.dp)
+                            .size(24.dp)
+                    )
+                    if (playerBackgroundColors == PlayerBackgroundColors.BlurredCoverColor) {
+                        Icon(
+                            painter = painterResource(id = getUnlikedIcon()),
+                            tint = colorPalette().text,
+                            contentDescription = null,
+                            modifier = Modifier
+                                .padding(start = 5.dp)
+                                .size(24.dp)
+                        )
+                    }
+                }
         }
-
-        if (playerControlsType == PlayerControlsType.Modern)
-         Box{
-             IconButton(
-                 color = colorPalette().favoritesIcon,
-                 icon = getLikeState(mediaId),
-                 onClick = {
-                     val currentMediaItem = binder.player.currentMediaItem
-                     Database.asyncTransaction {
-                         if ( like( mediaId, setLikeState(likedAt) ) == 0 ) {
-                             currentMediaItem
-                                 ?.takeIf { it.mediaId == mediaId }
-                                 ?.let {
-                                     insert(currentMediaItem, Song::toggleLike)
-                                 }
-                             if (currentMediaItem != null) {
-                                 MyDownloadHelper.autoDownloadWhenLiked(context(),currentMediaItem)
-                             }
-                         }
-                     }
-                     if (effectRotationEnabled) isRotated = !isRotated
-                 },
-                 modifier = Modifier
-                     .padding(start = 5.dp)
-                     .size(24.dp)
-             )
-             if (playerBackgroundColors == PlayerBackgroundColors.BlurredCoverColor) {
-                 Icon(
-                     painter = painterResource(id = getUnlikedIcon()),
-                     tint = colorPalette().text,
-                     contentDescription = null,
-                     modifier = Modifier
-                         .padding(start = 5.dp)
-                         .size(24.dp)
-                 )
-             }
-         }
 
 
     }

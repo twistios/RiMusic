@@ -162,7 +162,8 @@ fun Player.addNext(mediaItems: List<MediaItem>, context: Context? = null) {
     }
 
     if (playbackState == Player.STATE_IDLE || playbackState == Player.STATE_ENDED) {
-        forcePlay(filteredMediaItems.first())
+        setMediaItems(filteredMediaItems.map { it.cleaned })
+        play()
     } else {
         addMediaItems(currentMediaItemIndex + 1, filteredMediaItems.map { it.cleaned })
     }

@@ -1,9 +1,11 @@
 package it.fast4x.rimusic.ui.components.themed
 
 import androidx.annotation.DrawableRes
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
@@ -46,11 +48,13 @@ inline fun Menu(
     )
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun MenuEntry(
     painter: Painter,
     text: String,
     onClick: () -> Unit,
+    onLongClick: (() -> Unit)? = null,
     secondaryText: String? = null,
     enabled: Boolean = true,
     trailingContent: (@Composable () -> Unit)? = null
@@ -59,7 +63,7 @@ fun MenuEntry(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(24.dp),
         modifier = Modifier
-            .clickable(enabled = enabled, onClick = onClick)
+            .combinedClickable(enabled = enabled, onClick = onClick, onLongClick = onLongClick)
             .fillMaxWidth()
             .alpha(if (enabled) 1f else 0.4f)
             .padding(horizontal = 24.dp)
@@ -99,6 +103,7 @@ fun MenuEntry(
     @DrawableRes icon: Int,
     text: String,
     onClick: () -> Unit,
+    onLongClick: (() -> Unit)? = null,
     secondaryText: String? = null,
     enabled: Boolean = true,
     trailingContent: (@Composable () -> Unit)? = null
@@ -107,6 +112,7 @@ fun MenuEntry(
         painterResource( icon ),
         text,
         onClick,
+        onLongClick,
         secondaryText,
         enabled,
         trailingContent

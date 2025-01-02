@@ -857,4 +857,5 @@
     <string name="colorpalette">Палітра кольорів</string>
     <string name="customcolor">Користувальницький колір</string>
     <string name="lyricsanimate">Розмір анімації тексту пісні</string>
+    <string name="lyricsSizeSecondary">Long Press to change the size</string>
 </resources>

@@ -855,6 +855,7 @@
     <string name="gradienttype">Tipo de degradado</string>
     <string name="random">Aleatorio</string>
     <string name="colorpalette">Paleta de colores</string>
-    <string name="customcolor">Custom Color</string>
-    <string name="lyricsanimate">Animate Lyrics Size</string>
+    <string name="customcolor">Color personalizado</string>
+    <string name="lyricsanimate">Animar tamaño de letra</string>
+    <string name="lyricsSizeSecondary">Long Press to change the size</string>
 </resources>

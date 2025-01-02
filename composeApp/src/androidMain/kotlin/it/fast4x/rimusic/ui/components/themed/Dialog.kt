@@ -127,6 +127,8 @@ import it.fast4x.rimusic.utils.thumbnailSpacingKey
 import kotlinx.coroutines.delay
 import it.fast4x.rimusic.colorPalette
 import it.fast4x.rimusic.typography
+import it.fast4x.rimusic.utils.lyricsSizeKey
+import it.fast4x.rimusic.utils.lyricsSizeLKey
 import it.fast4x.rimusic.utils.thumbnailFadeExKey
 import it.fast4x.rimusic.utils.thumbnailSpacingLKey
 
@@ -1563,6 +1565,79 @@ fun BlurParamsDialog(
             }
         }
     }
+
+@androidx.annotation.OptIn(UnstableApi::class)
+@Composable
+fun LyricsSizeDialog(
+    onDismiss: () -> Unit,
+    sizeValue: (Float) -> Unit,
+    sizeValueL: (Float) -> Unit,
+) {
+    var lyricsSize by rememberPreference(lyricsSizeKey, 20f)
+    var lyricsSizeL by rememberPreference(lyricsSizeLKey, 20f)
+    DefaultDialog(
+        onDismiss = {
+            sizeValue(lyricsSize)
+            sizeValueL(lyricsSizeL)
+            onDismiss()
+        }
+    ) {
+
+        if (!isLandscape) {
+            Row(
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier
+                    .fillMaxWidth()
+            ) {
+                IconButton(
+                    onClick = {
+                        lyricsSize = 20f
+                    },
+                    icon = R.drawable.text,
+                    color = colorPalette().favoritesIcon,
+                    modifier = Modifier
+                        .size(24.dp)
+                )
+
+                SliderControl(
+                    state = lyricsSize,
+                    onSlide = { lyricsSize = it },
+                    onSlideComplete = {},
+                    toDisplay = { "%.0f".format(it) },
+                    steps = 82,
+                    range = 18f..100f
+                )
+            }
+        }
+        if (isLandscape) {
+            Row(
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier
+                    .fillMaxWidth()
+            ) {
+                IconButton(
+                    onClick = {
+                        lyricsSizeL = 20f
+                    },
+                    icon = R.drawable.text,
+                    color = colorPalette().favoritesIcon,
+                    modifier = Modifier
+                        .size(24.dp)
+                )
+
+                SliderControl(
+                    state = lyricsSizeL,
+                    onSlide = { lyricsSizeL = it },
+                    onSlideComplete = {},
+                    toDisplay = { "%.0f".format(it) },
+                    range = 18f..100f
+                )
+            }
+        }
+    }
+}
 
   /*if (isShowingLyrics && !showlyricsthumbnail)
       DefaultDialog(

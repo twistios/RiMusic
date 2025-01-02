@@ -859,4 +859,5 @@
     <string name="colorpalette">Цветовая палитра</string>
     <string name="customcolor">Пользовательский цвет</string>
     <string name="lyricsanimate">Размер анимации текста песни</string>
+    <string name="lyricsSizeSecondary">Long Press to change the size</string>
 </resources>

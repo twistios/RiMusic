@@ -857,4 +857,5 @@
     <string name="colorpalette">Renk Paleti</string>
     <string name="customcolor">Özel Renk</string>
     <string name="lyricsanimate">Animasyonlu Şarkı Sözleri</string>
+    <string name="lyricsSizeSecondary">Boyutu değiştirmek için uzun basın</string>
 </resources>

@@ -857,4 +857,5 @@
     <string name="colorpalette">Rəng Palitrası</string>
     <string name="customcolor">Fərdi Rəng</string>
     <string name="lyricsanimate">Lirika ölçüsün hərəkət etdir</string>
+    <string name="lyricsSizeSecondary">Long Press to change the size</string>
 </resources>

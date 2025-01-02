@@ -859,4 +859,5 @@
     <string name="colorpalette">Palette de couleurs</string>
     <string name="customcolor">Couleur personnalisée</string>
     <string name="lyricsanimate">Taille des paroles animées</string>
+    <string name="lyricsSizeSecondary">Appuyez longuement pour changer la taille</string>
 </resources>

@@ -855,6 +855,7 @@
     <string name="gradienttype">Tip gradient</string>
     <string name="random">Aleatoriu</string>
     <string name="colorpalette">Paletă de culori</string>
-    <string name="customcolor">Custom Color</string>
-    <string name="lyricsanimate">Animate Lyrics Size</string>
+    <string name="customcolor">Culoare personalizată</string>
+    <string name="lyricsanimate">Animare dimensiunea versurilor</string>
+    <string name="lyricsSizeSecondary">Long Press to change the size</string>
 </resources>

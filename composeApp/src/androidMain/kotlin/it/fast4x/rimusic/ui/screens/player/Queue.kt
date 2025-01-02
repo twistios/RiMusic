@@ -787,7 +787,7 @@ fun Queue(
                     ) {
                         MiniPlayer(
                             showPlayer = {
-                                //navController.navigate(NavRoutes.player.name)
+                                onDismiss(queueLoopType)
                             },
                             hidePlayer = {})
                     }

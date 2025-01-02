@@ -335,6 +335,8 @@ const val albumSwipeLeftActionKey = "albumSwipeLeftAction"
 const val albumSwipeRightActionKey = "albumSwipeRightAction"
 const val customColorKey = "customColor"
 const val lyricsSizeAnimateKey = "lyricsSizeAnimate"
+const val lyricsSizeKey = "lyricsSize"
+const val lyricsSizeLKey = "lyricsSizeL"
 
 /*
 @PublishedApi
