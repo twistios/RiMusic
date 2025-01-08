@@ -352,6 +352,7 @@
     <string name="sort_year">Yıl</string>
     <string name="sort_name">İsim</string>
     <string name="sort_songs_number">Şarkı Numarası</string>
+    <string name="sort_relative_listening_time">Göreceli Dinleme Süresi</string>
     <string name="follow">Takip et</string>
     <string name="following">Takip ediliyor</string>
     <string name="artist_subscribers">%s takipçi</string>
@@ -858,4 +859,6 @@
     <string name="customcolor">Özel Renk</string>
     <string name="lyricsanimate">Animasyonlu Şarkı Sözleri</string>
     <string name="lyricsSizeSecondary">Boyutu değiştirmek için uzun basın</string>
+    <string name="appearancepresets">Görünüm Ön Ayarları</string>
+    <string name="appearancepresetssecondary">Önizlemeler düşük kalitede olacaktır</string>
 </resources>

@@ -478,7 +478,10 @@ fun PlaylistsItemMenu(
                         MenuEntry(
                             icon = R.drawable.heart,
                             text = stringResource(R.string.add_to_favorites),
-                            onClick = onAddToPreferites
+                            onClick = {
+                                onDismiss()
+                                onAddToPreferites()
+                            }
                         )
 
                     if (onAddToPlaylist != null) {

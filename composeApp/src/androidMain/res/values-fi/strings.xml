@@ -352,6 +352,7 @@
     <string name="sort_year">Julkaisuvuosi</string>
     <string name="sort_name">Nimi</string>
     <string name="sort_songs_number">Kappaleiden määrä</string>
+    <string name="sort_relative_listening_time">Relative Listening Time</string>
     <string name="follow">Seuraa</string>
     <string name="following">Seuraan tätä</string>
     <string name="artist_subscribers">%s tilaajaa</string>
@@ -858,4 +859,6 @@
     <string name="customcolor">Custom Color</string>
     <string name="lyricsanimate">Animate Lyrics Size</string>
     <string name="lyricsSizeSecondary">Long Press to change the size</string>
+    <string name="appearancepresets">Appearance Presets</string>
+    <string name="appearancepresetssecondary">Previews will be in low quality</string>
 </resources>

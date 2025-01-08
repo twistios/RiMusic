@@ -353,6 +353,7 @@ CC-BY-SA 3.0</string>
     <string name="sort_year">Year</string>
     <string name="sort_name">Name</string>
     <string name="sort_songs_number">Songs Number</string>
+    <string name="sort_relative_listening_time">Relative Listening Time</string>
     <string name="follow">Follow</string>
     <string name="following">Following</string>
     <string name="artist_subscribers">%s subscribers</string>
@@ -859,4 +860,6 @@ CC-BY-SA 3.0</string>
     <string name="customcolor">Custom Color</string>
     <string name="lyricsanimate">Animate Lyrics Size</string>
     <string name="lyricsSizeSecondary">Long Press to change the size</string>
+    <string name="appearancepresets">Appearance Presets</string>
+    <string name="appearancepresetssecondary">Previews will be in low quality</string>
 </resources>

@@ -4,6 +4,8 @@ import android.annotation.SuppressLint
 import android.net.ConnectivityManager
 import android.text.format.Formatter
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
@@ -15,6 +17,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -25,6 +28,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -58,6 +62,7 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.distinctUntilChanged
 import it.fast4x.rimusic.colorPalette
 import it.fast4x.rimusic.typography
+import it.fast4x.rimusic.ui.components.themed.IconButton
 import kotlin.math.roundToInt
 
 @SuppressLint("LongLogTag")
@@ -105,6 +110,10 @@ fun StatsForNerds(
             PlayerBackgroundColors.BlurredCoverColor
         )
         var statsfornerdsfull by remember {mutableStateOf(false)}
+        val rotationAngle by animateFloatAsState(
+            targetValue = if (statsfornerdsfull) 180f else 0f,
+            animationSpec = tween(durationMillis = 500)
+        )
         LaunchedEffect(mediaId) {
             Database.format(mediaId).distinctUntilChanged().collectLatest { currentFormat ->
                 if (currentFormat?.itag == null) {
@@ -336,8 +345,7 @@ fun StatsForNerds(
     }
         if ((statsForNerds) && (!showThumbnail || playerType == PlayerType.Modern)) {
             Column(
-                modifier = modifier
-                    .pointerInput(Unit) {detectTapGestures(onLongPress = {statsfornerdsfull = !statsfornerdsfull})}
+
             ) {
 
                 Row(
@@ -381,6 +389,19 @@ fun StatsForNerds(
                                 ?: (stringResource(R.string.size) + " : " + stringResource(R.string.audio_quality_format_unknown)),
                             maxLines = 1,
                             style = typography().xs.medium.color(colorPalette().text)
+                        )
+                    }
+                    Box(
+                        contentAlignment = Alignment.Center,
+                        modifier = modifier.weight(0.2f)
+                    ) {
+                        IconButton(
+                            icon = R.drawable.chevron_up,
+                            color = colorPalette().text,
+                            onClick = {statsfornerdsfull = !statsfornerdsfull},
+                            modifier = Modifier
+                                .size(18.dp)
+                                .rotate(rotationAngle)
                         )
                     }
                 }

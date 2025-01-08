@@ -28,6 +28,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextOverflow
@@ -73,9 +74,11 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import it.fast4x.rimusic.colorPalette
+import it.fast4x.rimusic.enums.ColorPaletteName
 import it.fast4x.rimusic.utils.shimmerEffect
 import it.fast4x.rimusic.thumbnailShape
 import it.fast4x.rimusic.typography
+import it.fast4x.rimusic.utils.colorPaletteNameKey
 
 
 @UnstableApi
@@ -351,6 +354,7 @@ fun SongItem(
     var songPlaylist by remember {
         mutableIntStateOf(0)
     }
+    val colorPaletteName by rememberPreference(colorPaletteNameKey, ColorPaletteName.Dynamic)
 
     // TODO improve playlist indicator without recompose
     if (playlistindicator)
@@ -443,7 +447,7 @@ fun SongItem(
                     if (playlistindicator && (songPlaylist > 0)) {
                         IconButton(
                             icon = R.drawable.add_in_playlist,
-                            color = colorPalette().text,
+                            color = if (colorPaletteName == ColorPaletteName.PureBlack) Color.Black else colorPalette().text,
                             enabled = true,
                             onClick = {},
                             modifier = Modifier
@@ -539,7 +543,7 @@ fun SongItem(
                 if (playlistindicator && (songPlaylist > 0)) {
                     IconButton(
                         icon = R.drawable.add_in_playlist,
-                        color = colorPalette().text,
+                        color = if (colorPaletteName == ColorPaletteName.PureBlack) Color.Black else colorPalette().text,
                         enabled = true,
                         onClick = {},
                         modifier = Modifier

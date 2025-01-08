@@ -353,6 +353,7 @@
     <string name="sort_year">По году</string>
     <string name="sort_name">По названию</string>
     <string name="sort_songs_number">По количеству песен</string>
+    <string name="sort_relative_listening_time">Относительное время прослушивания</string>
     <string name="follow">Подписаться</string>
     <string name="following">Подписан</string>
     <string name="artist_subscribers">%s подписчиков</string>
@@ -859,5 +860,7 @@
     <string name="colorpalette">Цветовая палитра</string>
     <string name="customcolor">Пользовательский цвет</string>
     <string name="lyricsanimate">Размер анимации текста песни</string>
-    <string name="lyricsSizeSecondary">Long Press to change the size</string>
+    <string name="lyricsSizeSecondary">Долгое нажатие для изменения размера</string>
+    <string name="appearancepresets">Пресеты внешнего вида</string>
+    <string name="appearancepresetssecondary">Предпросмотр будет в низком качестве</string>
 </resources>

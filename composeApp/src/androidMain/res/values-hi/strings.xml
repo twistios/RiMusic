@@ -352,6 +352,7 @@
     <string name="sort_year">वर्ष</string>
     <string name="sort_name">नाम</string>
     <string name="sort_songs_number">गीत संख्या</string>
+    <string name="sort_relative_listening_time">Relative Listening Time</string>
     <string name="follow">फॉलो करें</string>
     <string name="following">फॉलोइंग</string>
     <string name="artist_subscribers">%s सब्सक्राइबर</string>
@@ -858,4 +859,6 @@
     <string name="customcolor">Custom Color</string>
     <string name="lyricsanimate">Animate Lyrics Size</string>
     <string name="lyricsSizeSecondary">Long Press to change the size</string>
+    <string name="appearancepresets">Appearance Presets</string>
+    <string name="appearancepresetssecondary">Previews will be in low quality</string>
 </resources>

@@ -398,7 +398,10 @@ fun PlaylistsItemGridMenu(
                         title = R.string.add_to_favorites,
                         colorIcon = colorPalette.text,
                         colorText = colorPalette.text,
-                        onClick = onAddToPreferites
+                        onClick = {
+                            onDismiss()
+                            onAddToPreferites()
+                        }
                     )
 
                 onAddToPlaylist?.let { onAddToPlaylist ->

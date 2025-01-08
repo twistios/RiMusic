@@ -352,6 +352,7 @@
     <string name="sort_year">Anno</string>
     <string name="sort_name">Nomine</string>
     <string name="sort_songs_number">Numero de cantos</string>
+    <string name="sort_relative_listening_time">Relative Listening Time</string>
     <string name="follow">Sequer</string>
     <string name="following">Sequinte</string>
     <string name="artist_subscribers">%s subscriptores</string>
@@ -858,4 +859,6 @@
     <string name="customcolor">Custom Color</string>
     <string name="lyricsanimate">Animate Lyrics Size</string>
     <string name="lyricsSizeSecondary">Long Press to change the size</string>
+    <string name="appearancepresets">Appearance Presets</string>
+    <string name="appearancepresetssecondary">Previews will be in low quality</string>
 </resources>

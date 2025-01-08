@@ -352,6 +352,7 @@
     <string name="sort_year">Рік</string>
     <string name="sort_name">Ім’я</string>
     <string name="sort_songs_number">Номер пісні</string>
+    <string name="sort_relative_listening_time">Відносний час прослуховування</string>
     <string name="follow">Підписатися</string>
     <string name="following">Підписаний</string>
     <string name="artist_subscribers">%s Підписників</string>
@@ -857,5 +858,7 @@
     <string name="colorpalette">Палітра кольорів</string>
     <string name="customcolor">Користувальницький колір</string>
     <string name="lyricsanimate">Розмір анімації тексту пісні</string>
-    <string name="lyricsSizeSecondary">Long Press to change the size</string>
+    <string name="lyricsSizeSecondary">Довге натискання для зміни розміру</string>
+    <string name="appearancepresets">Пресети зовнішнього вигляду</string>
+    <string name="appearancepresetssecondary">Попередній перегляд буде в низькій якості</string>
 </resources>

@@ -352,6 +352,7 @@
     <string name="sort_year">年</string>
     <string name="sort_name">名称</string>
     <string name="sort_songs_number">歌曲编号</string>
+    <string name="sort_relative_listening_time">Relative Listening Time</string>
     <string name="follow">关注</string>
     <string name="following">已关注</string>
     <string name="artist_subscribers">%s位订阅者</string>
@@ -858,4 +859,6 @@
     <string name="customcolor">Custom Color</string>
     <string name="lyricsanimate">Animate Lyrics Size</string>
     <string name="lyricsSizeSecondary">Long Press to change the size</string>
+    <string name="appearancepresets">Appearance Presets</string>
+    <string name="appearancepresetssecondary">Previews will be in low quality</string>
 </resources>

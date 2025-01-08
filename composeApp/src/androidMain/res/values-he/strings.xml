@@ -352,6 +352,7 @@
     <string name="sort_year">שנה</string>
     <string name="sort_name">שם</string>
     <string name="sort_songs_number">מספר שירים</string>
+    <string name="sort_relative_listening_time">Relative Listening Time</string>
     <string name="follow">עקוב</string>
     <string name="following">במעקב</string>
     <string name="artist_subscribers">%s מנויים</string>
@@ -858,4 +859,6 @@
     <string name="customcolor">Custom Color</string>
     <string name="lyricsanimate">Animate Lyrics Size</string>
     <string name="lyricsSizeSecondary">Long Press to change the size</string>
+    <string name="appearancepresets">Appearance Presets</string>
+    <string name="appearancepresetssecondary">Previews will be in low quality</string>
 </resources>

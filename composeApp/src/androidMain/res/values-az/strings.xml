@@ -352,6 +352,7 @@
     <string name="sort_year">İl</string>
     <string name="sort_name">Ad</string>
     <string name="sort_songs_number">Mahnı Nömrəsi</string>
+    <string name="sort_relative_listening_time">Nisbi Dinləmə Müddəti</string>
     <string name="follow">İzlə</string>
     <string name="following">İzlənilir</string>
     <string name="artist_subscribers">%s izləyici</string>
@@ -857,5 +858,7 @@
     <string name="colorpalette">Rəng Palitrası</string>
     <string name="customcolor">Fərdi Rəng</string>
     <string name="lyricsanimate">Lirika ölçüsün hərəkət etdir</string>
-    <string name="lyricsSizeSecondary">Long Press to change the size</string>
+    <string name="lyricsSizeSecondary">Ölçünü dəyişmək üçün uzun basın</string>
+    <string name="appearancepresets">Görünüş İlkin Qrupları</string>
+    <string name="appearancepresetssecondary">Önizləmələr aşağı keyfiyyətdə olacaq</string>
 </resources>

@@ -372,6 +372,7 @@ fun ControlsEssential(
     onShowSpeedPlayerDialog: () -> Unit,
 ) {
     val colorPaletteName by rememberPreference(colorPaletteNameKey, ColorPaletteName.Dynamic)
+    val colorPaletteMode by rememberPreference(colorPaletteModeKey, ColorPaletteMode.Dark)
     var effectRotationEnabled by rememberPreference(effectRotationKey, true)
     var isRotated by rememberSaveable { mutableStateOf(false) }
     val shouldBePlayingTransition = updateTransition(shouldBePlaying, label = "shouldBePlaying")
@@ -435,9 +436,7 @@ fun ControlsEssential(
                     else binder.player.playPrevious()
                     if (effectRotationEnabled) isRotated = !isRotated
                 },
-                onLongClick = {
-                    binder.player.seekTo(position - 5000)
-                }
+                onLongClick = {}
             )
             .rotate(rotationAngle)
             .padding(10.dp)
@@ -516,7 +515,7 @@ fun ControlsEssential(
         Image(
             painter = painterResource(if (shouldBePlaying) R.drawable.pause else R.drawable.play),
             contentDescription = null,
-            colorFilter = ColorFilter.tint(if (playerPlayButtonType == PlayerPlayButtonType.Disabled) colorPalette().accent else colorPalette().text),
+            colorFilter = ColorFilter.tint(if ((playerPlayButtonType == PlayerPlayButtonType.Disabled) || ((colorPaletteName == ColorPaletteName.Dynamic) && (colorPaletteMode == ColorPaletteMode.PitchBlack))) colorPalette().accent else colorPalette().text),
             modifier = Modifier
                 .rotate(rotationAngle)
                 .align(Alignment.Center)
@@ -561,9 +560,7 @@ fun ControlsEssential(
                     binder.player.playNext()
                     if (effectRotationEnabled) isRotated = !isRotated
                 },
-                onLongClick = {
-                    binder.player.seekTo(position + 5000)
-                }
+                onLongClick = {}
             )
             .rotate(rotationAngle)
             .padding(10.dp)

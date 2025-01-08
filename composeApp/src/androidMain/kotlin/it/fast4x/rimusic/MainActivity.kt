@@ -592,7 +592,7 @@ class MainActivity :
             preferences.getEnum(audioQualityFormatKey, AudioQualityFormat.Auto)
 
             var appearance by rememberSaveable(
-                isSystemInDarkTheme,
+                !lightTheme,
                 stateSaver = Appearance.Companion
             ) {
                 with(preferences) {
@@ -605,7 +605,7 @@ class MainActivity :
                     val applyFontPadding = getBoolean(applyFontPaddingKey, false)
 
                     var colorPalette =
-                        colorPaletteOf(colorPaletteName, colorPaletteMode, isSystemInDarkTheme)
+                        colorPaletteOf(colorPaletteName, colorPaletteMode, !lightTheme)
 
                     val fontType = getEnum(fontTypeKey, FontType.Rubik)
 
@@ -702,7 +702,7 @@ class MainActivity :
             }
 
 
-            DisposableEffect(binder, isSystemInDarkTheme) {
+            DisposableEffect(binder, !lightTheme) {
                 /*
             var bitmapListenerJob: Job? = null
 
@@ -823,7 +823,7 @@ class MainActivity :
                                 var colorPalette = colorPaletteOf(
                                     colorPaletteName,
                                     colorPaletteMode,
-                                    isSystemInDarkTheme
+                                    !lightTheme
                                 )
 
                                 if (colorPaletteName == ColorPaletteName.Dynamic) {

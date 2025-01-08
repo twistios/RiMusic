@@ -352,6 +352,7 @@
     <string name="sort_year">An</string>
     <string name="sort_name">Nume</string>
     <string name="sort_songs_number">Număr de melodii</string>
+    <string name="sort_relative_listening_time">Timp de ascultare relativă</string>
     <string name="follow">Urmărește</string>
     <string name="following">Urmărit</string>
     <string name="artist_subscribers">%s Abonați</string>
@@ -857,5 +858,7 @@
     <string name="colorpalette">Paletă de culori</string>
     <string name="customcolor">Culoare personalizată</string>
     <string name="lyricsanimate">Animare dimensiunea versurilor</string>
-    <string name="lyricsSizeSecondary">Long Press to change the size</string>
+    <string name="lyricsSizeSecondary">Țineți apăsat pentru a schimba dimensiunea</string>
+    <string name="appearancepresets">Presetări de aspect</string>
+    <string name="appearancepresetssecondary">Previzualizările vor fi de slabă calitate</string>
 </resources>

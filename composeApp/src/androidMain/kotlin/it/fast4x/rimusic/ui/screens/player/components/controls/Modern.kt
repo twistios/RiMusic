@@ -417,9 +417,7 @@ fun ControlsModern(
                       else binder.player.playPrevious()
                       if (effectRotationEnabled) isRotated = !isRotated
                   },
-                  onLongClick = {
-                      binder.player.seekTo(position - 5000)
-                  }
+                  onLongClick = {}
               )
 
       ) {
@@ -594,9 +592,7 @@ fun ControlsModern(
                     binder.player.playNext()
                     if (effectRotationEnabled) isRotated = !isRotated
                 },
-                onLongClick = {
-                    binder.player.seekTo(position + 5000)
-                }
+                onLongClick = {}
             )
             .clip(RoundedCornerShape(8.dp))
 

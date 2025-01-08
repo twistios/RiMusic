@@ -352,6 +352,7 @@
     <string name="sort_year">Año</string>
     <string name="sort_name">Nombre</string>
     <string name="sort_songs_number">Número de canciones</string>
+    <string name="sort_relative_listening_time">Relative Listening Time</string>
     <string name="follow">Seguir</string>
     <string name="following">Siguiendo</string>
     <string name="artist_subscribers">%s suscriptores</string>
@@ -844,18 +845,20 @@
     <string name="mesh">Degradado de malla</string>
     <string name="mesmerizinglens">Lente hipnotizante</string>
     <string name="glossygradient">Degradado brillante</string>
-    <string name="gradientflow">Flujo del degradado</string>
+    <string name="gradientflow">Flujo de degradado</string>
     <string name="purpleliquid">Líquido púrpura</string>
     <string name="stage">Escenario</string>
     <string name="inkflow">Flujo de tinta</string>
     <string name="goldenmagma">Magma dorado</string>
     <string name="oilflow">Flujo de aceite</string>
     <string name="icereflection">Reflejo de hielo</string>
-    <string name="blackcherrycosmos">Cosmos de cerezas negras</string>
+    <string name="blackcherrycosmos">Cosmos de cereza negra</string>
     <string name="gradienttype">Tipo de degradado</string>
     <string name="random">Aleatorio</string>
     <string name="colorpalette">Paleta de colores</string>
     <string name="customcolor">Color personalizado</string>
     <string name="lyricsanimate">Animar tamaño de letra</string>
-    <string name="lyricsSizeSecondary">Long Press to change the size</string>
+    <string name="lyricsSizeSecondary">Pulsación larga para cambiar el tamaño</string>
+    <string name="appearancepresets">Appearance Presets</string>
+    <string name="appearancepresetssecondary">Previews will be in low quality</string>
 </resources>

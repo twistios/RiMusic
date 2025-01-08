@@ -645,7 +645,7 @@ fun Lyrics(
                         )
                         IconButton(
                             icon = R.drawable.search,
-                            color = colorPalette().accent,
+                            color = Color.Black,
                             onClick = {
                                 isPicking = false
                                 menuState.hide()
@@ -761,7 +761,7 @@ fun Lyrics(
                                         )
                                         IconButton(
                                             icon = R.drawable.search,
-                                            color = colorPalette().accent,
+                                            color = Color.Black,
                                             onClick = {
                                                 isPicking = false
                                                 menuState.hide()

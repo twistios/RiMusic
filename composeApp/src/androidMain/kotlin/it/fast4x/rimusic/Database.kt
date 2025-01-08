@@ -567,6 +567,11 @@ interface Database {
     @Query("SELECT count(playlistId) FROM SongPlaylistMap WHERE songId = :id")
     fun songUsedInPlaylists(id: String): Int
 
+    data class PlayListIdPosition(val playlistId: Long, val position: Int)
+    @Transaction
+    @Query("SELECT playlistId, position FROM SongPlaylistMap WHERE songId = :id")
+    fun playlistsUsedForSong(id: String): List<PlayListIdPosition>
+
     @Query("SELECT COUNT(1) FROM Song WHERE likedAt IS NOT NULL")
     fun likedSongsCount(): Flow<Int>
 

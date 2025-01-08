@@ -352,6 +352,7 @@
     <string name="sort_year">연도</string>
     <string name="sort_name">이름</string>
     <string name="sort_songs_number">노래 순서</string>
+    <string name="sort_relative_listening_time">Relative Listening Time</string>
     <string name="follow">팔로우</string>
     <string name="following">팔로잉</string>
     <string name="artist_subscribers">구독자 %s명</string>
@@ -858,4 +859,6 @@
     <string name="customcolor">맞춤 색상</string>
     <string name="lyricsanimate">가사 크기 애니메이션</string>
     <string name="lyricsSizeSecondary">Long Press to change the size</string>
+    <string name="appearancepresets">Appearance Presets</string>
+    <string name="appearancepresetssecondary">Previews will be in low quality</string>
 </resources>

@@ -72,6 +72,8 @@ import it.fast4x.innertube.models.NavigationEndpoint
 import it.fast4x.innertube.models.bodies.BrowseBody
 import it.fast4x.innertube.requests.playlistPage
 import it.fast4x.rimusic.Database
+import it.fast4x.rimusic.Database.Companion.insert
+import it.fast4x.rimusic.Database.Companion.like
 import it.fast4x.rimusic.EXPLICIT_PREFIX
 import it.fast4x.rimusic.LocalPlayerServiceBinder
 import it.fast4x.rimusic.R
@@ -132,7 +134,9 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import it.fast4x.rimusic.colorPalette
+import it.fast4x.rimusic.models.Song
 import it.fast4x.rimusic.typography
+import it.fast4x.rimusic.utils.setLikeState
 import timber.log.Timber
 
 
@@ -160,6 +164,18 @@ fun PlaylistSongList(
     val hapticFeedback = LocalHapticFeedback.current
     val parentalControlEnabled by rememberPreference(parentalControlEnabledKey, false)
     val disableScrollingText by rememberPreference(disableScrollingTextKey, false)
+    var isLiked by remember {
+        mutableStateOf(0)
+    }
+    @Composable
+    fun checkLike(mediaId : String, song: Innertube. SongItem) : Boolean {
+        LaunchedEffect(Unit, mediaId) {
+            withContext(Dispatchers.IO) {
+                isLiked = like( mediaId, setLikeState(song.asSong.likedAt))
+            }
+        }
+        return true
+    }
 
     LaunchedEffect(Unit, filter) {
         if (playlistPage != null && playlistPage?.songsPage?.continuation == null) return@LaunchedEffect
@@ -626,6 +642,29 @@ fun PlaylistSongList(
                                         },
                                         onLongClick = {
                                             SmartMessage(context.resources.getString(R.string.info_add_in_playlist), context = context)
+                                        }
+                                    )
+                            )
+                            HeaderIconButton(
+                                icon = R.drawable.heart,
+                                enabled = playlistPage?.songsPage?.items?.isNotEmpty() == true,
+                                color = colorPalette().text,
+                                onClick = {},
+                                modifier = Modifier
+                                    .padding(horizontal = 5.dp)
+                                    .combinedClickable(
+                                        onClick = {
+                                            playlistPage!!.songsPage?.items?.forEachIndexed { _, song ->
+                                                Database.asyncTransaction {
+                                                    if ( like( song.asMediaItem.mediaId, setLikeState(song.asSong.likedAt) ) == 0 ) {
+                                                        insert(song.asMediaItem, Song::toggleLike)
+                                                    }
+                                                }
+                                            }
+                                            SmartMessage(context.resources.getString(R.string.done), context = context)
+                                        },
+                                        onLongClick = {
+                                            SmartMessage(context.resources.getString(R.string.add_to_favorites), context = context)
                                         }
                                     )
                             )

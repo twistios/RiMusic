@@ -4,6 +4,7 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -12,6 +13,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.BasicText
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -138,9 +140,20 @@ import it.fast4x.rimusic.utils.visualizerEnabledKey
 import it.fast4x.rimusic.utils.wallpaperTypeKey
 import it.fast4x.rimusic.colorPalette
 import it.fast4x.rimusic.enums.AnimatedGradient
+import it.fast4x.rimusic.enums.ColorPaletteMode
+import it.fast4x.rimusic.enums.ColorPaletteName
+import it.fast4x.rimusic.typography
 import it.fast4x.rimusic.ui.components.themed.Search
+import it.fast4x.rimusic.ui.components.themed.AppearancePresetDialog
 import it.fast4x.rimusic.utils.animatedGradientKey
+import it.fast4x.rimusic.utils.blurStrengthKey
+import it.fast4x.rimusic.utils.colorPaletteModeKey
+import it.fast4x.rimusic.utils.colorPaletteNameKey
 import it.fast4x.rimusic.utils.playerThumbnailSizeLKey
+import it.fast4x.rimusic.utils.semiBold
+import it.fast4x.rimusic.utils.thumbnailFadeExKey
+import it.fast4x.rimusic.utils.thumbnailFadeKey
+import it.fast4x.rimusic.utils.thumbnailSpacingKey
 import it.fast4x.rimusic.utils.topPaddingKey
 
 @Composable
@@ -500,6 +513,7 @@ fun AppearanceSettings(
         animatedGradientKey,
         AnimatedGradient.Linear
     )
+    var appearanceChooser by remember{ mutableStateOf(false)}
 
     Column(
         modifier = Modifier
@@ -550,8 +564,307 @@ fun AppearanceSettings(
             thumbnailpause = false
             //keepPlayerMinimized = false
         }
+        var blurStrength by rememberPreference(blurStrengthKey, 25f)
+        var thumbnailFadeEx  by rememberPreference(thumbnailFadeExKey, 5f)
+        var thumbnailFade  by rememberPreference(thumbnailFadeKey, 5f)
+        var thumbnailSpacing  by rememberPreference(thumbnailSpacingKey, 0f)
+        var colorPaletteName by rememberPreference(colorPaletteNameKey, ColorPaletteName.Dynamic)
+        var colorPaletteMode by rememberPreference(colorPaletteModeKey, ColorPaletteMode.Dark)
+
+        if (appearanceChooser){
+            AppearancePresetDialog(
+            onDismiss = {appearanceChooser = false},
+            onClick0 = {
+                showTopActionsBar = true
+                showthumbnail = true
+                playerBackgroundColors = PlayerBackgroundColors.BlurredCoverColor
+                blurStrength = 50f
+                thumbnailRoundness = ThumbnailRoundness.None
+                playerInfoType = PlayerInfoType.Essential
+                playerTimelineType = PlayerTimelineType.ThinBar
+                playerTimelineSize = PlayerTimelineSize.Biggest
+                playerControlsType = PlayerControlsType.Essential
+                playerPlayButtonType = PlayerPlayButtonType.Disabled
+                transparentbar = true
+                playerType = PlayerType.Essential
+                showlyricsthumbnail = false
+                expandedplayer = true
+                thumbnailType = ThumbnailType.Modern
+                playerThumbnailSize = PlayerThumbnailSize.Big
+                showTotalTimeQueue = false
+                bottomgradient = true
+                showRemainingSongTime = true
+                showNextSongsInPlayer = false
+                colorPaletteName = ColorPaletteName.Dynamic
+                colorPaletteMode = ColorPaletteMode.System
+                ///////ACTION BAR BUTTONS////////////////
+                transparentBackgroundActionBarPlayer = true
+                actionspacedevenly = true
+                showButtonPlayerVideo = false
+                showButtonPlayerDiscover = false
+                showButtonPlayerDownload = false
+                showButtonPlayerAddToPlaylist = true
+                showButtonPlayerLoop = false
+                showButtonPlayerShuffle = true
+                showButtonPlayerLyrics = false
+                expandedplayertoggle = false
+                showButtonPlayerSleepTimer = false
+                visualizerEnabled = false
+                appearanceChooser = false
+                showButtonPlayerArrow = false
+                showButtonPlayerStartradio = false
+                showButtonPlayerMenu = true
+                ///////////////////////////
+                appearanceChooser = false
+            },
+            onClick1 = {
+                showTopActionsBar = true
+                showthumbnail = true
+                playerBackgroundColors = PlayerBackgroundColors.BlurredCoverColor
+                blurStrength = 50f
+                playerInfoType = PlayerInfoType.Essential
+                playerPlayButtonType = PlayerPlayButtonType.Disabled
+                playerTimelineType = PlayerTimelineType.ThinBar
+                playerControlsType = PlayerControlsType.Essential
+                transparentbar = true
+                playerType = PlayerType.Modern
+                expandedplayer = true
+                fadingedge = true
+                thumbnailFadeEx = 4f
+                thumbnailSpacing = -32f
+                thumbnailType = ThumbnailType.Essential
+                carouselSize = CarouselSize.Big
+                playerThumbnailSize = PlayerThumbnailSize.Biggest
+                showTotalTimeQueue = false
+                transparentBackgroundActionBarPlayer = true
+                showRemainingSongTime = true
+                bottomgradient = true
+                showlyricsthumbnail = false
+                thumbnailRoundness = ThumbnailRoundness.Medium
+                showNextSongsInPlayer = true
+                colorPaletteName = ColorPaletteName.Dynamic
+                colorPaletteMode = ColorPaletteMode.System
+                ///////ACTION BAR BUTTONS////////////////
+                transparentBackgroundActionBarPlayer = true
+                actionspacedevenly = true
+                showButtonPlayerVideo = false
+                showButtonPlayerDiscover = false
+                showButtonPlayerDownload = false
+                showButtonPlayerAddToPlaylist = true
+                showButtonPlayerLoop = false
+                showButtonPlayerShuffle = false
+                showButtonPlayerLyrics = false
+                expandedplayertoggle = true
+                showButtonPlayerSleepTimer = false
+                visualizerEnabled = false
+                appearanceChooser = false
+                showButtonPlayerArrow = false
+                showButtonPlayerStartradio = false
+                showButtonPlayerMenu = true
+                ///////////////////////////
+                appearanceChooser = false
+            },
+            onClick2 = {
+                showTopActionsBar = false
+                showthumbnail = false
+                noblur = true
+                topPadding = false
+                playerBackgroundColors = PlayerBackgroundColors.BlurredCoverColor
+                blurStrength = 50f
+                playerPlayButtonType = PlayerPlayButtonType.Disabled
+                playerInfoType = PlayerInfoType.Modern
+                playerInfoShowIcons = false
+                playerTimelineType = PlayerTimelineType.ThinBar
+                playerControlsType = PlayerControlsType.Essential
+                transparentbar = true
+                playerType = PlayerType.Modern
+                expandedplayer = true
+                showTotalTimeQueue = false
+                transparentBackgroundActionBarPlayer = true
+                showRemainingSongTime = true
+                bottomgradient = true
+                showlyricsthumbnail = false
+                showNextSongsInPlayer = false
+                colorPaletteName = ColorPaletteName.Dynamic
+                colorPaletteMode = ColorPaletteMode.System
+                ///////ACTION BAR BUTTONS////////////////
+                transparentBackgroundActionBarPlayer = true
+                actionspacedevenly = true
+                showButtonPlayerVideo = false
+                showButtonPlayerDiscover = false
+                showButtonPlayerDownload = false
+                showButtonPlayerAddToPlaylist = false
+                showButtonPlayerLoop = false
+                showButtonPlayerShuffle = false
+                showButtonPlayerLyrics = false
+                expandedplayertoggle = false
+                showButtonPlayerSleepTimer = false
+                visualizerEnabled = false
+                appearanceChooser = false
+                showButtonPlayerArrow = false
+                showButtonPlayerStartradio = false
+                showButtonPlayerMenu = true
+                ///////////////////////////
+                appearanceChooser = false
+            },
+            onClick3 = {
+                showTopActionsBar = false
+                topPadding = false
+                showthumbnail = true
+                playerBackgroundColors = PlayerBackgroundColors.BlurredCoverColor
+                blurStrength = 50f
+                playerInfoType = PlayerInfoType.Essential
+                playerTimelineType = PlayerTimelineType.FakeAudioBar
+                playerTimelineSize = PlayerTimelineSize.Biggest
+                playerControlsType = PlayerControlsType.Modern
+                playerPlayButtonType = PlayerPlayButtonType.Disabled
+                colorPaletteName = ColorPaletteName.PureBlack
+                transparentbar = false
+                playerType = PlayerType.Essential
+                expandedplayer = false
+                playerThumbnailSize = PlayerThumbnailSize.Expanded
+                showTotalTimeQueue = false
+                transparentBackgroundActionBarPlayer = true
+                showRemainingSongTime = true
+                bottomgradient = true
+                showlyricsthumbnail = false
+                thumbnailType = ThumbnailType.Essential
+                thumbnailRoundness = ThumbnailRoundness.Light
+                playerType = PlayerType.Modern
+                fadingedge = true
+                thumbnailFade = 5f
+                showNextSongsInPlayer = false
+                ///////ACTION BAR BUTTONS////////////////
+                transparentBackgroundActionBarPlayer = true
+                actionspacedevenly = true
+                showButtonPlayerVideo = false
+                showButtonPlayerDiscover = false
+                showButtonPlayerDownload = false
+                showButtonPlayerAddToPlaylist = false
+                showButtonPlayerLoop = true
+                showButtonPlayerShuffle = true
+                showButtonPlayerLyrics = false
+                expandedplayertoggle = false
+                showButtonPlayerSleepTimer = false
+                visualizerEnabled = false
+                appearanceChooser = false
+                showButtonPlayerArrow = true
+                showButtonPlayerStartradio = false
+                showButtonPlayerMenu = true
+                ///////////////////////////
+                appearanceChooser = false
+            },
+            onClick4 = {
+                showTopActionsBar = false
+                topPadding = true
+                showthumbnail = true
+                playerBackgroundColors = PlayerBackgroundColors.AnimatedGradient
+                animatedGradient = AnimatedGradient.Linear
+                playerInfoType = PlayerInfoType.Essential
+                playerTimelineType = PlayerTimelineType.PinBar
+                playerTimelineSize = PlayerTimelineSize.Biggest
+                playerControlsType = PlayerControlsType.Essential
+                playerPlayButtonType = PlayerPlayButtonType.Square
+                colorPaletteName = ColorPaletteName.Dynamic
+                colorPaletteMode = ColorPaletteMode.PitchBlack
+                transparentbar = false
+                playerType = PlayerType.Modern
+                expandedplayer = false
+                playerThumbnailSize = PlayerThumbnailSize.Biggest
+                showTotalTimeQueue = false
+                transparentBackgroundActionBarPlayer = true
+                showRemainingSongTime = true
+                showlyricsthumbnail = false
+                thumbnailType = ThumbnailType.Modern
+                thumbnailRoundness = ThumbnailRoundness.Heavy
+                fadingedge = true
+                thumbnailFade = 0f
+                thumbnailFadeEx = 5f
+                thumbnailSpacing = -32f
+                showNextSongsInPlayer = false
+                ///////ACTION BAR BUTTONS////////////////
+                transparentBackgroundActionBarPlayer = true
+                actionspacedevenly = true
+                showButtonPlayerVideo = false
+                showButtonPlayerDiscover = false
+                showButtonPlayerDownload = true
+                showButtonPlayerAddToPlaylist = false
+                showButtonPlayerLoop = false
+                showButtonPlayerShuffle = false
+                showButtonPlayerLyrics = false
+                expandedplayertoggle = true
+                showButtonPlayerSleepTimer = false
+                visualizerEnabled = false
+                appearanceChooser = false
+                showButtonPlayerArrow =false
+                showButtonPlayerStartradio = false
+                showButtonPlayerMenu = true
+                ///////////////////////////
+                appearanceChooser = false
+            },
+            onClick5 = {
+                showTopActionsBar = true
+                showthumbnail = true
+                playerBackgroundColors = PlayerBackgroundColors.CoverColorGradient
+                playerInfoType = PlayerInfoType.Essential
+                playerTimelineType = PlayerTimelineType.Wavy
+                playerTimelineSize = PlayerTimelineSize.Biggest
+                playerControlsType = PlayerControlsType.Essential
+                playerPlayButtonType = PlayerPlayButtonType.CircularRibbed
+                colorPaletteName = ColorPaletteName.Dynamic
+                colorPaletteMode = ColorPaletteMode.System
+                transparentbar = false
+                playerType = PlayerType.Essential
+                expandedplayer = true
+                playerThumbnailSize = PlayerThumbnailSize.Big
+                showTotalTimeQueue = false
+                transparentBackgroundActionBarPlayer = true
+                showRemainingSongTime = true
+                showlyricsthumbnail = false
+                thumbnailType = ThumbnailType.Modern
+                thumbnailRoundness = ThumbnailRoundness.Heavy
+                showNextSongsInPlayer = false
+                ///////ACTION BAR BUTTONS////////////////
+                transparentBackgroundActionBarPlayer = true
+                actionspacedevenly = true
+                showButtonPlayerVideo = false
+                showButtonPlayerDiscover = false
+                showButtonPlayerDownload = false
+                showButtonPlayerAddToPlaylist = false
+                showButtonPlayerLoop = false
+                showButtonPlayerShuffle = true
+                showButtonPlayerLyrics = true
+                expandedplayertoggle = false
+                showButtonPlayerSleepTimer = false
+                visualizerEnabled = false
+                appearanceChooser = false
+                showButtonPlayerArrow =false
+                showButtonPlayerStartradio = false
+                showButtonPlayerMenu = true
+                ///////////////////////////
+                appearanceChooser = false
+            }
+            )
+        }
 
         if (!isLandscape) {
+            Column {
+                BasicText(
+                    text = stringResource(R.string.appearancepresets),
+                    style = typography().m.semiBold.copy(color = colorPalette().text),
+                    modifier = Modifier
+                        .padding(all = 12.dp)
+                        .clickable(onClick = { appearanceChooser = true })
+                )
+                BasicText(
+                    text = stringResource(R.string.appearancepresetssecondary),
+                    style = typography().xs.semiBold.copy(color = colorPalette().textSecondary),
+                    modifier = Modifier
+                        .padding(start = 12.dp)
+                        .padding(bottom = 10.dp)
+                )
+            }
+
             if (search.input.isBlank() || stringResource(R.string.show_player_top_actions_bar).contains(
                     search.input,
                     true
@@ -1653,7 +1966,7 @@ fun AppearanceSettings(
                     onCheckedChange = { controlsExpanded = it }
                 )
 
-            if (statsfornerds){
+            if (statsfornerds && (!(showthumbnail && playerType == PlayerType.Essential))){
                 if (search.input.isBlank() || stringResource(R.string.statsfornerds).contains(
                         search.input,
                         true

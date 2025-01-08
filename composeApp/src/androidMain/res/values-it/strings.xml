@@ -352,6 +352,7 @@
     <string name="sort_year">Anno</string>
     <string name="sort_name">Nome</string>
     <string name="sort_songs_number">Numero Brani</string>
+    <string name="sort_relative_listening_time">Relative Listening Time</string>
     <string name="follow">Segui</string>
     <string name="following">Segui già</string>
     <string name="artist_subscribers">%1$s iscritti</string>
@@ -858,4 +859,6 @@
     <string name="customcolor">Colore personalizzato</string>
     <string name="lyricsanimate">Dimensione delle lyrics animate</string>
     <string name="lyricsSizeSecondary">Long Press to change the size</string>
+    <string name="appearancepresets">Appearance Presets</string>
+    <string name="appearancepresetssecondary">Previews will be in low quality</string>
 </resources>

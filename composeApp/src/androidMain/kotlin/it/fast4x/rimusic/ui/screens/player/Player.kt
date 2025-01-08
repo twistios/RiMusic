@@ -281,9 +281,11 @@ import it.fast4x.rimusic.utils.statsExpandedKey
 import it.fast4x.rimusic.utils.thumbnailFadeKey
 import it.fast4x.rimusic.colorPalette
 import it.fast4x.rimusic.enums.AnimatedGradient
+import it.fast4x.rimusic.enums.ColorPaletteName
 import it.fast4x.rimusic.thumbnailShape
 import it.fast4x.rimusic.typography
 import it.fast4x.rimusic.utils.animatedGradientKey
+import it.fast4x.rimusic.utils.colorPaletteNameKey
 import it.fast4x.rimusic.utils.playerThumbnailSizeLKey
 import it.fast4x.rimusic.utils.seamlessPlay
 import it.fast4x.rimusic.utils.thumbnailFadeExKey
@@ -409,6 +411,7 @@ fun Player(
     val miniQueueExpanded by rememberPreference(miniQueueExpandedKey, true)
     val statsExpanded by rememberPreference(statsExpandedKey, true)
     val actionExpanded by rememberPreference(actionExpandedKey, true)
+    val colorPaletteName by rememberPreference(colorPaletteNameKey, ColorPaletteName.Dynamic)
 
 
     binder.player.DisposableListener {
@@ -1676,7 +1679,9 @@ fun Player(
                         if (showButtonPlayerAddToPlaylist)
                             IconButton(
                                 icon = R.drawable.add_in_playlist,
-                                color = if (songPlaylist > 0 && playlistindicator) colorPalette().text else colorPalette().accent,
+                                color = if (songPlaylist > 0 && playlistindicator)
+                                    if (colorPaletteName == ColorPaletteName.PureBlack) Color.Black else colorPalette().text
+                                    else colorPalette().accent,
                                 onClick = {
                                     menuState.display {
                                         MiniPlayerMenu(
@@ -2022,7 +2027,7 @@ fun Player(
                      .background(
                          Brush.verticalGradient(
                              0.0f to Color.Transparent,
-                             1.0f to if (bottomgradient) if (colorPaletteMode == ColorPaletteMode.Light) Color.White.copy(
+                             1.0f to if (bottomgradient) if (lightTheme) Color.White.copy(
                                  if (isLandscape) 0.8f else 0.75f
                              ) else Color.Black.copy(if (isLandscape) 0.8f else 0.75f) else Color.Transparent,
                              startY = if (isLandscape) 600f else if (expandedplayer) 1300f else 950f,
@@ -2030,7 +2035,7 @@ fun Player(
                          )
                      )
                      .background(
-                         if (bottomgradient) if (isLandscape) if (colorPaletteMode == ColorPaletteMode.Light) Color.White.copy(
+                         if (bottomgradient) if (isLandscape) if (lightTheme) Color.White.copy(
                              0.25f
                          ) else Color.Black.copy(0.25f) else Color.Transparent else Color.Transparent
                      )){}

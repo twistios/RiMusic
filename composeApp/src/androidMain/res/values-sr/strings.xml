@@ -352,6 +352,7 @@
     <string name="sort_year">Година</string>
     <string name="sort_name">Име</string>
     <string name="sort_songs_number">Број Песама</string>
+    <string name="sort_relative_listening_time">Relative Listening Time</string>
     <string name="follow">Прати</string>
     <string name="following">Следећи</string>
     <string name="artist_subscribers">%s претплатника</string>
@@ -858,4 +859,6 @@
     <string name="customcolor">Custom Color</string>
     <string name="lyricsanimate">Animate Lyrics Size</string>
     <string name="lyricsSizeSecondary">Long Press to change the size</string>
+    <string name="appearancepresets">Appearance Presets</string>
+    <string name="appearancepresetssecondary">Previews will be in low quality</string>
 </resources>
