@@ -128,10 +128,10 @@ fun Modifier.VerticalfadingEdge2(fade: Float, showTopActionsBar: Boolean, topPad
         drawRect(brush = bottomFade, blendMode = BlendMode.DstIn)
     }
 
-fun Modifier.HorizontalfadingEdge2() = this
+fun Modifier.HorizontalfadingEdge2(fade: Float) = this
     .graphicsLayer(compositingStrategy = CompositingStrategy.Offscreen)
     .drawWithContent {
-            val Fade = Brush.horizontalGradient(0f to Color.Transparent, 0.05f to Color.Black,0.95f to Color.Black,1f to Color.Transparent)
+            val Fade = Brush.horizontalGradient(0f to Color.Transparent, fade to Color.Black,(1f-fade) to Color.Black,1f to Color.Transparent)
             drawContent()
             drawRect(brush = Fade, blendMode = BlendMode.DstIn)
         }

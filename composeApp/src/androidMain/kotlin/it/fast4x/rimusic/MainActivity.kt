@@ -236,8 +236,6 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
-import me.knighthat.invidious.Invidious
-import me.knighthat.piped.Piped
 import okhttp3.Call
 import okhttp3.Callback
 import okhttp3.OkHttpClient
@@ -321,12 +319,6 @@ class MainActivity :
 
         WindowCompat.setDecorFitsSystemWindows(window, false)
 
-//        var splashScreenStays = true
-//        val delayTime = 800L
-//
-//        installSplashScreen().setKeepOnScreenCondition { splashScreenStays }
-//        Handler(Looper.getMainLooper()).postDelayed({ splashScreenStays = false }, delayTime)
-
         MonetCompat.setup(this)
         _monet = MonetCompat.getInstance()
         monet.setDefaultPalette()
@@ -353,15 +345,6 @@ class MainActivity :
 
         checkIfAppIsRunningInBackground()
 
-        // Fetch Piped & Invidious instances
-//        lifecycleScope.launch(Dispatchers.IO) {
-//            try {
-//                Piped.fetchInstances()
-//                Invidious.fetchInstances()
-//            } catch (e: Exception) {
-//                Timber.e(e, "MainActivity Error fetching Piped & Invidious instances")
-//            }
-//        }
     }
 
     private fun checkIfAppIsRunningInBackground() {
@@ -544,50 +527,27 @@ class MainActivity :
                     //gl = "US" // US IMPORTANT
                 )
                 //TODO Manage login
-//            if (preferences.getBoolean(enableYouTubeLoginKey, false)) {
-//                    var visitorData by rememberEncryptedPreference(
-//                        key = ytVisitorDataKey,
-//                        defaultValue = Innertube.DEFAULT_VISITOR_DATA
-//                    )
-//
-//                    if (visitorData.isEmpty()) runBlocking {
-//                        Innertube.visitorData().getOrNull()?.also {
-//                            visitorData = it
-//                        }
-//                    }
-//
-//                    YoutubePreferences.preference =
-//                        YoutubePreferenceItem(
-//                            cookie = encryptedPreferences.getString(ytCookieKey, ""),
-//                            visitordata = visitorData
-//                                .takeIf { it != "null" }
-//                                ?: Innertube.DEFAULT_VISITOR_DATA
-//
-//                        )
-//            }
+            if (preferences.getBoolean(enableYouTubeLoginKey, false)) {
+                    var visitorData by rememberEncryptedPreference(
+                        key = ytVisitorDataKey,
+                        defaultValue = Innertube.DEFAULT_VISITOR_DATA
+                    )
 
+                    if (visitorData.isEmpty()) runBlocking {
+                        Innertube.visitorData().getOrNull()?.also {
+                            visitorData = it
+                        }
+                    }
 
-//            if (preferences.getBoolean(enableYouTubeLoginKey, false)
-//                && encryptedPreferences.getString(ytCookieKey, "") != ""
-//            ) {
-//
-//                var visitorData by rememberEncryptedPreference(
-//                    key = ytVisitorDataKey,
-//                    defaultValue = Innertube.DEFAULT_VISITOR_DATA
-//                )
-//
-//                if (visitorData.isEmpty()) runBlocking {
-//                    Innertube.visitorData().getOrNull()?.also {
-//                        visitorData = it
-//                    }
-//                }
-//
-//                YoutubePreferences.preference =
-//                    YoutubePreferenceItem(
-//                        cookie = encryptedPreferences.getString(ytCookieKey, ""),
-//                        visitordata = visitorData
-//                    )
-//            }
+                    YoutubePreferences.preference =
+                        YoutubePreferenceItem(
+                            cookie = encryptedPreferences.getString(ytCookieKey, ""),
+                            visitordata = visitorData
+                                .takeIf { it != "null" }
+                                ?: Innertube.DEFAULT_VISITOR_DATA
+
+                        )
+            }
 
             preferences.getEnum(audioQualityFormatKey, AudioQualityFormat.Auto)
 
@@ -834,8 +794,7 @@ class MainActivity :
                                         if (it.isNotEmpty())
                                             setDynamicPalette(it)
                                         else {
-//                                                val isPicthBlack =
-//                                                    colorPaletteMode == ColorPaletteMode.PitchBlack
+
                                             setSystemBarAppearance(colorPalette.isDark)
                                             appearance = appearance.copy(
                                                 colorPalette = if (!isPicthBlack) colorPalette else colorPalette.copy(
@@ -880,8 +839,7 @@ class MainActivity :
                                     }
 
                                     setSystemBarAppearance(colorPalette.isDark)
-//                                        val isPicthBlack =
-//                                            colorPaletteMode == ColorPaletteMode.PitchBlack
+
                                     appearance = appearance.copy(
                                         colorPalette = if (!isPicthBlack) colorPalette else colorPalette.copy(
                                             background0 = Color.Black,
@@ -983,8 +941,6 @@ class MainActivity :
             }
 
 
-//                val colorPaletteMode =
-//                    preferences.getEnum(colorPaletteModeKey, ColorPaletteMode.Dark)
             if (colorPaletteMode == ColorPaletteMode.PitchBlack)
                 appearance = appearance.copy(
                     colorPalette = appearance.colorPalette.applyPitchBlack,
@@ -1049,19 +1005,6 @@ class MainActivity :
                     intent.action = null
                 }
 
-
-                /*
-            isInPip(
-                onChange = {
-                    println("MainActivity isInPip change $it")
-                    //if (!it || vm.binder?.player?.shouldBePlaying != true) return@isInPip
-                    //showPlayer = true
-                    pipState.value = it
-                }
-            )
-            */
-
-
                 CrossfadeContainer(state = pipState.value) { isCurrentInPip ->
                     println("MainActivity pipState ${pipState.value} CrossfadeContainer isCurrentInPip $isCurrentInPip ")
                     val pipModule by rememberPreference(pipModuleKey, PipModule.Cover)
@@ -1113,7 +1056,6 @@ class MainActivity :
                             )
 
                             checkIfAppIsRunningInBackground()
-                            // if (appRunningInBackground) showPlayer = false
 
 
                             val thumbnailRoundness by rememberPreference(
@@ -1255,43 +1197,6 @@ class MainActivity :
                             }
 
                             setDynamicPalette(mediaItem?.mediaMetadata?.artworkUri.toString())
-                            /**** NEW CODE ******/
-                            /*
-                        if (mediaItem != null) {
-                            coroutineScope.launch(Dispatchers.Main) {
-                                val result = imageLoader.execute(
-                                    ImageRequest.Builder(this@MainActivity)
-                                        .data(mediaItem.mediaMetadata.artworkUri)
-                                        .allowHardware(false)
-                                        .build()
-                                )
-                                val bitmap = (result.drawable as? BitmapDrawable)?.bitmap
-                                if (bitmap != null) {
-                                    val palette = Palette
-                                        .from(bitmap)
-                                        .maximumColorCount(8)
-                                        //.addFilter(if (isDark || isPitchBlack) ({ _, hsl -> hsl[0] !in 36f..100f }) else null)
-                                        .generate()
-                                    println("Mainactivity onmediaItemTRansition palette dominantSwatch: ${palette.dominantSwatch}")
-                                    val isDark =
-                                        colorPaletteMode == ColorPaletteMode.Dark || (colorPaletteMode == ColorPaletteMode.System && isSystemInDarkTheme)
-                                    val isPicthBlack = colorPaletteMode == ColorPaletteMode.PitchBlack
-                                    dynamicColorPaletteOf(bitmap, isDark, isPicthBlack)?.let {
-                                        withContext(Dispatchers.Main) {
-                                            setSystemBarAppearance(it.isDark)
-                                        }
-                                        appearance = appearance.copy(
-                                            colorPalette = it,
-                                            typography = appearance.typography.copy(it.text)
-                                        )
-                                        println("Mainactivity onmediaItemTRansition appearance inside: ${appearance.colorPalette}")
-                                    }
-                                }
-                            }
-                            println("Mainactivity onmediaItemTRansition appearance outside: ${appearance.colorPalette}")
-                        }
-                         */
-                            /*********/
                         }
 
 
@@ -1432,7 +1337,6 @@ class MainActivity :
         super.onPause()
         runCatching {
             sensorListener.let { sensorManager?.unregisterListener(it) }
-            //sensorManager!!.unregisterListener(sensorListener)
         }.onFailure {
             Timber.e("MainActivity.onPause unregisterListener sensorListener ${it.stackTraceToString()}")
         }
@@ -1445,9 +1349,6 @@ class MainActivity :
         intentUriData = intent.data ?: intent.getStringExtra(Intent.EXTRA_TEXT)?.toUri()
 
     }
-
-    //@Deprecated("Deprecated in Java", ReplaceWith("persistMap"))
-    //override fun onRetainCustomNonConfigurationInstance() = persistMap
 
     override fun onStop() {
         runCatching {

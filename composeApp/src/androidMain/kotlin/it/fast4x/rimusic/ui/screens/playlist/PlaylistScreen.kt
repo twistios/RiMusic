@@ -29,7 +29,7 @@ fun PlaylistScreen(
     miniPlayer: @Composable () -> Unit = {},
 ) {
     val saveableStateHolder = rememberSaveableStateHolder()
-    PersistMapCleanup(tagPrefix = "playlist/$browseId")
+    //PersistMapCleanup(tagPrefix = "playlist/$browseId")
 
             Skeleton(
                 navController,

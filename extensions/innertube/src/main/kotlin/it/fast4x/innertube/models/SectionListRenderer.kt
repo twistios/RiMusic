@@ -18,7 +18,8 @@ data class SectionListRenderer(
         val musicShelfRenderer: MusicShelfRenderer?,
         val gridRenderer: GridRenderer?,
         val musicDescriptionShelfRenderer: MusicDescriptionShelfRenderer?,
-        val musicResponsiveHeaderRenderer: MusicResponsiveHeaderRenderer?
+        val musicResponsiveHeaderRenderer: MusicResponsiveHeaderRenderer?,
+        val musicPlaylistShelfRenderer: MusicPlaylistShelfRenderer?,
 
     ) {
 

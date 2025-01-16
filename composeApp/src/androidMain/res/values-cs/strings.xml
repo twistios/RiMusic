@@ -718,6 +718,7 @@
     <string name="error_timeout">Spojení vypršelo</string>
     <string name="error_unknown">Neznámá chyba</string>
     <string name="delete_song">Opravdu chcete tuto skladbu smazat? Bude vymazána z databáze. Tato akce je nevratná.</string>
+    <string name="update_album">Aktualizace alba</string>
     <string name="info_check_update_now">Zkontrolovat nyní</string>
     <string name="info_no_update_available">Nejsou dostupné žádné aktualizace</string>
     <string name="lang_galician">Galicijština (Galego)</string>
@@ -858,7 +859,11 @@
     <string name="colorpalette">Paleta barev</string>
     <string name="customcolor">Vlastní barva</string>
     <string name="lyricsanimate">Animovat velikost písňových textů</string>
+    <string name="yt_playlists">YT/YTM</string>
     <string name="lyricsSizeSecondary">Dlouhým stisknutím změníte velikost</string>
+    <string name="home">Home</string>
     <string name="appearancepresets">Předvolby vzhledu</string>
     <string name="appearancepresetssecondary">Náhledy budou v nízké kvalitě</string>
+    <string name="yt_history">YTM History</string>
+    <string name="albumCoverRotation">Animace rotace pozadí</string>
 </resources>

@@ -4,15 +4,68 @@ import io.ktor.client.call.body
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
 import it.fast4x.innertube.Innertube
+import it.fast4x.innertube.YtMusic
 import it.fast4x.innertube.models.Context
 import it.fast4x.innertube.models.PlayerResponse
-import it.fast4x.innertube.models.YouTubeClient
+import it.fast4x.innertube.clients.YouTubeClient
+import it.fast4x.innertube.clients.YouTubeClient.Companion.ANDROID_MUSIC
+import it.fast4x.innertube.clients.YouTubeClient.Companion.IOS
+import it.fast4x.innertube.models.BrowseResponse
 import it.fast4x.innertube.models.bodies.PlayerBody
-import it.fast4x.innertube.utils.runCatchingNonCancellable
-import it.fast4x.invidious.Invidious
-import it.fast4x.piped.models.PipedResponse
-import it.fast4x.piped.models.Session
+/*
+suspend fun Innertube.newPlayer(body: PlayerBody, withLogin: Boolean = false): Result<PlayerResponse> = runCatching {
 
+    val playerResponse = when (withLogin) {
+        true -> try {
+            println("Innertube.newPlayer Player Response Try Android")
+            player(if (cookie != null) ANDROID_MUSIC else IOS, body.videoId, body.playlistId).body<PlayerResponse>()
+        } catch (e: Exception) {
+            println("Innertube.newPlayer Player Response Error $e")
+            println("Innertube.newPlayer Player Response Try IOS")
+            noLogInPlayer(body.videoId).body<PlayerResponse>()
+        }
+        false -> {
+            println("Innertube.newPlayer Player Response without login")
+            println("Innertube.newPlayer Player Response Try IOS")
+            noLogInPlayer(body.videoId).body<PlayerResponse>()
+        }
+    }
+
+    println("Innertube.newPlayer Player Response $playerResponse")
+    println("Innertube.newPlayer Player Response status: ${playerResponse.playabilityStatus?.status}")
+
+    return@runCatching playerResponse
+
+}
+*/
+suspend fun Innertube.player(body: PlayerBody, withLogin: Boolean = false): Result<PlayerResponse> = runCatching {
+    val response = when (withLogin) {
+        true -> try {
+            println("Innertube newPlayer Player Response Try Android")
+            //with login
+            //player(if (cookie != null) Context.DefaultAndroid.client else Context.DefaultIOS.client, body.videoId, body.playlistId).body<PlayerResponse>()
+            //whitout login
+            player(body.videoId, body.playlistId).body<PlayerResponse>()
+        } catch (e: Exception) {
+            println("Innertube newPlayer Player Response Error $e")
+            println("Innertube newPlayer Player Response Try IOS")
+            noLogInPlayer(body.videoId, withLogin).body<PlayerResponse>()
+        }
+        false -> {
+            println("Innertube newPlayer Player Response without login")
+            println("Innertube newPlayer Player Response Try IOS")
+            noLogInPlayer(body.videoId, withLogin).body<PlayerResponse>()
+        }
+    }
+
+    println("Innertube newPlayer withLogin $withLogin response adaptiveFormats ${response.streamingData?.adaptiveFormats}")
+    println("Innertube newPlayer withLogin $withLogin response Formats ${response.streamingData?.formats}")
+    println("Innertube newPlayer withLogin $withLogin response expire ${response.streamingData?.expiresInSeconds}")
+
+    return@runCatching response
+}
+
+/*
 suspend fun Innertube.player(body: PlayerBody, withLogin: Boolean = false): Result<PlayerResponse> = runCatching {
 
     val clientHttp = if (withLogin) ytHttpClient else client
@@ -24,9 +77,13 @@ suspend fun Innertube.player(body: PlayerBody, withLogin: Boolean = false): Resu
                 context = YouTubeClient.ANDROID_MUSIC.toContext(locale, visitorData)
             ))
         } else {
-            setBody(body.copy(context = Context.DefaultIOS))
+            ytClient(YouTubeClient.IOS, setLogin = false)
+            //setBody(body.copy(context = Context.DefaultIOS))
+            setBody(body.copy(
+                context = YouTubeClient.IOS.toContext(locale, visitorData)
+            ))
         }
-        mask("playabilityStatus.status,playerConfig.audioConfig,streamingData.adaptiveFormats,videoDetails.videoId")
+        //mask("playabilityStatus.status,playerConfig.audioConfig,streamingData.adaptiveFormats,videoDetails.videoId")
     }.body<PlayerResponse>()
 
     println("PlayerService DownloadHelper Innertube.player withLogin $withLogin response $response")
@@ -62,6 +119,7 @@ suspend fun Innertube.player(body: PlayerBody, withLogin: Boolean = false): Resu
 }.onFailure {
     println("YoutubeLogin PlayerServiceModern NEW Innertube.player error ${it.stackTraceToString()}")
 }
+*/
 /*
 suspend fun Innertube.player(
     body: PlayerBody,

@@ -54,6 +54,7 @@ import it.fast4x.rimusic.models.SearchQuery
 import it.fast4x.rimusic.ui.components.CustomModalBottomSheet
 import it.fast4x.rimusic.ui.screens.album.AlbumScreen
 import it.fast4x.rimusic.ui.screens.artist.ArtistScreen
+import it.fast4x.rimusic.ui.screens.artist.ArtistScreenModern
 import it.fast4x.rimusic.ui.screens.builtinplaylist.BuiltInPlaylistScreen
 import it.fast4x.rimusic.ui.screens.history.HistoryScreen
 import it.fast4x.rimusic.ui.screens.home.HomeScreen
@@ -308,8 +309,6 @@ fun AppNavigation(
             SettingsScreen(
                 navController = navController,
                 miniPlayer = miniPlayer,
-                //pop = popDestination,
-                //onGoToSettingsPage = { index -> navController.navigate("settingsPage/$index") }
             )
         }
 

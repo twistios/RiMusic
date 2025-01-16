@@ -145,6 +145,7 @@ import it.fast4x.rimusic.enums.ColorPaletteName
 import it.fast4x.rimusic.typography
 import it.fast4x.rimusic.ui.components.themed.Search
 import it.fast4x.rimusic.ui.components.themed.AppearancePresetDialog
+import it.fast4x.rimusic.utils.albumCoverRotationKey
 import it.fast4x.rimusic.utils.animatedGradientKey
 import it.fast4x.rimusic.utils.blurStrengthKey
 import it.fast4x.rimusic.utils.colorPaletteModeKey
@@ -514,6 +515,7 @@ fun AppearanceSettings(
         AnimatedGradient.Linear
     )
     var appearanceChooser by remember{ mutableStateOf(false)}
+    var albumCoverRotation by rememberPreference(albumCoverRotationKey, false)
 
     Column(
         modifier = Modifier
@@ -1471,6 +1473,22 @@ fun AppearanceSettings(
                     isChecked = blackgradient,
                     onCheckedChange = { blackgradient = it }
                 )
+
+        if ((playerBackgroundColors == PlayerBackgroundColors.BlurredCoverColor) && (playerType == PlayerType.Modern))
+            if (search.input.isBlank() || stringResource(R.string.albumCoverRotation).contains(
+                    search.input,
+                    true
+                )
+            )
+                SwitchSettingEntry(
+                    title = stringResource(R.string.albumCoverRotation),
+                    text = "",
+                    isChecked = albumCoverRotation,
+                    onCheckedChange = { albumCoverRotation = it },
+                    modifier = Modifier
+                        .padding(start = 25.dp)
+                )
+
         if (playerBackgroundColors == PlayerBackgroundColors.BlurredCoverColor)
             if (search.input.isBlank() || stringResource(R.string.bottomgradient).contains(
                     search.input,

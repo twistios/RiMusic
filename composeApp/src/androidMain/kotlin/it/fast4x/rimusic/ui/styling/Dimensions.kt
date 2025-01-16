@@ -26,6 +26,7 @@ object Dimensions {
     val musicAnimationHeight = 20.dp
 
 
+
     object thumbnails {
         val album = 128.dp
         val artist = 128.dp

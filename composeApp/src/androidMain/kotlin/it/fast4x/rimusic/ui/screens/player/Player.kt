@@ -8,7 +8,12 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.LinearOutSlowInEasing
+import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
@@ -52,15 +57,16 @@ import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicText
-import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.neverEqualPolicy
@@ -84,7 +90,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.LinearGradientShader
 import androidx.compose.ui.graphics.StrokeJoin
-import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.toArgb
@@ -98,99 +103,24 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.ExperimentalTextApi
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.Density
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
-import androidx.media3.common.MediaItem
-import androidx.media3.common.Player
-import androidx.media3.common.util.UnstableApi
-import androidx.media3.exoplayer.offline.Download
-import androidx.navigation.NavController
-import coil.compose.AsyncImage
-import coil.compose.rememberAsyncImagePainter
-import coil.request.ImageRequest
-import it.fast4x.rimusic.Database
-import it.fast4x.rimusic.LocalPlayerServiceBinder
-import it.fast4x.rimusic.R
-import it.fast4x.rimusic.enums.BackgroundProgress
-import it.fast4x.rimusic.enums.ColorPaletteMode
-import it.fast4x.rimusic.enums.NavRoutes
-import it.fast4x.rimusic.enums.PlayerBackgroundColors
-import it.fast4x.rimusic.enums.PlayerThumbnailSize
-import it.fast4x.rimusic.enums.PopupType
-import it.fast4x.rimusic.models.Info
-import it.fast4x.rimusic.models.Song
-import it.fast4x.rimusic.models.ui.toUiMedia
-import it.fast4x.rimusic.ui.components.CustomModalBottomSheet
-import it.fast4x.rimusic.ui.components.LocalMenuState
-import it.fast4x.rimusic.ui.components.themed.BlurParamsDialog
-import it.fast4x.rimusic.ui.components.themed.ThumbnailOffsetDialog
-import it.fast4x.rimusic.ui.components.themed.CircularSlider
-import it.fast4x.rimusic.ui.components.themed.ConfirmationDialog
-import it.fast4x.rimusic.ui.components.themed.DefaultDialog
-import it.fast4x.rimusic.ui.components.themed.DownloadStateIconButton
-import it.fast4x.rimusic.ui.components.themed.IconButton
-import it.fast4x.rimusic.ui.components.themed.MiniPlayerMenu
-import it.fast4x.rimusic.ui.components.themed.PlayerMenu
-import it.fast4x.rimusic.ui.components.themed.SecondaryTextButton
-import it.fast4x.rimusic.ui.components.themed.animateBrushRotation
-import it.fast4x.rimusic.ui.styling.Dimensions
-import it.fast4x.rimusic.ui.styling.collapsedPlayerProgressBar
-import it.fast4x.rimusic.ui.styling.dynamicColorPaletteOf
-import it.fast4x.rimusic.ui.styling.favoritesOverlay
-import it.fast4x.rimusic.ui.styling.px
-import it.fast4x.rimusic.utils.BlurTransformation
-import it.fast4x.rimusic.utils.DisposableListener
-import it.fast4x.rimusic.utils.backgroundProgressKey
-import it.fast4x.rimusic.utils.blurDarkenFactorKey
-import it.fast4x.rimusic.utils.blurStrengthKey
-import it.fast4x.rimusic.utils.colorPaletteModeKey
-import it.fast4x.rimusic.utils.currentWindow
-import it.fast4x.rimusic.utils.disablePlayerHorizontalSwipeKey
-import it.fast4x.rimusic.utils.durationTextToMillis
-import it.fast4x.rimusic.utils.effectRotationKey
-import it.fast4x.rimusic.utils.formatAsDuration
-import it.fast4x.rimusic.utils.formatAsTime
-import it.fast4x.rimusic.utils.getBitmapFromUrl
-import it.fast4x.rimusic.utils.getDownloadState
-import it.fast4x.rimusic.utils.isLandscape
-import it.fast4x.rimusic.utils.manageDownload
-import it.fast4x.rimusic.utils.mediaItems
-import it.fast4x.rimusic.utils.playerBackgroundColorsKey
-import it.fast4x.rimusic.utils.playerThumbnailSizeKey
-import it.fast4x.rimusic.utils.positionAndDurationState
-import it.fast4x.rimusic.utils.rememberPreference
-import it.fast4x.rimusic.utils.semiBold
-import it.fast4x.rimusic.utils.shouldBePlaying
-import it.fast4x.rimusic.utils.showButtonPlayerAddToPlaylistKey
-import it.fast4x.rimusic.utils.showButtonPlayerArrowKey
-import it.fast4x.rimusic.utils.showButtonPlayerDownloadKey
-import it.fast4x.rimusic.utils.showButtonPlayerLoopKey
-import it.fast4x.rimusic.utils.showButtonPlayerLyricsKey
-import it.fast4x.rimusic.utils.showButtonPlayerMenuKey
-import it.fast4x.rimusic.utils.showButtonPlayerShuffleKey
-import it.fast4x.rimusic.utils.showButtonPlayerSleepTimerKey
-import it.fast4x.rimusic.utils.showButtonPlayerSystemEqualizerKey
-import it.fast4x.rimusic.utils.showNextSongsInPlayerKey
-import it.fast4x.rimusic.utils.showTopActionsBarKey
-import it.fast4x.rimusic.utils.showTotalTimeQueueKey
-import it.fast4x.rimusic.utils.shuffleQueue
-import it.fast4x.rimusic.utils.thumbnail
-import it.fast4x.rimusic.utils.thumbnailTapEnabledKey
-import it.fast4x.rimusic.utils.transparentBackgroundPlayerActionBarKey
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.flowOf
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
-import kotlin.math.absoluteValue
 import androidx.compose.ui.unit.times
 import androidx.compose.ui.util.lerp
 import androidx.compose.ui.zIndex
 import androidx.core.graphics.ColorUtils.colorToHSL
+import androidx.media3.common.MediaItem
 import androidx.media3.common.PlaybackException
+import androidx.media3.common.Player
 import androidx.media3.common.Timeline
+import androidx.media3.common.util.UnstableApi
+import androidx.media3.exoplayer.offline.Download
+import androidx.navigation.NavController
 import androidx.palette.graphics.Palette
+import coil.compose.AsyncImage
+import coil.compose.rememberAsyncImagePainter
+import coil.request.ImageRequest
 import com.mikepenz.hypnoticcanvas.shaderBackground
 import com.mikepenz.hypnoticcanvas.shaders.BlackCherryCosmos
 import com.mikepenz.hypnoticcanvas.shaders.GlossyGradients
@@ -208,89 +138,165 @@ import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.haze
 import dev.chrisbanes.haze.hazeChild
 import it.fast4x.innertube.models.NavigationEndpoint
+import it.fast4x.rimusic.Database
+import it.fast4x.rimusic.LocalPlayerServiceBinder
+import it.fast4x.rimusic.R
 import it.fast4x.rimusic.appRunningInBackground
+import it.fast4x.rimusic.cleanPrefix
+import it.fast4x.rimusic.colorPalette
+import it.fast4x.rimusic.enums.AnimatedGradient
+import it.fast4x.rimusic.enums.BackgroundProgress
 import it.fast4x.rimusic.enums.CarouselSize
+import it.fast4x.rimusic.enums.ColorPaletteMode
+import it.fast4x.rimusic.enums.ColorPaletteName
+import it.fast4x.rimusic.enums.NavRoutes
+import it.fast4x.rimusic.enums.PlayerBackgroundColors
+import it.fast4x.rimusic.enums.PlayerThumbnailSize
 import it.fast4x.rimusic.enums.PlayerType
+import it.fast4x.rimusic.enums.PopupType
+import it.fast4x.rimusic.enums.QueueLoopType
 import it.fast4x.rimusic.enums.QueueType
 import it.fast4x.rimusic.enums.SongsNumber
+import it.fast4x.rimusic.enums.ThumbnailCoverType
 import it.fast4x.rimusic.enums.ThumbnailRoundness
 import it.fast4x.rimusic.enums.ThumbnailType
-import it.fast4x.rimusic.ui.components.themed.SmartMessage
-import it.fast4x.rimusic.utils.SearchYoutubeEntity
-import it.fast4x.rimusic.utils.actionspacedevenlyKey
-import it.fast4x.rimusic.utils.addNext
-import it.fast4x.rimusic.utils.expandedplayerKey
-import it.fast4x.rimusic.utils.expandedplayertoggleKey
-import it.fast4x.rimusic.utils.showthumbnailKey
-import it.fast4x.rimusic.utils.showlyricsthumbnailKey
-import it.fast4x.rimusic.utils.blackgradientKey
-import it.fast4x.rimusic.utils.visualizerEnabledKey
-import it.fast4x.rimusic.utils.bottomgradientKey
-import it.fast4x.rimusic.utils.carouselKey
-import it.fast4x.rimusic.utils.carouselSizeKey
-import it.fast4x.rimusic.cleanPrefix
-import it.fast4x.rimusic.enums.QueueLoopType
-import it.fast4x.rimusic.enums.ThumbnailCoverType
+import it.fast4x.rimusic.models.Info
+import it.fast4x.rimusic.models.Song
+import it.fast4x.rimusic.models.ui.toUiMedia
+import it.fast4x.rimusic.thumbnailShape
+import it.fast4x.rimusic.typography
+import it.fast4x.rimusic.ui.components.CustomModalBottomSheet
+import it.fast4x.rimusic.ui.components.LocalMenuState
+import it.fast4x.rimusic.ui.components.themed.BlurParamsDialog
+import it.fast4x.rimusic.ui.components.themed.CircularSlider
+import it.fast4x.rimusic.ui.components.themed.ConfirmationDialog
+import it.fast4x.rimusic.ui.components.themed.DefaultDialog
+import it.fast4x.rimusic.ui.components.themed.DownloadStateIconButton
+import it.fast4x.rimusic.ui.components.themed.IconButton
+import it.fast4x.rimusic.ui.components.themed.MiniPlayerMenu
 import it.fast4x.rimusic.ui.components.themed.NowPlayingSongIndicator
+import it.fast4x.rimusic.ui.components.themed.PlayerMenu
 import it.fast4x.rimusic.ui.components.themed.RotateThumbnailCoverAnimationModern
+import it.fast4x.rimusic.ui.components.themed.SecondaryTextButton
+import it.fast4x.rimusic.ui.components.themed.SmartMessage
+import it.fast4x.rimusic.ui.components.themed.ThumbnailOffsetDialog
+import it.fast4x.rimusic.ui.components.themed.animateBrushRotation
+import it.fast4x.rimusic.ui.styling.Dimensions
+import it.fast4x.rimusic.ui.styling.collapsedPlayerProgressBar
+import it.fast4x.rimusic.ui.styling.dynamicColorPaletteOf
+import it.fast4x.rimusic.ui.styling.favoritesOverlay
+import it.fast4x.rimusic.ui.styling.px
+import it.fast4x.rimusic.utils.BlurTransformation
+import it.fast4x.rimusic.utils.DisposableListener
+import it.fast4x.rimusic.utils.SearchYoutubeEntity
 import it.fast4x.rimusic.utils.VerticalfadingEdge2
 import it.fast4x.rimusic.utils.VinylSizeKey
 import it.fast4x.rimusic.utils.actionExpandedKey
-import it.fast4x.rimusic.utils.textoutlineKey
-import kotlin.Float.Companion.POSITIVE_INFINITY
+import it.fast4x.rimusic.utils.actionspacedevenlyKey
+import it.fast4x.rimusic.utils.addNext
+import it.fast4x.rimusic.utils.albumCoverRotationKey
+import it.fast4x.rimusic.utils.animatedGradientKey
+import it.fast4x.rimusic.utils.backgroundProgressKey
+import it.fast4x.rimusic.utils.blackgradientKey
+import it.fast4x.rimusic.utils.blurDarkenFactorKey
+import it.fast4x.rimusic.utils.blurStrengthKey
+import it.fast4x.rimusic.utils.bottomgradientKey
+import it.fast4x.rimusic.utils.carouselKey
+import it.fast4x.rimusic.utils.carouselSizeKey
 import it.fast4x.rimusic.utils.clickOnLyricsTextKey
-import it.fast4x.rimusic.utils.conditional
+import it.fast4x.rimusic.utils.colorPaletteModeKey
+import it.fast4x.rimusic.utils.colorPaletteNameKey
 import it.fast4x.rimusic.utils.controlsExpandedKey
 import it.fast4x.rimusic.utils.coverThumbnailAnimationKey
+import it.fast4x.rimusic.utils.currentWindow
+import it.fast4x.rimusic.utils.disablePlayerHorizontalSwipeKey
 import it.fast4x.rimusic.utils.disableScrollingTextKey
 import it.fast4x.rimusic.utils.discoverKey
 import it.fast4x.rimusic.utils.doubleShadowDrop
+import it.fast4x.rimusic.utils.durationTextToMillis
+import it.fast4x.rimusic.utils.effectRotationKey
+import it.fast4x.rimusic.utils.expandedplayerKey
+import it.fast4x.rimusic.utils.expandedplayertoggleKey
 import it.fast4x.rimusic.utils.extraspaceKey
 import it.fast4x.rimusic.utils.fadingedgeKey
+import it.fast4x.rimusic.utils.formatAsDuration
+import it.fast4x.rimusic.utils.formatAsTime
+import it.fast4x.rimusic.utils.getBitmapFromUrl
+import it.fast4x.rimusic.utils.getDownloadState
+import it.fast4x.rimusic.utils.getIconQueueLoopState
 import it.fast4x.rimusic.utils.horizontalFadingEdge
+import it.fast4x.rimusic.utils.isDownloadedSong
+import it.fast4x.rimusic.utils.isExplicit
+import it.fast4x.rimusic.utils.isLandscape
+import it.fast4x.rimusic.utils.manageDownload
+import it.fast4x.rimusic.utils.mediaItems
 import it.fast4x.rimusic.utils.miniQueueExpandedKey
 import it.fast4x.rimusic.utils.noblurKey
-import it.fast4x.rimusic.utils.playerTypeKey
-import it.fast4x.rimusic.utils.playlistindicatorKey
-import it.fast4x.rimusic.utils.queueDurationExpandedKey
-import it.fast4x.rimusic.utils.queueLoopTypeKey
-import it.fast4x.rimusic.utils.queueTypeKey
-import it.fast4x.rimusic.utils.resize
-import it.fast4x.rimusic.utils.setQueueLoopState
-import it.fast4x.rimusic.utils.showButtonPlayerDiscoverKey
-import it.fast4x.rimusic.utils.showButtonPlayerVideoKey
-import it.fast4x.rimusic.utils.showalbumcoverKey
-import it.fast4x.rimusic.utils.showsongsKey
-import it.fast4x.rimusic.utils.showvisthumbnailKey
-import it.fast4x.rimusic.utils.statsfornerdsKey
-import it.fast4x.rimusic.utils.swipeUpQueueKey
-import it.fast4x.rimusic.utils.tapqueueKey
-import it.fast4x.rimusic.utils.thumbnailRoundnessKey
-import it.fast4x.rimusic.utils.thumbnailSpacingKey
-import it.fast4x.rimusic.utils.thumbnailTypeKey
-import it.fast4x.rimusic.utils.timelineExpandedKey
-import it.fast4x.rimusic.utils.titleExpandedKey
-import it.fast4x.rimusic.utils.getIconQueueLoopState
-import it.fast4x.rimusic.utils.isDownloadedSong
 import it.fast4x.rimusic.utils.playAtIndex
 import it.fast4x.rimusic.utils.playNext
 import it.fast4x.rimusic.utils.playPrevious
-import it.fast4x.rimusic.utils.showButtonPlayerStartRadioKey
-import it.fast4x.rimusic.utils.showCoverThumbnailAnimationKey
-import it.fast4x.rimusic.utils.statsExpandedKey
-import it.fast4x.rimusic.utils.thumbnailFadeKey
-import it.fast4x.rimusic.colorPalette
-import it.fast4x.rimusic.enums.AnimatedGradient
-import it.fast4x.rimusic.enums.ColorPaletteName
-import it.fast4x.rimusic.thumbnailShape
-import it.fast4x.rimusic.typography
-import it.fast4x.rimusic.utils.animatedGradientKey
-import it.fast4x.rimusic.utils.colorPaletteNameKey
+import it.fast4x.rimusic.utils.playerBackgroundColorsKey
+import it.fast4x.rimusic.utils.playerThumbnailSizeKey
 import it.fast4x.rimusic.utils.playerThumbnailSizeLKey
+import it.fast4x.rimusic.utils.playerTypeKey
+import it.fast4x.rimusic.utils.playlistindicatorKey
+import it.fast4x.rimusic.utils.positionAndDurationState
+import it.fast4x.rimusic.utils.queueDurationExpandedKey
+import it.fast4x.rimusic.utils.queueLoopTypeKey
+import it.fast4x.rimusic.utils.queueTypeKey
+import it.fast4x.rimusic.utils.rememberPreference
+import it.fast4x.rimusic.utils.resize
 import it.fast4x.rimusic.utils.seamlessPlay
+import it.fast4x.rimusic.utils.semiBold
+import it.fast4x.rimusic.utils.setQueueLoopState
+import it.fast4x.rimusic.utils.shouldBePlaying
+import it.fast4x.rimusic.utils.showButtonPlayerAddToPlaylistKey
+import it.fast4x.rimusic.utils.showButtonPlayerArrowKey
+import it.fast4x.rimusic.utils.showButtonPlayerDiscoverKey
+import it.fast4x.rimusic.utils.showButtonPlayerDownloadKey
+import it.fast4x.rimusic.utils.showButtonPlayerLoopKey
+import it.fast4x.rimusic.utils.showButtonPlayerLyricsKey
+import it.fast4x.rimusic.utils.showButtonPlayerMenuKey
+import it.fast4x.rimusic.utils.showButtonPlayerShuffleKey
+import it.fast4x.rimusic.utils.showButtonPlayerSleepTimerKey
+import it.fast4x.rimusic.utils.showButtonPlayerStartRadioKey
+import it.fast4x.rimusic.utils.showButtonPlayerSystemEqualizerKey
+import it.fast4x.rimusic.utils.showButtonPlayerVideoKey
+import it.fast4x.rimusic.utils.showCoverThumbnailAnimationKey
+import it.fast4x.rimusic.utils.showNextSongsInPlayerKey
+import it.fast4x.rimusic.utils.showTopActionsBarKey
+import it.fast4x.rimusic.utils.showTotalTimeQueueKey
+import it.fast4x.rimusic.utils.showalbumcoverKey
+import it.fast4x.rimusic.utils.showlyricsthumbnailKey
+import it.fast4x.rimusic.utils.showsongsKey
+import it.fast4x.rimusic.utils.showthumbnailKey
+import it.fast4x.rimusic.utils.showvisthumbnailKey
+import it.fast4x.rimusic.utils.shuffleQueue
+import it.fast4x.rimusic.utils.statsExpandedKey
+import it.fast4x.rimusic.utils.statsfornerdsKey
+import it.fast4x.rimusic.utils.swipeUpQueueKey
+import it.fast4x.rimusic.utils.tapqueueKey
+import it.fast4x.rimusic.utils.textoutlineKey
+import it.fast4x.rimusic.utils.thumbnail
 import it.fast4x.rimusic.utils.thumbnailFadeExKey
+import it.fast4x.rimusic.utils.thumbnailFadeKey
+import it.fast4x.rimusic.utils.thumbnailRoundnessKey
+import it.fast4x.rimusic.utils.thumbnailSpacingKey
 import it.fast4x.rimusic.utils.thumbnailSpacingLKey
+import it.fast4x.rimusic.utils.thumbnailTapEnabledKey
+import it.fast4x.rimusic.utils.thumbnailTypeKey
+import it.fast4x.rimusic.utils.timelineExpandedKey
+import it.fast4x.rimusic.utils.titleExpandedKey
 import it.fast4x.rimusic.utils.topPaddingKey
+import it.fast4x.rimusic.utils.transparentBackgroundPlayerActionBarKey
+import it.fast4x.rimusic.utils.visualizerEnabledKey
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import kotlin.Float.Companion.POSITIVE_INFINITY
+import kotlin.math.absoluteValue
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -442,6 +448,7 @@ fun Player(
     val mediaItem = nullableMediaItem ?: return
 
     val pagerState = rememberPagerState(pageCount = { mediaItems.size })
+    val pagerStateFS = rememberPagerState(pageCount = { mediaItems.size })
     val isDragged by pagerState.interactionSource.collectIsDraggedAsState()
 
     //Temporaly commented for debug
@@ -942,20 +949,21 @@ fun Player(
     val showCoverThumbnailAnimation by rememberPreference(showCoverThumbnailAnimationKey, false)
     var coverThumbnailAnimation by rememberPreference(coverThumbnailAnimationKey, ThumbnailCoverType.Vinyl)
 
-    var value by remember{ mutableStateOf(2) }
+    var valueGrad by remember{ mutableStateOf(2) }
     val gradients = enumValues<AnimatedGradient>()
     var tempGradient by remember{ mutableStateOf(AnimatedGradient.Linear) }
+    var albumCoverRotation by rememberPreference(albumCoverRotationKey, false)
 
     if (animatedGradient == AnimatedGradient.Random){
         LaunchedEffect(mediaItem.mediaId){
-            value = (2..13).random()
+            valueGrad = (2..13).random()
         }
-        tempGradient = gradients[value]
+        tempGradient = gradients[valueGrad]
     }
 
 
     if (!isGradientBackgroundEnabled) {
-        if (playerBackgroundColors == PlayerBackgroundColors.BlurredCoverColor && (playerType == PlayerType.Essential || showthumbnail)) {
+        if (playerBackgroundColors == PlayerBackgroundColors.BlurredCoverColor && (playerType == PlayerType.Essential || (showthumbnail && (!albumCoverRotation)))) {
             containerModifier = containerModifier
                 .background(dynamicColorPalette.background1)
                 .paint(
@@ -1305,7 +1313,8 @@ fun Player(
             position = positionAndDuration.first,
             duration = positionAndDuration.second,
             modifier = modifierValue,
-            onBlurScaleChange = { blurStrength = it }
+            onBlurScaleChange = { blurStrength = it },
+            isExplicit = mediaItem.isExplicit
         )
     }
     val textoutline by rememberPreference(textoutlineKey, false)
@@ -1952,16 +1961,16 @@ fun Player(
          Box(
              modifier = Modifier.haze(state = hazeState, style = HazeDefaults.style(backgroundColor = Color.Transparent, tint = Color.Black.copy(0.5f),blurRadius = 8.dp))
          ){
-             if (playerBackgroundColors == PlayerBackgroundColors.BlurredCoverColor && playerType == PlayerType.Modern && !showthumbnail) {
+             if (playerBackgroundColors == PlayerBackgroundColors.BlurredCoverColor && playerType == PlayerType.Modern && (!showthumbnail || albumCoverRotation)) {
                  val fling = PagerDefaults.flingBehavior(
-                     state = pagerState,
+                     state = pagerStateFS,
                      snapPositionalThreshold = 0.20f
                  )
-                 pagerState.LaunchedEffectScrollToPage(binder.player.currentMediaItemIndex)
+                 pagerStateFS.LaunchedEffectScrollToPage(binder.player.currentMediaItemIndex)
 
-                 LaunchedEffect(pagerState) {
-                     var previousPage = pagerState.settledPage
-                     snapshotFlow { pagerState.settledPage }.distinctUntilChanged().collect {
+                 LaunchedEffect(pagerStateFS) {
+                     var previousPage = pagerStateFS.settledPage
+                     snapshotFlow { pagerStateFS.settledPage }.distinctUntilChanged().collect {
                          if (previousPage != it) {
                              if (it != binder.player.currentMediaItemIndex) binder.player.playAtIndex(it)
                          }
@@ -1970,11 +1979,46 @@ fun Player(
                  }
 
                  HorizontalPager(
-                     state = pagerState,
+                     state = pagerStateFS,
                      beyondViewportPageCount = 1,
                      flingBehavior = fling,
+                     userScrollEnabled = !(albumCoverRotation && (isShowingLyrics || showthumbnail)),
                      modifier = Modifier
                  ) { it ->
+
+                     var currentRotation by remember {
+                         mutableFloatStateOf(0f)
+                     }
+
+                     val rotation = remember {
+                         Animatable(currentRotation)
+                     }
+
+                     LaunchedEffect(player.isPlaying, pagerStateFS.settledPage) {
+                         if (player.isPlaying && it == pagerStateFS.settledPage) {
+                             rotation.animateTo(
+                                 targetValue = currentRotation + 360f,
+                                 animationSpec = infiniteRepeatable(
+                                     animation = tween(30000, easing = LinearEasing),
+                                     repeatMode = RepeatMode.Restart
+                                 )
+                             ) {
+                                 currentRotation = value
+                             }
+                         } else {
+                             if (currentRotation > 0f && it == pagerStateFS.settledPage) {
+                                 rotation.animateTo(
+                                     targetValue = currentRotation + 10,
+                                     animationSpec = tween(
+                                         1250,
+                                         easing = LinearOutSlowInEasing
+                                     )
+                                 ) {
+                                     currentRotation = value
+                                 }
+                             }
+                         }
+                     }
 
                      AsyncImage(
                          model = ImageRequest.Builder(LocalContext.current)
@@ -1998,14 +2042,22 @@ fun Player(
                              )
                              .build(),
                          contentDescription = "",
-                         contentScale = ContentScale.Crop,
+                         contentScale = if (albumCoverRotation && (isShowingLyrics || showthumbnail)) ContentScale.Fit else ContentScale.Crop,
                          modifier = Modifier
-                             .fillMaxHeight()
+                             .fillMaxWidth()
+                             .zIndex(if (it == pagerStateFS.currentPage) 1f else 0.9f)
+                             .conditional(albumCoverRotation) {
+                                 graphicsLayer {
+                                     scaleX = if (isShowingLyrics || showthumbnail) (screenWidth/screenHeight) + 0.5f else 1f
+                                     scaleY = if (isShowingLyrics || showthumbnail) (screenWidth/screenHeight) + 0.5f else 1f
+                                     rotationZ = if ((it == pagerStateFS.settledPage) && (isShowingLyrics || showthumbnail)) rotation.value else 0f
+                                 }
+                             }
                              .combinedClickable(
                                  interactionSource = remember { MutableInteractionSource() },
                                  indication = null,
                                  onClick = {
-                                     if (thumbnailTapEnabled) {
+                                     if (thumbnailTapEnabled && !showthumbnail) {
                                          if (isShowingVisualizer) isShowingVisualizer = false
                                          isShowingLyrics = !isShowingLyrics
                                      }
@@ -2458,6 +2510,9 @@ fun Player(
                         )
                     } else {
 
+                                val index = if (!showthumbnail) {if (pagerStateFS.currentPage > binder.player.currentTimeline.windowCount) 0 else pagerStateFS.currentPage}
+                                else if (pagerState.currentPage > binder.player.currentTimeline.windowCount) 0 else pagerState.currentPage
+
                                 Controls(
                                     navController = navController,
                                     onCollapse = onDismiss,
@@ -2468,8 +2523,8 @@ fun Player(
                                     isShowingLyrics = isShowingLyrics,
                                     media = mediaItem.toUiMedia(positionAndDuration.second),
                                     mediaId = mediaItem.mediaId,
-                                    title = player.getMediaItemAt(pagerState.currentPage).mediaMetadata.title?.toString(),
-                                    artist = player.getMediaItemAt(pagerState.currentPage).mediaMetadata.artist?.toString(),
+                                    title = player.getMediaItemAt(index).mediaMetadata.title?.toString(),
+                                    artist = player.getMediaItemAt(index).mediaMetadata.artist?.toString(),
                                     artistIds = artistsInfo,
                                     albumId = albumId,
                                     shouldBePlaying = shouldBePlaying,
@@ -2477,7 +2532,8 @@ fun Player(
                                     duration = positionAndDuration.second,
                                     modifier = Modifier
                                         .padding(vertical = 8.dp),
-                                    onBlurScaleChange = { blurStrength = it }
+                                    onBlurScaleChange = { blurStrength = it },
+                                    isExplicit = mediaItem.isExplicit
                                 )
 
                     }
@@ -2496,16 +2552,16 @@ fun Player(
            Box(
                modifier = Modifier.haze(state = hazeState, style = HazeDefaults.style(backgroundColor = Color.Transparent, tint = Color.Black.copy(0.5f),blurRadius = 8.dp))
            ) {
-               if (playerBackgroundColors == PlayerBackgroundColors.BlurredCoverColor && playerType == PlayerType.Modern && !showthumbnail) {
+               if (playerBackgroundColors == PlayerBackgroundColors.BlurredCoverColor && playerType == PlayerType.Modern && (!showthumbnail || albumCoverRotation)) {
                     val fling = PagerDefaults.flingBehavior(
-                        state = pagerState,
+                        state = pagerStateFS,
                         snapPositionalThreshold = 0.20f
                     )
-                   pagerState.LaunchedEffectScrollToPage(binder.player.currentMediaItemIndex)
+                   pagerStateFS.LaunchedEffectScrollToPage(binder.player.currentMediaItemIndex)
 
-                    LaunchedEffect(pagerState) {
-                        var previousPage = pagerState.settledPage
-                        snapshotFlow { pagerState.settledPage }.distinctUntilChanged().collect {
+                    LaunchedEffect(pagerStateFS) {
+                        var previousPage = pagerStateFS.settledPage
+                        snapshotFlow { pagerStateFS.settledPage }.distinctUntilChanged().collect {
                             if (previousPage != it) {
                                 if (it != binder.player.currentMediaItemIndex) binder.player.playAtIndex(it)
                             }
@@ -2513,11 +2569,46 @@ fun Player(
                         }
                     }
                     HorizontalPager(
-                        state = pagerState,
+                        state = pagerStateFS,
                         beyondViewportPageCount = 1,
                         flingBehavior = fling,
+                        userScrollEnabled = !(albumCoverRotation && (isShowingLyrics || showthumbnail)),
                         modifier = Modifier
                     ) { it ->
+
+                        var currentRotation by remember {
+                            mutableFloatStateOf(0f)
+                        }
+
+                        val rotation = remember {
+                            Animatable(currentRotation)
+                        }
+
+                        LaunchedEffect(player.isPlaying, pagerStateFS.settledPage) {
+                            if (player.isPlaying && it == pagerStateFS.settledPage) {
+                                rotation.animateTo(
+                                    targetValue = currentRotation + 360f,
+                                    animationSpec = infiniteRepeatable(
+                                        animation = tween(30000, easing = LinearEasing),
+                                        repeatMode = RepeatMode.Restart
+                                    )
+                                ) {
+                                    currentRotation = value
+                                }
+                            } else {
+                                if (currentRotation > 0f && it == pagerStateFS.settledPage) {
+                                    rotation.animateTo(
+                                        targetValue = currentRotation + 10,
+                                        animationSpec = tween(
+                                            1250,
+                                            easing = LinearOutSlowInEasing
+                                        )
+                                    ) {
+                                        currentRotation = value
+                                    }
+                                }
+                            }
+                        }
 
                         AsyncImage(
                             model = ImageRequest.Builder(LocalContext.current)
@@ -2542,14 +2633,22 @@ fun Player(
                                 )
                                 .build(),
                             contentDescription = "",
-                            contentScale = ContentScale.Crop,
+                            contentScale = if (albumCoverRotation && (isShowingLyrics || showthumbnail)) ContentScale.Fit else ContentScale.Crop,
                             modifier = Modifier
                                 .fillMaxHeight()
+                                .zIndex(if (it == pagerStateFS.currentPage) 1f else 0.9f)
+                                .conditional(albumCoverRotation) {
+                                    graphicsLayer {
+                                        scaleX = if (isShowingLyrics || showthumbnail) (screenHeight / screenWidth) + 0.5f else 1f
+                                        scaleY = if (isShowingLyrics || showthumbnail) (screenHeight / screenWidth) + 0.5f else 1f
+                                        rotationZ = if ((it == pagerStateFS.settledPage) && (isShowingLyrics || showthumbnail)) rotation.value else 0f
+                                    }
+                                }
                                 .combinedClickable(
                                     interactionSource = remember { MutableInteractionSource() },
                                     indication = null,
                                     onClick = {
-                                        if (thumbnailTapEnabled) {
+                                        if (thumbnailTapEnabled && !showthumbnail) {
                                             if (isShowingVisualizer) isShowingVisualizer = false
                                             isShowingLyrics = !isShowingLyrics
                                         }
@@ -2985,8 +3084,9 @@ fun Player(
 
                         )
                     } else {
-                                val index = if (pagerState.currentPage > binder.player.currentTimeline.windowCount) 0 else
-                                pagerState.currentPage
+                                val index = if (!showthumbnail) {if (pagerStateFS.currentPage > binder.player.currentTimeline.windowCount) 0 else pagerStateFS.currentPage}
+                                            else if (pagerState.currentPage > binder.player.currentTimeline.windowCount) 0 else pagerState.currentPage
+
                                 Controls(
                                     navController = navController,
                                     onCollapse = onDismiss,
@@ -3008,7 +3108,8 @@ fun Player(
                                         .padding(vertical = 4.dp)
                                         .fillMaxWidth(),
                                             //.weight(1f),
-                                        onBlurScaleChange = { blurStrength = it }
+                                        onBlurScaleChange = { blurStrength = it },
+                                    isExplicit = mediaItem.isExplicit
                                 )
 
                     }

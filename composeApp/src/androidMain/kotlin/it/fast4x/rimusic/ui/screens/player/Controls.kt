@@ -23,7 +23,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -42,7 +41,6 @@ import it.fast4x.rimusic.enums.PlayerControlsType
 import it.fast4x.rimusic.enums.PlayerInfoType
 import it.fast4x.rimusic.enums.PlayerPlayButtonType
 import it.fast4x.rimusic.enums.PlayerTimelineSize
-import it.fast4x.rimusic.enums.PlayerTimelineType
 import it.fast4x.rimusic.enums.PlayerType
 import it.fast4x.rimusic.models.Info
 import it.fast4x.rimusic.models.Song
@@ -54,7 +52,6 @@ import it.fast4x.rimusic.utils.GetSeekBar
 import it.fast4x.rimusic.utils.buttonzoomoutKey
 import it.fast4x.rimusic.utils.conditional
 import it.fast4x.rimusic.utils.disableScrollingTextKey
-import it.fast4x.rimusic.utils.effectRotationKey
 import it.fast4x.rimusic.utils.isCompositionLaunched
 import it.fast4x.rimusic.utils.isDownloadedSong
 import it.fast4x.rimusic.utils.isLandscape
@@ -63,7 +60,6 @@ import it.fast4x.rimusic.utils.playerInfoTypeKey
 import it.fast4x.rimusic.utils.playerPlayButtonTypeKey
 import it.fast4x.rimusic.utils.playerSwapControlsWithTimelineKey
 import it.fast4x.rimusic.utils.playerTimelineSizeKey
-import it.fast4x.rimusic.utils.playerTimelineTypeKey
 import it.fast4x.rimusic.utils.playerTypeKey
 import it.fast4x.rimusic.utils.rememberPreference
 import it.fast4x.rimusic.utils.showlyricsthumbnailKey
@@ -97,6 +93,7 @@ fun Controls(
     shouldBePlaying: Boolean,
     position: Long,
     duration: Long,
+    isExplicit: Boolean,
     modifier: Modifier = Modifier
 ) {
     val binder = LocalPlayerServiceBinder.current
@@ -247,6 +244,7 @@ fun Controls(
                             disableScrollingText = disableScrollingText,
                             artist = artist,
                             artistIds = artistIds,
+                            isExplicit = isExplicit
                         )
 
                     if (playerInfoType == PlayerInfoType.Essential)
@@ -262,6 +260,7 @@ fun Controls(
                             disableScrollingText = disableScrollingText,
                             artist = artist,
                             artistIds = artistIds,
+                            isExplicit = isExplicit
                         )
                     Spacer(
                         modifier = Modifier
@@ -323,6 +322,7 @@ fun Controls(
                         disableScrollingText = disableScrollingText,
                         artist = artist,
                         artistIds = artistIds,
+                        isExplicit = isExplicit
                     )
 
                 if (playerInfoType == PlayerInfoType.Essential)
@@ -338,6 +338,7 @@ fun Controls(
                         disableScrollingText = disableScrollingText,
                         artist = artist,
                         artistIds = artistIds,
+                        isExplicit = isExplicit
                     )
 
                 Spacer(
@@ -418,6 +419,7 @@ fun Controls(
                     disableScrollingText = disableScrollingText,
                     artist = artist,
                     artistIds = artistIds,
+                    isExplicit = isExplicit
                 )
 
             if (playerInfoType == PlayerInfoType.Essential)
@@ -433,6 +435,7 @@ fun Controls(
                     disableScrollingText = disableScrollingText,
                     artist = artist,
                     artistIds = artistIds,
+                    isExplicit = isExplicit
                 )
 
             Spacer(

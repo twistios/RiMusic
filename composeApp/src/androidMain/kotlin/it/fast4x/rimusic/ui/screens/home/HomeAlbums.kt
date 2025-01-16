@@ -35,6 +35,7 @@ import androidx.compose.ui.text.ExperimentalTextApi
 import androidx.compose.ui.unit.dp
 import androidx.media3.common.util.UnstableApi
 import it.fast4x.compose.persist.persistList
+import it.fast4x.innertube.YtMusic
 import it.fast4x.rimusic.Database
 import it.fast4x.rimusic.LocalPlayerServiceBinder
 import it.fast4x.rimusic.MODIFIED_PREFIX
@@ -75,6 +76,10 @@ import it.fast4x.rimusic.ui.components.tab.toolbar.Randomizer
 import it.fast4x.rimusic.ui.components.tab.toolbar.SongsShuffle
 import it.fast4x.rimusic.utils.Preference.HOME_ALBUM_ITEM_SIZE
 import it.fast4x.rimusic.thumbnailShape
+import it.fast4x.rimusic.ui.screens.settings.isYouTubeSyncEnabled
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @ExperimentalTextApi
@@ -296,8 +301,7 @@ fun HomeAlbums(
                                                 //Log.d("mediaItem", " maxPos in Playlist $it ${position}")
                                                 if (position > 0) position++ else position =
                                                     0
-                                                //Log.d("mediaItem", "next initial pos ${position}")
-                                                //if (listMediaItems.isEmpty()) {
+
                                                 songs.forEachIndexed { index, song ->
                                                     Database.asyncTransaction {
                                                         insert(song.asMediaItem)
@@ -309,9 +313,14 @@ fun HomeAlbums(
                                                             )
                                                         )
                                                     }
-                                                    //Log.d("mediaItemPos", "added position ${position + index}")
+
+                                                    if(isYouTubeSyncEnabled())
+                                                        CoroutineScope(Dispatchers.IO).launch {
+                                                            playlistPreview.playlist.browseId?.let { YtMusic.addToPlaylist(it, song.id) }
+                                                        }
+
                                                 }
-                                                //}
+
                                             },
                                             disableScrollingText = disableScrollingText
                                         )

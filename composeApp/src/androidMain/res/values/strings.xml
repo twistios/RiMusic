@@ -859,7 +859,11 @@
     <string name="colorpalette">Color Palette</string>
     <string name="customcolor">Custom Color</string>
     <string name="lyricsanimate">Animate Lyrics Size</string>
+    <string name="yt_playlists">YT/YTM</string>
     <string name="lyricsSizeSecondary">Long Press to change the size</string>
+    <string name="home">Home</string>
     <string name="appearancepresets">Appearance Presets</string>
     <string name="appearancepresetssecondary">Previews will be in low quality</string>
+    <string name="yt_history">YTM History</string>
+    <string name="albumCoverRotation">Background Rotation Animation</string>
 </resources>

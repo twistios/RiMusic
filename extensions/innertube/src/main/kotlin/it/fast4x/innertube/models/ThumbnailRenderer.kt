@@ -18,6 +18,8 @@ data class ThumbnailRenderer(
         data class Thumbnail(
             val thumbnails: List<it.fast4x.innertube.models.Thumbnail>?
         )
+
+        fun getThumbnailUrl() = thumbnail?.thumbnails?.lastOrNull()?.url
     }
 }
 

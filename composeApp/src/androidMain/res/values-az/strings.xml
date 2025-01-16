@@ -718,6 +718,7 @@
     <string name="error_timeout">Qoşulma vaxtı bitdi</string>
     <string name="error_unknown">Naməlum xəta</string>
     <string name="delete_song">Bu mahnını həqiqətən silmək istəyirsiniz? Məlumat bazasından silinəcək. Bu proses geri dönməzdir.</string>
+    <string name="update_album">Albomu Yeniləyir</string>
     <string name="info_check_update_now">İndi Yoxla</string>
     <string name="info_no_update_available">Yeniləmə mövcud deyil</string>
     <string name="lang_galician">Qalisiya dili (Galician)</string>
@@ -858,7 +859,11 @@
     <string name="colorpalette">Rəng Palitrası</string>
     <string name="customcolor">Fərdi Rəng</string>
     <string name="lyricsanimate">Lirika ölçüsün hərəkət etdir</string>
+    <string name="yt_playlists">YT/YTM</string>
     <string name="lyricsSizeSecondary">Ölçünü dəyişmək üçün uzun basın</string>
+    <string name="home">Ev</string>
     <string name="appearancepresets">Görünüş İlkin Qrupları</string>
     <string name="appearancepresetssecondary">Önizləmələr aşağı keyfiyyətdə olacaq</string>
+    <string name="yt_history">YTM Tarixçəsi</string>
+    <string name="albumCoverRotation">Arxa Plan Dönmə Animasiyası</string>
 </resources>

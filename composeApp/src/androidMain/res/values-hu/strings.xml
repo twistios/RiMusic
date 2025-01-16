@@ -718,6 +718,7 @@
     <string name="error_timeout">Kapcsolat időtúllépés</string>
     <string name="error_unknown">Ismeretlen hiba</string>
     <string name="delete_song">Biztosan törölni akarod ezt a dalt? Törölve lesz az adatbázisból. Ez a művelet visszafordíthatatlan.</string>
+    <string name="update_album">Updates the Album</string>
     <string name="info_check_update_now">Ellenőrizd most</string>
     <string name="info_no_update_available">Nincs elérhető frissítés</string>
     <string name="lang_galician">Galíciai</string>
@@ -858,7 +859,11 @@
     <string name="colorpalette">Color Palette</string>
     <string name="customcolor">Custom Color</string>
     <string name="lyricsanimate">Animate Lyrics Size</string>
+    <string name="yt_playlists">YT/YTM</string>
     <string name="lyricsSizeSecondary">Long Press to change the size</string>
+    <string name="home">Home</string>
     <string name="appearancepresets">Appearance Presets</string>
     <string name="appearancepresetssecondary">Previews will be in low quality</string>
+    <string name="yt_history">YTM History</string>
+    <string name="albumCoverRotation">Background Rotation Animation</string>
 </resources>

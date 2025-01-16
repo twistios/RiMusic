@@ -8,18 +8,31 @@ import it.fast4x.innertube.Innertube
 import it.fast4x.innertube.models.BrowseResponse
 import it.fast4x.innertube.models.ContinuationResponse
 import it.fast4x.innertube.models.MusicCarouselShelfRenderer
+import it.fast4x.innertube.models.MusicResponsiveListItemRenderer
 import it.fast4x.innertube.models.MusicShelfRenderer
 import it.fast4x.innertube.models.bodies.BrowseBody
 import it.fast4x.innertube.models.bodies.ContinuationBody
 import it.fast4x.innertube.utils.from
 import it.fast4x.innertube.utils.runCatchingNonCancellable
 
-/**** api modified by youtube music 0624 ****/
+
 suspend fun Innertube.playlistPage(body: BrowseBody) = runCatchingNonCancellable {
     val response = client.post(browse) {
+        setLogin(setLogin = true)
         setBody(body)
-        body.context.apply()
+        //body.context.apply()
     }.body<BrowseResponse>()
+
+//    val songsOld = response.contents?.singleColumnBrowseResultsRenderer?.tabs?.firstOrNull()
+//        ?.tabRenderer?.content?.sectionListRenderer?.contents?.firstOrNull()
+//        ?.musicPlaylistShelfRenderer?.contents
+//
+//    val songsNew = response.contents?.twoColumnBrowseResultsRenderer?.secondaryContents?.sectionListRenderer
+//        ?.contents?.firstOrNull()?.musicPlaylistShelfRenderer?.contents
+//
+//    println("mediaItem playlistPage songsOld ${songsOld?.size}")
+//    println("mediaItem playlistPage songsNew ${songsNew?.size}")
+
 
     if (response.contents?.twoColumnBrowseResultsRenderer == null) {
         /* OLD */
@@ -37,9 +50,9 @@ suspend fun Innertube.playlistPage(body: BrowseBody) = runCatchingNonCancellable
             ?.sectionListRenderer
             ?.contents
 
-        val musicShelfRenderer = contents
-            ?.firstOrNull()
-            ?.musicShelfRenderer
+//        val musicShelfRenderer = contents
+//            ?.firstOrNull()
+//            ?.musicShelfRenderer
 
         val musicCarouselShelfRenderer = contents
             ?.getOrNull(1)
@@ -74,8 +87,15 @@ suspend fun Innertube.playlistPage(body: BrowseBody) = runCatchingNonCancellable
                 .microformat
                 ?.microformatDataRenderer
                 ?.urlCanonical,
-            songsPage = musicShelfRenderer
-                ?.toSongsPage(),
+            songsPage = Innertube.ItemsPage(
+                items = response.contents?.singleColumnBrowseResultsRenderer?.tabs?.firstOrNull()
+                    ?.tabRenderer?.content?.sectionListRenderer?.contents?.firstOrNull()
+                    ?.musicPlaylistShelfRenderer?.contents?.mapNotNull {
+                        it.musicResponsiveListItemRenderer?.let { it1 -> Innertube.SongItem.from(it1) }
+                    },
+                continuation = response.continuationContents?.musicPlaylistShelfContinuation?.continuations
+                    ?.firstOrNull()?.nextContinuationData?.continuation
+            ),
             otherVersions = musicCarouselShelfRenderer
                 ?.contents
                 ?.mapNotNull(MusicCarouselShelfRenderer.Content::musicTwoRowItemRenderer)
@@ -105,9 +125,9 @@ suspend fun Innertube.playlistPage(body: BrowseBody) = runCatchingNonCancellable
             ?.sectionListRenderer
             ?.contents
 
-        val musicShelfRenderer = contents
-            ?.firstOrNull()
-            ?.musicShelfRenderer
+//        val musicShelfRenderer = contents
+//            ?.firstOrNull()
+//            ?.musicShelfRenderer
 
         val musicCarouselShelfRenderer = contents
             ?.getOrNull(1)
@@ -139,8 +159,14 @@ suspend fun Innertube.playlistPage(body: BrowseBody) = runCatchingNonCancellable
                 .microformat
                 ?.microformatDataRenderer
                 ?.urlCanonical,
-            songsPage = musicShelfRenderer
-                ?.toSongsPage(),
+            songsPage = Innertube.ItemsPage(
+                items = response.contents.twoColumnBrowseResultsRenderer.secondaryContents?.sectionListRenderer
+                ?.contents?.firstOrNull()?.musicPlaylistShelfRenderer?.contents?.mapNotNull {
+                    it.musicResponsiveListItemRenderer?.let { it1 -> Innertube.SongItem.from(it1) }
+                },
+                continuation = response.continuationContents?.musicPlaylistShelfContinuation?.continuations
+                    ?.firstOrNull()?.nextContinuationData?.continuation
+            ),
             otherVersions = musicCarouselShelfRenderer
                 ?.contents
                 ?.mapNotNull(MusicCarouselShelfRenderer.Content::musicTwoRowItemRenderer)
@@ -170,26 +196,6 @@ suspend fun Innertube.playlistPage(body: ContinuationBody) = runCatchingNonCance
         ?.toSongsPage()
 }
 
-suspend fun Innertube.playlistPageLong(body: ContinuationBody) = runCatching {
-    val response = client.post(browse) {
-        //---
-        //mask("continuationContents.musicPlaylistShelfContinuation(continuations,contents.$musicResponsiveListItemRendererMask)")
-        //---
-        parameter("continuation", body.continuation)
-        parameter("ctoken", body.continuation)
-        //parameter("type", "next")
-        setBody(body) // required for long playlist
-        body.context.apply()
-    }.body<ContinuationResponse>()
-
-    println("mediaItem ContinuationBody playlistPageLong continuation ${response.continuationContents?.musicShelfContinuation?.continuations?.firstOrNull()?.nextContinuationData?.continuation}")
-
-    response
-        .continuationContents
-        ?.musicShelfContinuation
-        ?.toSongsPage()
-}
-
 private fun MusicShelfRenderer?.toSongsPage() = Innertube.ItemsPage(
     items = this
         ?.contents
@@ -209,4 +215,6 @@ private fun MusicShelfRenderer?.toSongsPage() = Innertube.ItemsPage(
         ?.nextContinuationData
         ?.continuation
 )
+
+
 

@@ -41,6 +41,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import it.fast4x.rimusic.ui.components.Skeleton
+import it.fast4x.rimusic.ui.screens.settings.isYouTubeLoggedIn
 import kotlin.system.exitProcess
 
 
@@ -88,7 +89,6 @@ fun HomeScreen(
 
             if (tabIndex == -2) navController.navigate(NavRoutes.search.name)
 
-
             if (!enableQuickPicksPage && tabIndex==0) tabIndex = 1
 
             Skeleton(
@@ -97,8 +97,10 @@ fun HomeScreen(
                 onTabChanged,
                 miniPlayer,
                 navBarContent = { Item ->
-                    if (enableQuickPicksPage)
-                        Item(0, stringResource(R.string.quick_picks), R.drawable.sparkles)
+                    if (enableQuickPicksPage || isYouTubeLoggedIn())
+                        Item(0, if (!isYouTubeLoggedIn())
+                            stringResource(R.string.quick_picks) else stringResource(R.string.home),
+                            if (!isYouTubeLoggedIn()) R.drawable.sparkles else R.drawable.ytmusic)
                     Item(1, stringResource(R.string.songs), R.drawable.musical_notes)
                     Item(2, stringResource(R.string.artists), R.drawable.artists)
                     Item(3, stringResource(R.string.albums), R.drawable.album)
@@ -107,7 +109,7 @@ fun HomeScreen(
             ) { currentTabIndex ->
                 saveableStateHolder.SaveableStateProvider(key = currentTabIndex) {
                     when (currentTabIndex) {
-                        0 -> QuickPicks(
+                        0 -> HomeQuickPicks(
                             onAlbumClick = {
                                 navController.navigate(route = "${NavRoutes.album.name}/$it")
                             },
@@ -128,7 +130,6 @@ fun HomeScreen(
                                 navController.navigate(NavRoutes.settings.name)
                             },
                             navController = navController
-
                         )
 
                         1 -> HomeSongsModern(

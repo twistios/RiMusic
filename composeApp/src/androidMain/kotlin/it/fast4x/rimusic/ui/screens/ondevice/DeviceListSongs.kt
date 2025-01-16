@@ -74,6 +74,7 @@ import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.offline.Download
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
+import it.fast4x.innertube.YtMusic
 import it.fast4x.rimusic.Database
 import it.fast4x.rimusic.LocalPlayerServiceBinder
 import it.fast4x.rimusic.R
@@ -148,6 +149,8 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.isActive
 import it.fast4x.rimusic.colorPalette
 import it.fast4x.rimusic.typography
+import it.fast4x.rimusic.ui.screens.settings.isYouTubeSyncEnabled
+import kotlinx.coroutines.launch
 import timber.log.Timber
 import kotlin.random.Random
 import kotlin.time.Duration.Companion.milliseconds
@@ -709,7 +712,10 @@ fun DeviceListSongs(
                                                         )
                                                     )
                                                 }
-                                                //Log.d("mediaItemPos", "added position ${position + index}")
+                                                if(isYouTubeSyncEnabled())
+                                                    CoroutineScope(Dispatchers.IO).launch {
+                                                        playlistPreview.playlist.browseId?.let { YtMusic.addToPlaylist(it, song.asMediaItem.mediaId) }
+                                                    }
                                             }
                                         } else {
                                             listMediaItems.forEachIndexed { index, song ->
@@ -724,7 +730,10 @@ fun DeviceListSongs(
                                                         )
                                                     )
                                                 }
-                                                //Log.d("mediaItemPos", "add position $position")
+                                                if(isYouTubeSyncEnabled())
+                                                    CoroutineScope(Dispatchers.IO).launch {
+                                                        playlistPreview.playlist.browseId?.let { YtMusic.addToPlaylist(it, song.mediaId) }
+                                                    }
                                             }
                                             listMediaItems.clear()
                                             selectItems = false

@@ -132,7 +132,7 @@ import kotlin.random.Random
 fun ArtistOverview(
     navController: NavController,
     browseId: String?,
-    youtubeArtistPage: Innertube.ArtistPage?,
+    youtubeArtistPage: Innertube.ArtistInfoPage?,
     onViewAllSongsClick: () -> Unit,
     onViewAllAlbumsClick: () -> Unit,
     onViewAllSinglesClick: () -> Unit,

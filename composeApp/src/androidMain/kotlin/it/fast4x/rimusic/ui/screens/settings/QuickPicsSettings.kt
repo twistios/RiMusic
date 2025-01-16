@@ -98,8 +98,8 @@ fun  QuickPicsSettings() {
              */
     ) {
         HeaderWithIcon(
-            title = stringResource(R.string.quick_picks),
-            iconId = R.drawable.sparkles,
+            title = if (!isYouTubeLoggedIn()) stringResource(R.string.quick_picks) else stringResource(R.string.home),
+            iconId = if (!isYouTubeLoggedIn()) R.drawable.sparkles else R.drawable.ytmusic,
             enabled = false,
             showIcon = true,
             modifier = Modifier,

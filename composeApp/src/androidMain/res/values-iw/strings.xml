@@ -352,6 +352,7 @@
     <string name="sort_year">שנה</string>
     <string name="sort_name">שם</string>
     <string name="sort_songs_number">מספר שירים</string>
+    <string name="sort_relative_listening_time">Relative Listening Time</string>
     <string name="follow">עקוב</string>
     <string name="following">במעקב</string>
     <string name="artist_subscribers">%s מנויים</string>
@@ -717,6 +718,7 @@
     <string name="error_timeout">Connection timeout</string>
     <string name="error_unknown">Unknown error</string>
     <string name="delete_song">Do you really want to delete this song? It will be deleted from database. This action is irreversible.</string>
+    <string name="update_album">Updates the Album</string>
     <string name="info_check_update_now">Check Now</string>
     <string name="info_no_update_available">No update available</string>
     <string name="lang_galician">Galician</string>
@@ -840,4 +842,28 @@
     <string name="bookmark">Bookmark</string>
     <string name="downloading_videos_not_supported">Downloading videos not supported</string>
     <string name="animatedgradient">Animated Gradient</string>
+    <string name="linear">Linear Gradient</string>
+    <string name="mesh">Mesh Gradient</string>
+    <string name="mesmerizinglens">Mesmerizing Lens</string>
+    <string name="glossygradient">Glossy Gradient</string>
+    <string name="gradientflow">Gradient Flow</string>
+    <string name="purpleliquid">Purple Liquid</string>
+    <string name="stage">Stage</string>
+    <string name="inkflow">Ink Flow</string>
+    <string name="goldenmagma">Golden Magma</string>
+    <string name="oilflow">Oil Flow</string>
+    <string name="icereflection">Ice Reflection</string>
+    <string name="blackcherrycosmos">Black Cherry Cosmos</string>
+    <string name="gradienttype">Gradient Type</string>
+    <string name="random">Random</string>
+    <string name="colorpalette">Color Palette</string>
+    <string name="customcolor">Custom Color</string>
+    <string name="lyricsanimate">Animate Lyrics Size</string>
+    <string name="yt_playlists">YT/YTM</string>
+    <string name="lyricsSizeSecondary">Long Press to change the size</string>
+    <string name="home">Home</string>
+    <string name="appearancepresets">Appearance Presets</string>
+    <string name="appearancepresetssecondary">Previews will be in low quality</string>
+    <string name="yt_history">YTM History</string>
+    <string name="albumCoverRotation">Background Rotation Animation</string>
 </resources>

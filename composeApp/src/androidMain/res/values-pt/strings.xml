@@ -718,6 +718,7 @@
     <string name="error_timeout">Tempo de conexão esgotado</string>
     <string name="error_unknown">Erro desconhecido</string>
     <string name="delete_song">O senhor realmente deseja excluir esta música? Ela será excluída do banco de dados. Esta ação é irreversível.</string>
+    <string name="update_album">Updates the Album</string>
     <string name="info_check_update_now">Verificar agora</string>
     <string name="info_no_update_available">Nenhuma atualização disponível</string>
     <string name="lang_galician">Galego (Galego)</string>
@@ -858,7 +859,11 @@
     <string name="colorpalette">Color Palette</string>
     <string name="customcolor">Custom Color</string>
     <string name="lyricsanimate">Animate Lyrics Size</string>
+    <string name="yt_playlists">YT/YTM</string>
     <string name="lyricsSizeSecondary">Long Press to change the size</string>
+    <string name="home">Home</string>
     <string name="appearancepresets">Appearance Presets</string>
     <string name="appearancepresetssecondary">Previews will be in low quality</string>
+    <string name="yt_history">YTM History</string>
+    <string name="albumCoverRotation">Background Rotation Animation</string>
 </resources>

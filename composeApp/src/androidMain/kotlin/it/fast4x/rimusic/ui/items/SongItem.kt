@@ -41,44 +41,44 @@ import androidx.media3.exoplayer.offline.DownloadService
 import coil.compose.AsyncImage
 import it.fast4x.innertube.Innertube
 import it.fast4x.rimusic.Database
-import it.fast4x.rimusic.EXPLICIT_PREFIX
 import it.fast4x.rimusic.LocalPlayerServiceBinder
 import it.fast4x.rimusic.R
 import it.fast4x.rimusic.cleanPrefix
+import it.fast4x.rimusic.colorPalette
+import it.fast4x.rimusic.enums.ColorPaletteName
 import it.fast4x.rimusic.enums.DownloadedStateMedia
 import it.fast4x.rimusic.models.Song
 import it.fast4x.rimusic.service.MyDownloadService
 import it.fast4x.rimusic.service.isLocal
+import it.fast4x.rimusic.thumbnailShape
+import it.fast4x.rimusic.typography
 import it.fast4x.rimusic.ui.components.themed.HeaderIconButton
 import it.fast4x.rimusic.ui.components.themed.IconButton
+import it.fast4x.rimusic.ui.components.themed.NowPlayingSongIndicator
 import it.fast4x.rimusic.ui.components.themed.SmartMessage
 import it.fast4x.rimusic.ui.components.themed.TextPlaceholder
-import it.fast4x.rimusic.ui.styling.favoritesIcon
-import it.fast4x.rimusic.ui.styling.shimmer
-import it.fast4x.rimusic.ui.components.themed.NowPlayingSongIndicator
 import it.fast4x.rimusic.ui.styling.LocalAppearance
+import it.fast4x.rimusic.ui.styling.favoritesIcon
 import it.fast4x.rimusic.ui.styling.favoritesOverlay
+import it.fast4x.rimusic.ui.styling.shimmer
 import it.fast4x.rimusic.utils.asMediaItem
 import it.fast4x.rimusic.utils.asSong
+import it.fast4x.rimusic.utils.colorPaletteNameKey
 import it.fast4x.rimusic.utils.conditional
 import it.fast4x.rimusic.utils.downloadedStateMedia
 import it.fast4x.rimusic.utils.getLikeState
+import it.fast4x.rimusic.utils.isExplicit
 import it.fast4x.rimusic.utils.medium
 import it.fast4x.rimusic.utils.playlistindicatorKey
 import it.fast4x.rimusic.utils.rememberPreference
 import it.fast4x.rimusic.utils.secondary
 import it.fast4x.rimusic.utils.semiBold
+import it.fast4x.rimusic.utils.shimmerEffect
 import it.fast4x.rimusic.utils.thumbnail
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import it.fast4x.rimusic.colorPalette
-import it.fast4x.rimusic.enums.ColorPaletteName
-import it.fast4x.rimusic.utils.shimmerEffect
-import it.fast4x.rimusic.thumbnailShape
-import it.fast4x.rimusic.typography
-import it.fast4x.rimusic.utils.colorPaletteNameKey
 
 
 @UnstableApi
@@ -345,7 +345,6 @@ fun SongItem(
     downloadedStateMedia = if (!mediaItem.isLocal) downloadedStateMedia(mediaItem.mediaId)
     else DownloadedStateMedia.DOWNLOADED
 
-    val isExplicit = mediaItem.mediaMetadata.title?.startsWith(EXPLICIT_PREFIX) == true
     val title = mediaItem.mediaMetadata.title.toString()
     val authors = mediaItem.mediaMetadata.artist.toString()
     val duration = mediaItem.mediaMetadata.extras?.getString("durationText")
@@ -357,6 +356,7 @@ fun SongItem(
     val colorPaletteName by rememberPreference(colorPaletteNameKey, ColorPaletteName.Dynamic)
 
     // TODO improve playlist indicator without recompose
+    // There's no need, turning this into Flow is much more efficient
     if (playlistindicator)
         LaunchedEffect(Unit, forceRecompose) {
             withContext(Dispatchers.IO) {
@@ -464,7 +464,7 @@ fun SongItem(
                         Spacer(modifier = Modifier.padding(horizontal = 3.dp))
                     }
 
-                    if (isExplicit)
+                    if ( mediaItem.isExplicit )
                         IconButton(
                             icon = R.drawable.explicit,
                             color = colorPalette().text,
@@ -522,7 +522,7 @@ fun SongItem(
                                 .size(18.dp)
                         )
 
-                    if (isExplicit)
+                    if ( mediaItem.isExplicit )
                         IconButton(
                             icon = R.drawable.explicit,
                             color = colorPalette().text,

@@ -718,6 +718,7 @@
     <string name="error_timeout">연결 시간 초과</string>
     <string name="error_unknown">알 수 없는 오류</string>
     <string name="delete_song">Do you really want to delete this song? It will be deleted from database.\\nThis action is irreversible.</string>
+    <string name="update_album">Updates the Album</string>
     <string name="info_check_update_now">지금 확인</string>
     <string name="info_no_update_available">새로운 업데이트 없음</string>
     <string name="lang_galician">갈리시아어</string>
@@ -858,7 +859,11 @@
     <string name="colorpalette">색상 팔레트</string>
     <string name="customcolor">맞춤 색상</string>
     <string name="lyricsanimate">가사 크기 애니메이션</string>
+    <string name="yt_playlists">YT/YTM</string>
     <string name="lyricsSizeSecondary">Long Press to change the size</string>
+    <string name="home">Home</string>
     <string name="appearancepresets">Appearance Presets</string>
     <string name="appearancepresetssecondary">Previews will be in low quality</string>
+    <string name="yt_history">YTM History</string>
+    <string name="albumCoverRotation">Background Rotation Animation</string>
 </resources>

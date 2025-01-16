@@ -34,11 +34,13 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.media3.common.util.UnstableApi
 import it.fast4x.compose.persist.persistList
+import it.fast4x.innertube.YtMusic
 import it.fast4x.rimusic.Database
 import it.fast4x.rimusic.MONTHLY_PREFIX
 import it.fast4x.rimusic.PINNED_PREFIX
 import it.fast4x.rimusic.PIPED_PREFIX
 import it.fast4x.rimusic.R
+import it.fast4x.rimusic.YT_PREFIX
 import it.fast4x.rimusic.enums.NavigationBarPosition
 import it.fast4x.rimusic.enums.PlaylistSortBy
 import it.fast4x.rimusic.enums.PlaylistsType
@@ -82,7 +84,11 @@ import it.fast4x.rimusic.ui.components.tab.TabHeader
 import it.fast4x.rimusic.ui.components.tab.toolbar.Descriptive
 import it.fast4x.rimusic.ui.components.tab.toolbar.MenuIcon
 import it.fast4x.rimusic.ui.components.tab.toolbar.SongsShuffle
+import it.fast4x.rimusic.ui.screens.settings.isYouTubeSyncEnabled
 import it.fast4x.rimusic.utils.Preference.HOME_LIBRARY_ITEM_SIZE
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 
 @ExperimentalMaterial3Api
@@ -132,6 +138,7 @@ fun HomeLibrary(
             PlaylistsType.PinnedPlaylist -> Database.songsInAllPinnedPlaylists()
             PlaylistsType.MonthlyPlaylist -> Database.songsInAllMonthlyPlaylists()
             PlaylistsType.PipedPlaylist -> Database.songsInAllPipedPlaylists()
+            PlaylistsType.YTPlaylist -> Database.songsInAllYTPlaylists()
         }.map { it.map( Song::asMediaItem ) }
     }
     //<editor-fold desc="New playlist dialog">
@@ -151,12 +158,31 @@ fun HomeLibrary(
                 newPlaylistToggleState.value = value
                 field = value
             }
-        // TODO: Add a random name generator
+
         override var value: String = ""
 
         override fun onShortClick() = super.onShortClick()
 
         override fun onSet(newValue: String) {
+            if (isYouTubeSyncEnabled()) {
+                CoroutineScope(Dispatchers.IO).launch {
+                    YtMusic.createPlaylist(newValue).getOrNull()
+                        .also {
+                            println("Innertube YtMusic createPlaylist: $it")
+                            Database.asyncTransaction {
+                                insert(Playlist(name = newValue, browseId = it))
+                            }
+                        }
+
+                }
+            } else {
+                CoroutineScope(Dispatchers.IO).launch {
+                    Database.asyncTransaction {
+                        insert(Playlist(name = newValue))
+                    }
+                }
+            }
+
             if ( isPipedEnabled && pipedSession.token.isNotEmpty() )
                 createPipedPlaylist(
                     context = context,
@@ -164,10 +190,8 @@ fun HomeLibrary(
                     pipedSession = pipedSession.toApiSession(),
                     name = newValue
                 )
-            else
-                Database.asyncTransaction {
-                    insert( Playlist( name = newValue ) )
-                }
+
+
 
             onDismiss()
         }
@@ -219,7 +243,8 @@ fun HomeLibrary(
     val showMonthlyPlaylists by rememberPreference(showMonthlyPlaylistsKey, true)
     val showPipedPlaylists by rememberPreference(showPipedPlaylistsKey, true)
 
-    var buttonsList = listOf(PlaylistsType.Playlist to stringResource(R.string.playlists))
+    val buttonsList = mutableListOf(PlaylistsType.Playlist to stringResource(R.string.playlists))
+    //buttonsList += PlaylistsType.YTPlaylist to stringResource(R.string.yt_playlists)
     if (showPipedPlaylists) buttonsList +=
         PlaylistsType.PipedPlaylist to stringResource(R.string.piped_playlists)
     if (showPinnedPlaylists) buttonsList +=
@@ -249,7 +274,7 @@ fun HomeLibrary(
             //.fillMaxSize()
             .fillMaxHeight()
             .fillMaxWidth(
-                if( NavigationBarPosition.Right.isCurrent() )
+                if (NavigationBarPosition.Right.isCurrent())
                     Dimensions.contentWidthRightBar
                 else
                     1f
@@ -291,6 +316,7 @@ fun HomeLibrary(
                         PlaylistsType.PinnedPlaylist -> PINNED_PREFIX
                         PlaylistsType.MonthlyPlaylist -> MONTHLY_PREFIX
                         PlaylistsType.PipedPlaylist -> PIPED_PREFIX
+                        PlaylistsType.YTPlaylist -> YT_PREFIX
                     }
                 val condition: (PlaylistPreview) -> Boolean = {
                     it.playlist.name.startsWith( listPrefix, true )
@@ -304,12 +330,13 @@ fun HomeLibrary(
                         thumbnailSizeDp = itemSize.size.dp,
                         thumbnailSizePx = itemSize.size.px,
                         alternative = true,
-                        modifier = Modifier.fillMaxSize()
-                                           .animateItem( fadeInSpec = null, fadeOutSpec = null )
-                                           .clickable(onClick = {
-                                               search.onItemSelected()
-                                               onPlaylistClick( preview.playlist )
-                                           }),
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .animateItem(fadeInSpec = null, fadeOutSpec = null)
+                            .clickable(onClick = {
+                                search.onItemSelected()
+                                onPlaylistClick(preview.playlist)
+                            }),
                         disableScrollingText = disableScrollingText
                     )
                 }

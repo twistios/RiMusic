@@ -47,9 +47,11 @@ import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
 import androidx.navigation.NavController
 import it.fast4x.rimusic.Database
-import it.fast4x.rimusic.EXPLICIT_PREFIX
 import it.fast4x.rimusic.R
+import it.fast4x.rimusic.appContext
 import it.fast4x.rimusic.cleanPrefix
+import it.fast4x.rimusic.colorPalette
+import it.fast4x.rimusic.context
 import it.fast4x.rimusic.enums.ColorPaletteMode
 import it.fast4x.rimusic.enums.NavRoutes
 import it.fast4x.rimusic.enums.PlayerBackgroundColors
@@ -58,7 +60,9 @@ import it.fast4x.rimusic.enums.PlayerPlayButtonType
 import it.fast4x.rimusic.models.Info
 import it.fast4x.rimusic.models.Song
 import it.fast4x.rimusic.models.ui.UiMedia
+import it.fast4x.rimusic.service.MyDownloadHelper
 import it.fast4x.rimusic.service.modern.PlayerServiceModern
+import it.fast4x.rimusic.typography
 import it.fast4x.rimusic.ui.components.themed.CustomElevatedButton
 import it.fast4x.rimusic.ui.components.themed.IconButton
 import it.fast4x.rimusic.ui.components.themed.SelectorArtistsDialog
@@ -83,11 +87,6 @@ import it.fast4x.rimusic.utils.setLikeState
 import it.fast4x.rimusic.utils.showthumbnailKey
 import it.fast4x.rimusic.utils.textCopyToClipboard
 import it.fast4x.rimusic.utils.textoutlineKey
-import it.fast4x.rimusic.appContext
-import it.fast4x.rimusic.colorPalette
-import it.fast4x.rimusic.context
-import it.fast4x.rimusic.service.MyDownloadHelper
-import it.fast4x.rimusic.typography
 
 
 @UnstableApi
@@ -102,6 +101,7 @@ fun InfoAlbumAndArtistModern(
     title: String?,
     likedAt: Long?,
     artistIds: List<Info>?,
+    isExplicit: Boolean,
     artist: String?,
     onCollapse: () -> Unit,
     disableScrollingText: Boolean = false
@@ -177,7 +177,7 @@ fun InfoAlbumAndArtistModern(
                 modifier = Modifier
                  .weight(1f)
             ) {
-                if (title?.startsWith(EXPLICIT_PREFIX) == true)
+                if ( isExplicit )
                     IconButton(
                         icon = R.drawable.explicit,
                         color = colorPalette().text,
@@ -649,9 +649,7 @@ fun ControlsModern(
                               else binder.player.playPrevious()
                               if (effectRotationEnabled) isRotated = !isRotated
                           },
-                          onLongClick = {
-                              binder.player.seekTo(position - 5000)
-                          }
+                          onLongClick = {}
                       )
               )
           }
@@ -729,9 +727,7 @@ fun ControlsModern(
                               binder.player.playNext()
                               if (effectRotationEnabled) isRotated = !isRotated
                           },
-                          onLongClick = {
-                              binder.player.seekTo(position + 5000)
-                          }
+                          onLongClick = {}
                       )
               )
           }

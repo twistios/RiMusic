@@ -1225,7 +1225,8 @@ fun BlurParamsDialog(
                 onSlide = { blurStrength = it },
                 onSlideComplete = {},
                 toDisplay = { "%.0f".format(it) },
-                range = 0f..50f
+                range = 0f..100f,
+                steps = 99
             )
 
             /*
@@ -1367,7 +1368,7 @@ fun BlurParamsDialog(
                             onSlide = { thumbnailFadeEx = it },
                             onSlideComplete = {},
                             toDisplay = { "%.0f".format(it) },
-                            steps = 10,
+                            steps = 9,
                             range = 0f..10f
                         )
 
@@ -1451,7 +1452,7 @@ fun BlurParamsDialog(
                             onSlide = { thumbnailFade = it },
                             onSlideComplete = {},
                             toDisplay = { "%.0f".format(it) },
-                            steps = 10,
+                            steps = 9,
                             range = 0f..10f
                         )
                     }

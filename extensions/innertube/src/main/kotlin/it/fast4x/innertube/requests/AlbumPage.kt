@@ -8,6 +8,7 @@ import it.fast4x.innertube.models.bodies.BrowseBody
 suspend fun Innertube.albumPage(body: BrowseBody) = playlistPage(body)?.map { album ->
     album.url?.let { Url(it).parameters["list"] }?.let { playlistId ->
         playlistPage(BrowseBody(browseId = "VL$playlistId"))?.getOrNull()?.let { playlist ->
+            println("mediaItem albumPage pre songsPage ${playlist.songsPage?.items?.size}")
             album.copy(songsPage = playlist.songsPage)
         }
     } ?: album
@@ -23,7 +24,7 @@ suspend fun Innertube.albumPage(body: BrowseBody) = playlistPage(body)?.map { al
          */
 
         val albumInfo = Innertube.Info(
-            name = album?.title,
+            name = album.title,
             endpoint = NavigationEndpoint.Endpoint.Browse(
                 browseId = body.browseId,
                 params = body.params

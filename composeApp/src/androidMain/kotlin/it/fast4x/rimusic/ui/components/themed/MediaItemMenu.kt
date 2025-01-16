@@ -59,6 +59,7 @@ import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.offline.Download
 import androidx.navigation.NavController
 import it.fast4x.compose.persist.persistList
+import it.fast4x.innertube.YtMusic
 import it.fast4x.innertube.models.NavigationEndpoint
 import it.fast4x.rimusic.Database
 import it.fast4x.rimusic.LocalPlayerServiceBinder
@@ -116,6 +117,7 @@ import it.fast4x.rimusic.colorPalette
 import it.fast4x.rimusic.context
 import it.fast4x.rimusic.service.MyDownloadHelper
 import it.fast4x.rimusic.typography
+import it.fast4x.rimusic.ui.screens.settings.isYouTubeSyncEnabled
 import timber.log.Timber
 import java.time.LocalTime.now
 import java.time.format.DateTimeFormatter
@@ -180,13 +182,20 @@ fun InPlaylistMediaItemMenu(
                 deleteSongFromPlaylist(song.id, playlistId)
             }
 
+            if(isYouTubeSyncEnabled() && playlist?.playlist?.browseId != null && !playlist.playlist.name.startsWith(PIPED_PREFIX))
+                CoroutineScope(Dispatchers.IO).launch {
+                    playlist.playlist.browseId.let { YtMusic.removeFromPlaylist(
+                        it, song.id
+                    ) }
+                }
+
             if (playlist?.playlist?.name?.startsWith(PIPED_PREFIX) == true && isPipedEnabled && pipedSession.token.isNotEmpty()) {
                 Timber.d("MediaItemMenu InPlaylistMediaItemMenu onRemoveFromPlaylist browseId ${playlist.playlist.browseId}")
                 removeFromPipedPlaylist(
                     context = context,
                     coroutineScope = coroutineScope,
                     pipedSession = pipedSession.toApiSession(),
-                    id = UUID.fromString(playlist?.playlist?.browseId),
+                    id = UUID.fromString(playlist.playlist.browseId),
                     positionInPlaylist
                 )
             }
@@ -549,6 +558,11 @@ fun BaseMediaItemMenu(
                 )
             }
 
+            if(isYouTubeSyncEnabled())
+                CoroutineScope(Dispatchers.IO).launch {
+                    playlist.browseId?.let { YtMusic.addToPlaylist(it, mediaItem.mediaId) }
+                }
+
             if (playlist.name.startsWith(PIPED_PREFIX) && isPipedEnabled && pipedSession.token.isNotEmpty()) {
                 Timber.d("BaseMediaItemMenu onAddToPlaylist mediaItem ${mediaItem.mediaId}")
                 addToPipedPlaylist(
@@ -630,6 +644,12 @@ fun MiniMediaItemMenu(
                     )
                 )
             }
+
+            if(isYouTubeSyncEnabled())
+                CoroutineScope(Dispatchers.IO).launch {
+                    playlist.browseId?.let { YtMusic.addToPlaylist(it, mediaItem.mediaId) }
+                }
+
             onDismiss()
         },
         onGoToPlaylist = {

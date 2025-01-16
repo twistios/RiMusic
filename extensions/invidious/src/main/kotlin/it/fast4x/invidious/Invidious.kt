@@ -132,11 +132,11 @@ object Invidious {
 
         suspend fun videos(videoId: String) = runCatchingCancellable {
             println("Invidious.api.videos request started")
-            val url = "${Instances.NADEKO.apiUrl}videos/${videoId}"
+            val url = "${Instances.YEWTU.apiUrl}videos/${videoId}"
             println("Invidious.api.videos url: $url")
             val response = client.get(url) {
                 contentType(ContentType.Application.Json)
-            }.body<InvidiousResponse>().adaptiveFormats
+            }.body<InvidiousResponse>()
             println("Invidious.api.videos request finished $response")
             return@runCatchingCancellable response
         }?.onFailure {

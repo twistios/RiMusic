@@ -718,6 +718,7 @@
     <string name="error_timeout">Час очікування підключення закінчився</string>
     <string name="error_unknown">Невідома помилка</string>
     <string name="delete_song">Do you really want to delete this song? It will be deleted from database.\\nThis action is irreversible.</string>
+    <string name="update_album">Оновити альбом</string>
     <string name="info_check_update_now">Перевірити</string>
     <string name="info_no_update_available">Немає доступних оновлень</string>
     <string name="lang_galician">Галісія (Galego)</string>
@@ -858,7 +859,11 @@
     <string name="colorpalette">Палітра кольорів</string>
     <string name="customcolor">Користувальницький колір</string>
     <string name="lyricsanimate">Розмір анімації тексту пісні</string>
+    <string name="yt_playlists">YT/YTM</string>
     <string name="lyricsSizeSecondary">Довге натискання для зміни розміру</string>
+    <string name="home">Головна</string>
     <string name="appearancepresets">Пресети зовнішнього вигляду</string>
     <string name="appearancepresetssecondary">Попередній перегляд буде в низькій якості</string>
+    <string name="yt_history">Історія YTM</string>
+    <string name="albumCoverRotation">Анімація повороту фону</string>
 </resources>

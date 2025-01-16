@@ -12,11 +12,6 @@ import it.fast4x.innertube.requests.player
 import it.fast4x.rimusic.Database
 import it.fast4x.rimusic.enums.AudioQualityFormat
 import it.fast4x.rimusic.models.Format
-import it.fast4x.rimusic.utils.enableYouTubeLoginKey
-import it.fast4x.rimusic.utils.preferences
-import it.fast4x.rimusic.appContext
-import me.knighthat.invidious.Invidious
-import me.knighthat.invidious.request.player
 import me.knighthat.piped.Piped
 import me.knighthat.piped.request.player
 import java.net.ConnectException
@@ -60,7 +55,7 @@ private suspend fun getPipedFormatUrl(
     // Return parsed URL to play song or throw error if none of the responses is valid
     return Uri.parse( format?.url ) ?: throw NoSuchElementException( "Could not find any playable format from Piped ($videoId)" )
 }
-
+/*
 private suspend fun getInvidiousFormatUrl(
     videoId: String,
     audioQualityFormat: AudioQualityFormat
@@ -98,6 +93,8 @@ private suspend fun getInvidiousFormatUrl(
     return Uri.parse( format?.url ) ?: throw NoSuchElementException( "Could not find any playable format from Piped ($videoId)" )
 }
 
+ */
+
 @OptIn(UnstableApi::class)
 internal suspend fun PlayerService.dataSpecProcess(
     dataSpec: DataSpec,
@@ -132,11 +129,12 @@ internal suspend fun PlayerService.dataSpecProcess(
             return dataSpec.withUri( formatUrl )
 
         } catch ( e: NoSuchElementException ) {
+            throw e
             // Switch to Invidious
-            val formatUrl = getInvidiousFormatUrl( videoId, audioQualityFormat )
-
-            println("PlayerService DataSpecProcess Playing song $videoId from url $formatUrl")
-            return dataSpec.withUri( formatUrl )
+//            val formatUrl = getInvidiousFormatUrl( videoId, audioQualityFormat )
+//
+//            println("PlayerService DataSpecProcess Playing song $videoId from url $formatUrl")
+//            return dataSpec.withUri( formatUrl )
         }
 
     } catch ( e: Exception ) {
@@ -177,7 +175,8 @@ suspend fun getInnerTubeFormatUrl(
     //println("PlayerService MyDownloadHelper DataSpecProcess getMediaFormat Playing song $videoId from format $audioQualityFormat")
     return Innertube.player(
         body = PlayerBody(videoId = videoId),
-        withLogin = false // TODO manage login appContext().preferences.getBoolean(enableYouTubeLoginKey, false),
+        // TODO manage login
+        withLogin = false //appContext().preferences.getBoolean(enableYouTubeLoginKey, false),
         //pipedSession = getPipedSession().toApiSession()
     ).fold(
         { playerResponse ->

@@ -66,6 +66,7 @@ import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import it.fast4x.compose.persist.persist
 import it.fast4x.innertube.Innertube
+import it.fast4x.innertube.YtMusic
 import it.fast4x.innertube.models.NavigationEndpoint
 import it.fast4x.innertube.models.bodies.BrowseBody
 import it.fast4x.innertube.requests.podcastPage
@@ -127,6 +128,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import it.fast4x.rimusic.colorPalette
 import it.fast4x.rimusic.typography
+import it.fast4x.rimusic.ui.screens.settings.isYouTubeSyncEnabled
 import timber.log.Timber
 
 
@@ -556,6 +558,10 @@ fun Podcast(
                                                             }.onFailure {
                                                                 Timber.e("Failed onAddToPlaylist in PlaylistSongListModern  ${it.stackTraceToString()}")
                                                             }
+                                                            if(isYouTubeSyncEnabled())
+                                                                CoroutineScope(Dispatchers.IO).launch {
+                                                                    playlistPreview.playlist.browseId?.let { YtMusic.addToPlaylist(it, song.asMediaItem.mediaId) }
+                                                                }
                                                         }
                                                         CoroutineScope(Dispatchers.Main).launch {
                                                             SmartMessage(context.resources.getString(R.string.done), type = PopupType.Success, context = context)

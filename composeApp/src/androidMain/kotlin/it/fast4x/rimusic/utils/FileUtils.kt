@@ -143,3 +143,15 @@ fun loadAppLog(context: Context, type: LogType): String? {
         SmartMessage(context.resources.getString(R.string.no_log_available), type = PopupType.Info, context = context)
     return null
 }
+
+fun saveFileToInternalStorage(context: Context, fileName: String, fileContent: String) {
+    try {
+        val file = File(context.filesDir.resolve("logs"), fileName)
+        file.writeText(fileContent)
+    } catch (e: IOException) {
+        Timber.e("Failed to save file $fileName to internal storage: $e")
+
+    }
+
+
+}

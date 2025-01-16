@@ -38,6 +38,8 @@ import it.fast4x.rimusic.utils.ytAccountNameKey
 import it.fast4x.rimusic.utils.ytAccountEmailKey
 import it.fast4x.rimusic.utils.ytAccountChannelHandleKey
 import it.fast4x.rimusic.utils.rememberEncryptedPreference
+import it.fast4x.rimusic.utils.rememberPreference
+import it.fast4x.rimusic.utils.ytAccountThumbnailKey
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
@@ -48,43 +50,19 @@ import timber.log.Timber
 @SuppressLint("SetJavaScriptEnabled")
 @Composable
 fun YouTubeLogin(
-    onLogin: (Boolean) -> Unit
+    onLogin: (String) -> Unit
 ) {
 
     val scope = rememberCoroutineScope()
 
     var visitorData by rememberEncryptedPreference(key = ytVisitorDataKey, defaultValue = Innertube.DEFAULT_VISITOR_DATA)
     var cookie by rememberEncryptedPreference(key = ytCookieKey, defaultValue = "")
-    var accountName by rememberEncryptedPreference(key = ytAccountNameKey, defaultValue = "")
-    var accountEmail by rememberEncryptedPreference(key = ytAccountEmailKey, defaultValue = "")
+    var accountName by rememberPreference(key = ytAccountNameKey, defaultValue = "")
+    var accountEmail by rememberPreference(key = ytAccountEmailKey, defaultValue = "")
     var accountChannelHandle by rememberEncryptedPreference(key = ytAccountChannelHandleKey, defaultValue = "")
+    var accountThumbnail by rememberPreference(key = ytAccountThumbnailKey, defaultValue = "")
 
     var webView: WebView? = null
-
-    fun processData(url: String) {
-        if (url.startsWith("https://music.youtube.com")) {
-            runBlocking {
-                val cookieManager = CookieManager.getInstance()
-                cookie = cookieManager.getCookie(url)
-                //cookieManager.removeAllCookies(null)
-                //cookieManager.flush()
-                //WebStorage.getInstance().deleteAllData()
-                println("YoutubeLogin Cookie: $cookie")
-                GlobalScope.launch {
-                    Innertube.accountInfo().onSuccess {
-                        accountName = it.name.orEmpty()
-                        accountEmail = it.email.orEmpty()
-                        accountChannelHandle = it.channelHandle.orEmpty()
-                        println("YoutubeLogin webClient AccountInfo: $it")
-                        onLogin(true)
-                    }.onFailure {
-                        Timber.e("Error YoutubeLogin: $it.stackTraceToString()")
-                        println("Error YoutubeLogin: ${it.stackTraceToString()}")
-                    }
-                }
-            }
-        }
-    }
 
     Column (
         verticalArrangement = Arrangement.Top,
@@ -92,7 +70,10 @@ fun YouTubeLogin(
         modifier = Modifier.fillMaxSize().windowInsetsPadding(LocalPlayerAwareWindowInsets.current)
     ) {
         //Row(modifier = Modifier.fillMaxWidth()) {
-            Title("Login to YouTube Music", icon = R.drawable.chevron_down, onClick = { onLogin(true) })
+            Title("Login to YouTube Music",
+                icon = R.drawable.chevron_down,
+                onClick = { onLogin(cookie) }
+            )
         //}
 
         AndroidView(
@@ -105,12 +86,16 @@ fun YouTubeLogin(
                         override fun doUpdateVisitedHistory(view: WebView, url: String, isReload: Boolean) {
                             if (url.startsWith("https://music.youtube.com")) {
                                 cookie = CookieManager.getInstance().getCookie(url)
+                                //onLogin(cookie)
+
                                 GlobalScope.launch {
-                                    Innertube.accountInfo().onSuccess {
-                                        accountName = it.name.orEmpty()
-                                        accountEmail = it.email.orEmpty()
-                                        accountChannelHandle = it.channelHandle.orEmpty()
-                                        onLogin(true)
+                                    Innertube.accountInfoList().onSuccess {
+                                        println("YoutubeLogin doUpdateVisitedHistory accountInfo() $it")
+                                        accountName = it.first().name.orEmpty()
+                                        accountEmail = it.first().email.orEmpty()
+                                        accountChannelHandle = it.first().channelHandle.orEmpty()
+                                        accountThumbnail = it.first().thumbnailUrl.orEmpty()
+                                        onLogin(cookie)
                                     }.onFailure {
                                         Timber.e("Error YoutubeLogin: $it.stackTraceToString()")
                                         println("Error YoutubeLogin: ${it.stackTraceToString()}")
@@ -122,6 +107,9 @@ fun YouTubeLogin(
                         override fun onPageFinished(view: WebView, url: String?) {
                             loadUrl("javascript:Android.onRetrieveVisitorData(window.yt.config_.VISITOR_DATA)")
                         }
+
+
+
                     }
                     settings.apply {
                         javaScriptEnabled = true

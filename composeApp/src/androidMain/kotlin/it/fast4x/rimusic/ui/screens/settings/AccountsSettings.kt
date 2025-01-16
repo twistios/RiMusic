@@ -7,12 +7,16 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.provider.Settings
+import android.webkit.CookieManager
+import android.webkit.WebStorage
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -35,6 +39,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.password
@@ -42,13 +47,18 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.media3.common.util.UnstableApi
 import androidx.navigation.compose.rememberNavController
+import coil.compose.AsyncImage
+import coil.request.ImageRequest
 import io.ktor.http.Url
 import it.fast4x.compose.persist.persistList
 import it.fast4x.innertube.utils.parseCookieString
 import it.fast4x.piped.Piped
 import it.fast4x.piped.models.Instance
+import it.fast4x.piped.models.Session
 import it.fast4x.rimusic.R
+import it.fast4x.rimusic.appContext
 import it.fast4x.rimusic.colorPalette
+import it.fast4x.rimusic.enums.NavRoutes
 import it.fast4x.rimusic.enums.NavigationBarPosition
 import it.fast4x.rimusic.enums.PopupType
 import it.fast4x.rimusic.enums.ThumbnailRoundness
@@ -62,6 +72,7 @@ import it.fast4x.rimusic.ui.components.CustomModalBottomSheet
 import it.fast4x.rimusic.ui.components.LocalMenuState
 import it.fast4x.rimusic.ui.components.themed.DefaultDialog
 import it.fast4x.rimusic.ui.components.themed.HeaderWithIcon
+import it.fast4x.rimusic.ui.components.themed.IconButton
 import it.fast4x.rimusic.ui.components.themed.Loader
 import it.fast4x.rimusic.ui.components.themed.Menu
 import it.fast4x.rimusic.ui.components.themed.MenuEntry
@@ -69,13 +80,13 @@ import it.fast4x.rimusic.ui.components.themed.SmartMessage
 import it.fast4x.rimusic.ui.styling.Dimensions
 import it.fast4x.rimusic.utils.textCopyToClipboard
 import it.fast4x.rimusic.utils.ytAccountChannelHandleKey
-import it.fast4x.rimusic.utils.ytAccountEmailKey
-import it.fast4x.rimusic.utils.ytAccountNameKey
 import it.fast4x.rimusic.utils.ytCookieKey
 import it.fast4x.rimusic.utils.ytVisitorDataKey
 import it.fast4x.rimusic.utils.defaultFolderKey
 import it.fast4x.rimusic.utils.discordPersonalAccessTokenKey
 import it.fast4x.rimusic.utils.enableYouTubeLoginKey
+import it.fast4x.rimusic.utils.enableYouTubeSyncKey
+import it.fast4x.rimusic.utils.encryptedPreferences
 import it.fast4x.rimusic.utils.extraspaceKey
 import it.fast4x.rimusic.utils.isAtLeastAndroid10
 import it.fast4x.rimusic.utils.isAtLeastAndroid12
@@ -96,6 +107,7 @@ import it.fast4x.rimusic.utils.pipedApiTokenKey
 import it.fast4x.rimusic.utils.pipedInstanceNameKey
 import it.fast4x.rimusic.utils.pipedPasswordKey
 import it.fast4x.rimusic.utils.pipedUsernameKey
+import it.fast4x.rimusic.utils.preferences
 import it.fast4x.rimusic.utils.proxyHostnameKey
 import it.fast4x.rimusic.utils.proxyModeKey
 import it.fast4x.rimusic.utils.proxyPortKey
@@ -104,6 +116,9 @@ import it.fast4x.rimusic.utils.rememberPreference
 import it.fast4x.rimusic.utils.restartActivityKey
 import it.fast4x.rimusic.utils.showFoldersOnDeviceKey
 import it.fast4x.rimusic.utils.thumbnailRoundnessKey
+import it.fast4x.rimusic.utils.ytAccountEmailKey
+import it.fast4x.rimusic.utils.ytAccountNameKey
+import it.fast4x.rimusic.utils.ytAccountThumbnailKey
 import kotlinx.coroutines.launch
 import timber.log.Timber
 import java.io.File
@@ -157,21 +172,23 @@ fun AccountsSettings() {
 
         //TODO MANAGE LOGIN
         /****** YOUTUBE LOGIN ******/
-/*
+
         var isYouTubeLoginEnabled by rememberPreference(enableYouTubeLoginKey, false)
+        var isYouTubeSyncEnabled by rememberPreference(enableYouTubeSyncKey, false)
         var loginYouTube by remember { mutableStateOf(false) }
         var visitorData by rememberEncryptedPreference(key = ytVisitorDataKey, defaultValue = "")
         var cookie by rememberEncryptedPreference(key = ytCookieKey, defaultValue = "")
-        var accountName by rememberEncryptedPreference(key = ytAccountNameKey, defaultValue = "")
-        var accountEmail by rememberEncryptedPreference(key = ytAccountEmailKey, defaultValue = "")
+        var accountName by rememberPreference(key = ytAccountNameKey, defaultValue = "")
+        var accountEmail by rememberPreference(key = ytAccountEmailKey, defaultValue = "")
         var accountChannelHandle by rememberEncryptedPreference(
             key = ytAccountChannelHandleKey,
             defaultValue = ""
         )
-        val isLoggedIn = remember(cookie) {
+        var accountThumbnail by rememberPreference(key = ytAccountThumbnailKey, defaultValue = "")
+        var isLoggedIn = remember(cookie) {
             "SAPISID" in parseCookieString(cookie)
         }
-        //if (!isLoggedIn) isYouTubeLoginEnabled = false // disable if not logged in
+
 
 
 
@@ -200,77 +217,111 @@ fun AccountsSettings() {
             ) {
                 if (isAtLeastAndroid7) {
 
-                    Column {
-                        ButtonBarSettingEntry(
-                            isEnabled = true,
-                            title = if (isLoggedIn) "Disconnect" else "Connect",
-                            text = if (isLoggedIn) "$accountName ${accountChannelHandle}" else "",
-                            icon = R.drawable.logo_youtube,
-                            iconColor = colorPalette().text,
-                            onClick = {
-                                if (isLoggedIn) {
-                                    cookie = ""
-                                    accountName = ""
-                                    accountChannelHandle = ""
-                                    accountEmail = ""
-                                    visitorData = ""
-                                    loginYouTube = false
-                                } else
-                                    loginYouTube = true
-                            }
-                        )
-                        /*
-                        ImportantSettingsDescription(
-                            text = "You need to log in to listen the songs online"
-                        )
-                         */
-                        SettingsDescription(text = stringResource(R.string.restarting_rimusic_is_required))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
 
-                        CustomModalBottomSheet(
-                            showSheet = loginYouTube,
-                            onDismissRequest = {
-                                SmartMessage(
-                                    "Restart RiMusic, please",
-                                    type = PopupType.Info,
-                                    context = context
-                                )
-                                loginYouTube = false
-                                restartActivity = !restartActivity
-                            },
-                            containerColor = colorPalette().background0,
-                            contentColor = colorPalette().background0,
-                            modifier = Modifier.fillMaxWidth(),
-                            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-                            dragHandle = {
-                                Surface(
-                                    modifier = Modifier.padding(vertical = 0.dp),
-                                    color = colorPalette().background0,
-                                    shape = thumbnailShape()
-                                ) {}
-                            },
-                            shape = thumbnailRoundness.shape()
-                        ) {
-                            YouTubeLogin(
-                                onLogin = { success ->
-                                    if (success) {
+                    ){
+
+                        if (isLoggedIn && accountThumbnail != "")
+                            AsyncImage(
+                                model = accountThumbnail,
+                                contentDescription = null,
+                                modifier = Modifier.height(50.dp)
+                                    .clip( thumbnailShape() )
+                            )
+
+                        Column {
+                            ButtonBarSettingEntry(
+                                isEnabled = true,
+                                title = if (isLoggedIn) "Disconnect" else "Connect",
+                                text = if (isLoggedIn) "$accountName ${accountChannelHandle}" else "",
+                                icon = R.drawable.ytmusic,
+                                iconColor = colorPalette().text,
+                                onClick = {
+                                    if (isLoggedIn) {
+                                        cookie = ""
+                                        accountName = ""
+                                        accountChannelHandle = ""
+                                        accountEmail = ""
+                                        accountThumbnail = ""
+                                        visitorData = ""
                                         loginYouTube = false
-                                        SmartMessage(
-                                            "Login successful, restart RiMusic",
-                                            type = PopupType.Info,
-                                            context = context
-                                        )
-                                        restartActivity = !restartActivity
-                                    }
+                                        //Delete cookies after logout
+                                        val cookieManager = CookieManager.getInstance()
+                                        cookieManager.removeAllCookies(null)
+                                        cookieManager.flush()
+                                        WebStorage.getInstance().deleteAllData()
+                                    } else
+                                        loginYouTube = true
                                 }
                             )
+                            /*
+                            ImportantSettingsDescription(
+                                text = "You need to log in to listen the songs online"
+                            )
+                             */
+                            //SettingsDescription(text = stringResource(R.string.restarting_rimusic_is_required))
+
+                            CustomModalBottomSheet(
+                                showSheet = loginYouTube,
+                                onDismissRequest = {
+                                    SmartMessage(
+                                        "Restart RiMusic, please",
+                                        type = PopupType.Info,
+                                        context = context
+                                    )
+                                    loginYouTube = false
+                                },
+                                containerColor = colorPalette().background0,
+                                contentColor = colorPalette().background0,
+                                modifier = Modifier.fillMaxWidth(),
+                                sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+                                dragHandle = {
+                                    Surface(
+                                        modifier = Modifier.padding(vertical = 0.dp),
+                                        color = colorPalette().background0,
+                                        shape = thumbnailShape()
+                                    ) {}
+                                },
+                                shape = thumbnailRoundness.shape()
+                            ) {
+                                YouTubeLogin(
+                                    onLogin = { cookieRetrieved ->
+                                        if (cookieRetrieved.contains("SAPISID")) {
+                                            loginYouTube = false
+                                            SmartMessage(
+                                                "Login successful",
+                                                type = PopupType.Info,
+                                                context = context
+                                            )
+                                            restartActivity = !restartActivity
+                                        }
+
+                                    }
+                                )
+                            }
                         }
+
                     }
 
                 }
+
+//                SwitchSettingEntry(
+//                    isEnabled = false,
+//                    title = "Sync with your YouTube Music Account",
+//                    text = "",
+//                    isChecked = isYouTubeSyncEnabled,
+//                    onCheckedChange = {
+//                        isYouTubeSyncEnabled = it
+//                    }
+//                )
+
             }
         }
-*/
-        /****** YOUTUBE LOGIN ******/
+
+    /****** YOUTUBE LOGIN ******/
 
     /****** PIPED ******/
 
@@ -291,7 +342,7 @@ fun AccountsSettings() {
         var executeLogin by remember { mutableStateOf(false) }
         var showInstances by remember { mutableStateOf(false) }
         var session by remember {
-            mutableStateOf<Result<it.fast4x.piped.models.Session>?>(
+            mutableStateOf<Result<Session>?>(
                 null
             )
         }
@@ -577,6 +628,27 @@ fun AccountsSettings() {
 
 
     }
+
+
 }
+
+fun isYouTubeLoginEnabled(): Boolean {
+    val isYouTubeLoginEnabled = appContext().preferences.getBoolean(enableYouTubeLoginKey, false)
+    return isYouTubeLoginEnabled
+}
+
+fun isYouTubeSyncEnabled(): Boolean {
+    val isYouTubeSyncEnabled = appContext().preferences.getBoolean(enableYouTubeSyncKey, false)
+    return isYouTubeSyncEnabled && isYouTubeLoggedIn() && isYouTubeLoginEnabled()
+}
+
+fun isYouTubeLoggedIn(): Boolean {
+    val cookie = appContext().encryptedPreferences.getString(ytCookieKey, "")
+    val isLoggedIn = cookie?.let { parseCookieString(it) }?.contains("SAPISID") == true
+    return isLoggedIn
+}
+
+
+
 
 

@@ -3,17 +3,18 @@ package it.fast4x.rimusic.service.modern
 import android.content.Context
 import android.net.Uri
 import androidx.annotation.OptIn
+import androidx.core.net.toUri
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.datasource.DataSpec
 import it.fast4x.innertube.Innertube
 import it.fast4x.innertube.models.PlayerResponse
 import it.fast4x.innertube.models.bodies.PlayerBody
 import it.fast4x.innertube.requests.player
+import it.fast4x.invidious.Invidious
 import it.fast4x.rimusic.Database
 import it.fast4x.rimusic.enums.AudioQualityFormat
 import it.fast4x.rimusic.models.Format
 import it.fast4x.rimusic.service.LoginRequiredException
-import it.fast4x.rimusic.service.MyDownloadHelper
 import it.fast4x.rimusic.service.NoInternetException
 import it.fast4x.rimusic.service.TimeoutException
 import it.fast4x.rimusic.service.UnknownException
@@ -22,8 +23,6 @@ import it.fast4x.rimusic.service.isLocal
 import it.fast4x.rimusic.utils.enableYouTubeLoginKey
 import it.fast4x.rimusic.utils.preferences
 import it.fast4x.rimusic.appContext
-import me.knighthat.invidious.Invidious
-import me.knighthat.invidious.request.player
 import me.knighthat.piped.Piped
 import me.knighthat.piped.request.player
 import java.net.ConnectException
@@ -72,13 +71,13 @@ private suspend fun getInvidiousFormatUrl(
     videoId: String,
     audioQualityFormat: AudioQualityFormat
 ): Uri {
-    val format = Invidious.player( videoId )?.fold(
+    val format = Invidious.api.videos( videoId )?.fold(
         {
             when( audioQualityFormat ){
-                AudioQualityFormat.Auto -> it?.autoMaxQualityFormat
-                AudioQualityFormat.High -> it?.highestQualityFormat
-                AudioQualityFormat.Medium -> it?.mediumQualityFormat
-                AudioQualityFormat.Low -> it?.lowestQualityFormat
+                AudioQualityFormat.Auto -> it.autoMaxQualityFormat
+                AudioQualityFormat.High -> it.highestQualityFormat
+                AudioQualityFormat.Medium -> it.mediumQualityFormat
+                AudioQualityFormat.Low -> it.lowestQualityFormat
             }.also {
                 //println("PlayerService MyDownloadHelper DataSpecProcess getInvidiousFormatUrl before upsert format $it")
                 Database.asyncTransaction {
@@ -131,9 +130,12 @@ internal suspend fun PlayerServiceModern.dataSpecProcess(
         return dataSpec.withUri(Uri.parse(format?.url))
 
     } catch ( e: LoginRequiredException ) {
+        println("PlayerServiceModern DataSpecProcess Playing song $videoId from ALTERNATIVE url")
+        val alternativeUrl = "https://jossred.josprox.com/yt/stream/$videoId"
+        return dataSpec.withUri(alternativeUrl.toUri())
+
+
         // Temporary disabled piped and invidious
-        println("PlayerServiceModern DataSpecProcess Playing song $videoId from url LOGIN REQUIRED ISSUE ${e.message}")
-        throw e
 //        try {
 //            // Switch to Piped
 //            val formatUrl = getPipedFormatUrl( videoId, audioQualityFormat )
@@ -164,20 +166,34 @@ suspend fun getInnerTubeFormatUrl(
     //println("PlayerServiceModern MyDownloadHelper DataSpecProcess getMediaFormat Playing song $videoId from format $audioQualityFormat")
     return Innertube.player(
         body = PlayerBody(videoId = videoId),
-        withLogin = false, //TODO manage login appContext().preferences.getBoolean(enableYouTubeLoginKey, false),
+        //TODO manage login
+        withLogin = appContext().preferences.getBoolean(enableYouTubeLoginKey, false),
         //pipedSession = getPipedSession().toApiSession()
     ).fold(
         { playerResponse ->
 
             when(playerResponse.playabilityStatus?.status) {
                 "OK" -> {
-                    when (audioQualityFormat) {
-                        AudioQualityFormat.Auto -> if (!connectionMetered) playerResponse.streamingData?.autoMaxQualityFormat
-                        else playerResponse.streamingData?.lowestQualityFormat
-                        AudioQualityFormat.High -> playerResponse.streamingData?.highestQualityFormat
-                        AudioQualityFormat.Medium -> playerResponse.streamingData?.mediumQualityFormat
-                        AudioQualityFormat.Low -> playerResponse.streamingData?.lowestQualityFormat
-                    }.let {
+//                    when (audioQualityFormat) {
+//                        AudioQualityFormat.Auto -> if (!connectionMetered) playerResponse.streamingData?.autoMaxQualityFormat
+//                        else playerResponse.streamingData?.lowestQualityFormat
+//                        AudioQualityFormat.High -> playerResponse.streamingData?.highestQualityFormat
+//                        AudioQualityFormat.Medium -> playerResponse.streamingData?.mediumQualityFormat
+//                        AudioQualityFormat.Low -> playerResponse.streamingData?.lowestQualityFormat
+//                    }
+                    playerResponse.streamingData?.adaptiveFormats
+                        ?.filter { it.isAudio }
+                        ?.maxByOrNull {
+                            (it.bitrate?.times(
+                                when (audioQualityFormat) {
+                                    AudioQualityFormat.Auto -> if (connectionMetered) -1 else 1
+                                    AudioQualityFormat.High -> 1
+                                    AudioQualityFormat.Medium -> 0
+                                    AudioQualityFormat.Low -> -1
+                                }
+                            ) ?: 0) + (if (it.mimeType.startsWith("audio/webm")) 10240 else 0) // prefer opus stream
+                        }
+                        .let {
                         // Specify range to avoid YouTube's throttling
                         it?.copy(url = "${it.url}&range=0-${it.contentLength ?: 10000000}")
                     }.also {

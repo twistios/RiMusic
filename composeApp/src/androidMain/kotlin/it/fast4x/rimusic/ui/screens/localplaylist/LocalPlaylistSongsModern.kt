@@ -86,6 +86,7 @@ import it.fast4x.compose.reordering.draggedItem
 import it.fast4x.compose.reordering.rememberReorderingState
 import it.fast4x.compose.reordering.reorder
 import it.fast4x.innertube.Innertube
+import it.fast4x.innertube.YtMusic
 import it.fast4x.innertube.models.bodies.BrowseBody
 import it.fast4x.innertube.models.bodies.NextBody
 import it.fast4x.innertube.requests.playlistPage
@@ -178,14 +179,15 @@ import it.fast4x.rimusic.cleanPrefix
 import it.fast4x.rimusic.MONTHLY_PREFIX
 import it.fast4x.rimusic.PINNED_PREFIX
 import it.fast4x.rimusic.PIPED_PREFIX
-import it.fast4x.rimusic.EXPLICIT_PREFIX
 import it.fast4x.rimusic.ui.components.themed.NowPlayingSongIndicator
+import it.fast4x.rimusic.ui.screens.settings.isYouTubeSyncEnabled
 import it.fast4x.rimusic.utils.checkFileExists
 import it.fast4x.rimusic.utils.deleteFileIfExists
 import it.fast4x.rimusic.utils.disableScrollingTextKey
 import it.fast4x.rimusic.utils.isDownloadedSong
 import it.fast4x.rimusic.utils.isNowPlaying
 import it.fast4x.rimusic.utils.saveImageToInternalStorage
+import kotlinx.coroutines.CoroutineScope
 import it.fast4x.rimusic.models.SongEntity
 import it.fast4x.rimusic.utils.mediaItemToggleLike
 import kotlinx.coroutines.flow.map
@@ -344,8 +346,14 @@ fun LocalPlaylistSongsModern(
             text = stringResource(R.string.delete_playlist),
             onDismiss = { isDeleting = false },
             onConfirm = {
-                Database.asyncTransaction {
-                    playlistPreview?.playlist?.let(Database::delete)
+                CoroutineScope(Dispatchers.IO).launch {
+                    if (isYouTubeSyncEnabled()) {
+                        playlistPreview?.playlist?.browseId?.let { YtMusic.deletePlaylist(it) }
+                        println("Innertube YtMusic deletetePlaylist")
+                    }
+                    Database.asyncTransaction {
+                        playlistPreview?.playlist?.let(Database::delete)
+                    }
                 }
 
                 if (playlistPreview?.playlist?.name?.startsWith(PIPED_PREFIX) == true && isPipedEnabled && pipedSession.token.isNotEmpty())
@@ -357,7 +365,8 @@ fun LocalPlaylistSongsModern(
                     )
 
 
-                onDelete()
+                //onDelete()
+                navController.popBackStack()
             }
         )
     }
@@ -634,9 +643,17 @@ fun LocalPlaylistSongsModern(
             placeholder = stringResource(R.string.enter_the_playlist_name),
             setValue = { text ->
                 if (isRenaming) {
-                    Database.asyncTransaction {
-                        playlistPreview?.playlist?.copy(name = text)?.let(Database::update)
+                    CoroutineScope(Dispatchers.IO).launch {
+                        println("Innertube YtMusic try to rename Playlist with browseId: ${playlistPreview?.playlist?.browseId}, name: $text")
+                        playlistPreview?.playlist?.browseId?.let {
+                            println("Innertube YtMusic renamePlaylist with id: $it, name: $text")
+                            YtMusic.renamePlaylist(it, text)
+                        }
+                        Database.asyncTransaction {
+                            playlistPreview?.playlist?.copy(name = text)?.let(Database::update)
+                        }
                     }
+
 
                     if (playlistPreview?.playlist?.name?.startsWith(PIPED_PREFIX) == true && isPipedEnabled && pipedSession.token.isNotEmpty())
                         renamePipedPlaylist(
@@ -879,7 +896,9 @@ fun LocalPlaylistSongsModern(
                         .fillMaxWidth()
                 ) {
 
-                    if (playlistNotMonthlyType)
+                    if (playlistNotMonthlyType &&
+                        playlistPreview?.playlist?.browseId?.isEmpty() == true
+                    )
                         HeaderIconButton(
                             icon = R.drawable.pin,
                             enabled = playlistSongs.isNotEmpty(),
@@ -1283,13 +1302,6 @@ fun LocalPlaylistSongsModern(
                                         },
                                         onDelete = {
                                             isDeleting = true
-                                            /*
-                                            if (playlistNotMonthlyType)
-                                                isDeleting = true
-                                            else
-                                                SmartToast(context.resources.getString(R.string.info_cannot_delete_a_monthly_playlist))
-
-                                             */
                                         },
                                         showonListenToYT = !playlistPreview.playlist.browseId.isNullOrBlank(),
                                         onListenToYT = {
@@ -1433,7 +1445,10 @@ fun LocalPlaylistSongsModern(
                                             scrollToNowPlaying = true
                                     },
                                     onLongClick = {
-                                        SmartMessage(context.resources.getString(R.string.info_find_the_song_that_is_playing), context = context)
+                                        SmartMessage(
+                                            context.resources.getString(R.string.info_find_the_song_that_is_playing),
+                                            context = context
+                                        )
                                     }
                                 ),
                             icon = R.drawable.locate,
@@ -1627,6 +1642,13 @@ fun LocalPlaylistSongsModern(
                                 Database.move(playlistId, positionInPlaylist, Int.MAX_VALUE)
                                 Database.delete(SongPlaylistMap(song.song.id, playlistId, Int.MAX_VALUE))
                             }
+
+                            if(isYouTubeSyncEnabled() && playlistNotPipedType && playlistNotMonthlyType && playlistPreview?.playlist?.browseId != null)
+                                CoroutineScope(Dispatchers.IO).launch {
+                                    playlistPreview?.playlist?.browseId?.let { YtMusic.removeFromPlaylist(
+                                        it, song.song.id
+                                    ) }
+                                }
 
                             if (playlistPreview?.playlist?.name?.startsWith(PIPED_PREFIX) == true && isPipedEnabled && pipedSession.token.isNotEmpty()) {
                                 removeFromPipedPlaylist(

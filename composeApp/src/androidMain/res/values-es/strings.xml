@@ -352,7 +352,7 @@
     <string name="sort_year">Año</string>
     <string name="sort_name">Nombre</string>
     <string name="sort_songs_number">Número de canciones</string>
-    <string name="sort_relative_listening_time">Relative Listening Time</string>
+    <string name="sort_relative_listening_time">Tiempo de escucha relativo</string>
     <string name="follow">Seguir</string>
     <string name="following">Siguiendo</string>
     <string name="artist_subscribers">%s suscriptores</string>
@@ -718,6 +718,7 @@
     <string name="error_timeout">Tiempo de espera de la conexión expirado</string>
     <string name="error_unknown">Error desconocido</string>
     <string name="delete_song">¿Seguro que quieres eliminar esta canción? Será eliminada de la base de datos. Esta acción es irreversible.</string>
+    <string name="update_album">Actualiza el álbum</string>
     <string name="info_check_update_now">Buscar ahora</string>
     <string name="info_no_update_available">No hay actualizaciones disponibles</string>
     <string name="lang_galician">Gallego</string>
@@ -858,7 +859,11 @@
     <string name="colorpalette">Paleta de colores</string>
     <string name="customcolor">Color personalizado</string>
     <string name="lyricsanimate">Animar tamaño de letra</string>
+    <string name="yt_playlists">YT/YTM</string>
     <string name="lyricsSizeSecondary">Pulsación larga para cambiar el tamaño</string>
-    <string name="appearancepresets">Appearance Presets</string>
-    <string name="appearancepresetssecondary">Previews will be in low quality</string>
+    <string name="home">Inicio</string>
+    <string name="appearancepresets">Preajustes de apariencia</string>
+    <string name="appearancepresetssecondary">Las vistas previas serán de baja calidad</string>
+    <string name="yt_history">Historial de YTM</string>
+    <string name="albumCoverRotation">Animación de rotación de fondo</string>
 </resources>

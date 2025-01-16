@@ -10,37 +10,21 @@
 </div>
 
 ## ✨ Features
-- **Multilingual support:** English, Italian, German, Russian, French, Spanish, Czech, Turkish, Romanian and more. Contributions for other languages are welcome
+- **Multilingual:** English, Italian, German, Russian, French, Spanish, Czech, Turkish, Romanian and more. Contributions for other languages are welcome
 - UI Mode, change style from RiMusic to classic ViMusic style and viceversa
-- Play songs from YouTube Music
-- Change your favorite language from settings
 - Auto cache songs for offline playback with a custom cache size
 - Download songs or entire playlists for offline playback (not cache) 
-- Background playback with stop when app swipe out from task manager
-- Minimized player optimizations
+- Background playback
 - Listening statistics
 - Audio visualizer on player with many type of effects. THIS FEATURES REQUIRE MIC PERMISSION, ONLY AVAILABLE IF ACTIVATED FROM SETTINGS. BY DEFAULT IT IS DISABLED [Full list of permissions](https://github.com/fast4x/RiMusic/wiki/FAQs#what-permissions-are-used)
-- News, mood and musical genres
-- New albums from favourite artists
-- Search for songs, albums, artists and playlists
-- Bookmark artists and albums
-- Import online playlists 
-- Local playlist management
-- Export/Import local playlist, can share with friend RiMusic playlist
-- Reorder songs in playlist or queue
-- Persistent queue
-- Clear queue
-- Share menu with support for YouTube and YouTube Music links
+- News, mood and musical genres, new albums from favourite artists
+- Import/Export online, RiMusic playlists, can share with friend all RiMusic playlists
 - Fetch, display, edit and translate synchronized, or not, songs lyrics
-- Light, Dark, Dynamic, PureBlack and ModernBack themes
+- Customizable themes
 - Sleep timer with customizable time
-- Audio control panel: control volume of app and device, playback speed and pitch
-- Audio normalization
-- Audio auto-skip silence
-- Android Auto support
-- Android TV support
-- Youtube Video support
-- Widgets in home screen
+- Audio control: volume app and device, playback speed and pitch, normalization, skip silence
+- Android Auto, Android TV, YT Video support
+- Widgets (experiment)
 - Check for Updates, which can be enabled or disabled in settings
 
 ## 📷 Screenshots
@@ -167,6 +151,7 @@ WARNING, the custom version is not an official release, download only if invited
 - [**Translator**](https://github.com/therealbush/translator): A simple and free Google Translate library for Kotlin/JVM and Java.
 - [**KuGou**](https://www.kugou.com): Lyrics provider
 - [**LrcLib**](https://lrclib.net): Lyrics provider
+- [**HypnoticCanvas**](https://mikepenz.github.io/HypnoticCanvas/): A shader modifier for Compose Multiplatform / Jetpack Compose
 
 
 ## ❗ Disclaimer

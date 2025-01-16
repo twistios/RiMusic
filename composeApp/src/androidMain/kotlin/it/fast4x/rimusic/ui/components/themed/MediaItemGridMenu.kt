@@ -51,6 +51,7 @@ import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.offline.Download
 import androidx.navigation.NavController
 import it.fast4x.compose.persist.persistList
+import it.fast4x.innertube.YtMusic
 import it.fast4x.innertube.models.NavigationEndpoint
 import it.fast4x.rimusic.Database
 import it.fast4x.rimusic.LocalPlayerServiceBinder
@@ -92,6 +93,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import it.fast4x.rimusic.colorPalette
 import it.fast4x.rimusic.typography
+import it.fast4x.rimusic.ui.screens.settings.isYouTubeSyncEnabled
 
 @OptIn(UnstableApi::class)
 @Composable
@@ -180,6 +182,10 @@ fun BaseMediaItemGridMenu(
                     )
                 )
             }
+            if(isYouTubeSyncEnabled())
+                CoroutineScope(Dispatchers.IO).launch {
+                    playlist.browseId?.let { YtMusic.addToPlaylist(it, mediaItem.mediaId) }
+                }
         },
         onHideFromDatabase = onHideFromDatabase,
         onDeleteFromDatabase = onDeleteFromDatabase,
@@ -246,6 +252,12 @@ fun MiniMediaItemGridMenu(
                     )
                 )
             }
+
+            if(isYouTubeSyncEnabled())
+                CoroutineScope(Dispatchers.IO).launch {
+                    playlist.browseId?.let { YtMusic.addToPlaylist(it, mediaItem.mediaId) }
+                }
+
             onDismiss()
         },
         onGoToPlaylist = {

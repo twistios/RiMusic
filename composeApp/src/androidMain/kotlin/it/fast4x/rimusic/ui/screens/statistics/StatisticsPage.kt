@@ -184,9 +184,7 @@ fun StatisticsPage(
 
     var totalPlayTimes = 0L
     allSongs.forEach {
-        totalPlayTimes += it.durationText?.let { it1 ->
-            durationTextToMillis(it1)
-        }?.toLong() ?: 0
+        totalPlayTimes += it.totalPlayTimeMs
     }
 
     if (showStatsListeningTime) {

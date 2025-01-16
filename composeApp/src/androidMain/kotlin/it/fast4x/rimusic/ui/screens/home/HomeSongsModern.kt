@@ -80,6 +80,7 @@ import androidx.navigation.NavController
 import com.github.doyaaaaaken.kotlincsv.dsl.csvReader
 import com.github.doyaaaaaken.kotlincsv.dsl.csvWriter
 import it.fast4x.compose.persist.persistList
+import it.fast4x.innertube.YtMusic
 import it.fast4x.rimusic.Database
 import it.fast4x.rimusic.EXPLICIT_PREFIX
 import it.fast4x.rimusic.LocalPlayerServiceBinder
@@ -107,7 +108,7 @@ import it.fast4x.rimusic.models.SongEntity
 import it.fast4x.rimusic.models.SongPlaylistMap
 import it.fast4x.rimusic.service.LOCAL_KEY_PREFIX
 import it.fast4x.rimusic.service.MyDownloadHelper
-import it.fast4x.rimusic.service.isLocal
+import it.fast4x.rimusic.service.modern.isLocal
 import it.fast4x.rimusic.thumbnailShape
 import it.fast4x.rimusic.typography
 import it.fast4x.rimusic.ui.components.ButtonsRow
@@ -191,6 +192,7 @@ import kotlin.math.min
 import kotlin.time.Duration
 import it.fast4x.rimusic.ui.components.SwipeablePlaylistItem
 import it.fast4x.rimusic.ui.components.themed.CacheSpaceIndicator
+import it.fast4x.rimusic.ui.screens.settings.isYouTubeSyncEnabled
 import it.fast4x.rimusic.utils.isDownloadedSong
 import it.fast4x.rimusic.utils.isNowPlaying
 
@@ -1002,7 +1004,7 @@ fun HomeSongsModern(
                                 ),
                             icon = R.drawable.locate,
                             enabled = songs.isNotEmpty(),
-                            color = if (songs.isNotEmpty()) colorPalette().text else colorPalette().textDisabled,
+                            color = colorPalette().text,
                             onClick = {}
                         )
                         LaunchedEffect(scrollToNowPlaying) {
@@ -1015,7 +1017,7 @@ fun HomeSongsModern(
                             HeaderIconButton(
                                 icon = R.drawable.downloaded,
                                 enabled = songs.isNotEmpty(),
-                                color = if (songs.isNotEmpty()) colorPalette().text else colorPalette().textDisabled,
+                                color = colorPalette().text,
                                 onClick = {},
                                 modifier = Modifier
                                     .combinedClickable(
@@ -1070,7 +1072,7 @@ fun HomeSongsModern(
                             HeaderIconButton(
                                 icon = R.drawable.download,
                                 enabled = songs.isNotEmpty(),
-                                color = if (songs.isNotEmpty()) colorPalette().text else colorPalette().textDisabled,
+                                color = colorPalette().text,
                                 onClick = {},
                                 modifier = Modifier
                                     .combinedClickable(
@@ -1142,7 +1144,7 @@ fun HomeSongsModern(
                         HeaderIconButton(
                             icon = R.drawable.shuffle,
                             enabled = items.isNotEmpty(),
-                            color = if (items.isNotEmpty()) colorPalette().text else colorPalette().textDisabled,
+                            color = colorPalette().text,
                             onClick = {},
                             modifier = Modifier
                                 .padding(horizontal = 2.dp)
@@ -1308,6 +1310,11 @@ fun HomeSongsModern(
                                                     Timber.e("Failed addToPlaylist in HomeSongsModern ${it.stackTraceToString()}")
                                                     println("Failed addToPlaylist in HomeSongsModern ${it.stackTraceToString()}")
                                                 }
+                                                if(isYouTubeSyncEnabled() && !song.song.id.startsWith(
+                                                        LOCAL_KEY_PREFIX))
+                                                    CoroutineScope(Dispatchers.IO).launch {
+                                                        playlistPreview.playlist.browseId?.let { YtMusic.addToPlaylist(it, song.song.asMediaItem.mediaId) }
+                                                    }
                                             }
                                             CoroutineScope(Dispatchers.Main).launch {
                                                 SmartMessage(

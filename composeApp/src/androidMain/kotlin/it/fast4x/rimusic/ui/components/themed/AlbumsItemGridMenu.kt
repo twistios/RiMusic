@@ -73,6 +73,7 @@ fun AlbumsItemGridMenu(
     onPlayNext: (() -> Unit)? = null,
     onEnqueue: (() -> Unit)? = null,
     onAddToPlaylist: ((PlaylistPreview) -> Unit)? = null,
+    onAddToFavourites: (() -> Unit)? = null,
     disableScrollingText: Boolean
 ) {
     val density = LocalDensity.current
@@ -369,6 +370,18 @@ fun AlbumsItemGridMenu(
                         )
                     }
 
+                    onAddToFavourites?.let {
+                        GridMenuItem(
+                            icon = R.drawable.heart,
+                            title = R.string.add_to_favorites,
+                            colorIcon = color,
+                            colorText = color,
+                            onClick = {
+                                onDismiss()
+                                onAddToFavourites()
+                            }
+                        )
+                    }
                 }
             }
         }
