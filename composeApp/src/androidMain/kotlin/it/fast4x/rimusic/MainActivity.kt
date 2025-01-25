@@ -615,7 +615,7 @@ class MainActivity :
                             playerBackgroundColors == PlayerBackgroundColors.CoverColor ||
                             animatedGradient == AnimatedGradient.FluidCoverColorGradient
 
-                if (!isDynamicPalette) return
+                if (!isDynamicPalette || url.isEmpty()) return
 
                 val colorPaletteMode =
                     preferences.getEnum(colorPaletteModeKey, ColorPaletteMode.Dark)
@@ -789,7 +789,7 @@ class MainActivity :
 
                                 if (colorPaletteName == ColorPaletteName.Dynamic) {
                                     val artworkUri =
-                                        (binder?.player?.currentMediaItem?.mediaMetadata?.artworkUri.thumbnail(1200)
+                                        (binder?.player?.currentMediaItem?.mediaMetadata?.artworkUri?.thumbnail(1200)
                                             ?: "").toString()
                                     artworkUri.let {
                                         if (it.isNotEmpty())
@@ -891,7 +891,7 @@ class MainActivity :
                         getEnum(colorPaletteNameKey, ColorPaletteName.Dynamic)
                     if (colorPaletteName == ColorPaletteName.Dynamic) {
                         setDynamicPalette(
-                            (binder?.player?.currentMediaItem?.mediaMetadata?.artworkUri.thumbnail(1200)
+                            (binder?.player?.currentMediaItem?.mediaMetadata?.artworkUri?.thumbnail(1200)
                                 ?: "").toString()
                         )
                     }
@@ -1189,7 +1189,7 @@ class MainActivity :
                                 }
                             }
 
-                            setDynamicPalette(mediaItem?.mediaMetadata?.artworkUri.thumbnail(1200).toString())
+                            setDynamicPalette(mediaItem?.mediaMetadata?.artworkUri?.thumbnail(1200).toString())
                         }
 
 
