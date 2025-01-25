@@ -249,7 +249,7 @@ fun InfoAlbumAndArtistEssential(
                 BoxWithConstraints(
                     modifier = Modifier.weight(0.1f)
                 ) {
-                    likeButtonWidth = maxWidth
+                    likeButtonWidth = this.maxWidth
                     IconButton(
                         color = colorPalette().favoritesIcon,
                         icon = getLikeState(mediaId),

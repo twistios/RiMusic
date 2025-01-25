@@ -398,7 +398,6 @@ class MainActivity :
         content()
     }
 
-    @SuppressLint("UnusedBoxWithConstraintsScope")
     @OptIn(
         ExperimentalTextApi::class,
         ExperimentalFoundationApi::class, ExperimentalAnimationApi::class,
@@ -965,7 +964,7 @@ class MainActivity :
                 val playerSheetState = rememberPlayerSheetState(
                     dismissedBound = 0.dp,
                     collapsedBound = Dimensions.collapsedPlayer + bottomDp,
-                    expandedBound = maxHeight,
+                    expandedBound = this.maxHeight,
                 )
 
                 val playerState =
