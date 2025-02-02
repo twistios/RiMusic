@@ -1,31 +1,24 @@
 package it.fast4x.innertube
 
 import io.ktor.client.call.body
-import io.ktor.client.request.accept
-import io.ktor.client.request.header
-import io.ktor.client.request.post
-import io.ktor.client.request.setBody
-import io.ktor.http.ContentType
-import io.ktor.http.contentType
-import it.fast4x.innertube.Innertube.client
-import it.fast4x.innertube.Innertube.locale
-import it.fast4x.innertube.Innertube.setLogin
-import it.fast4x.innertube.Innertube.visitorData
+import it.fast4x.innertube.Innertube.getBestQuality
 import it.fast4x.innertube.models.BrowseEndpoint
 import it.fast4x.innertube.models.BrowseResponse
 import it.fast4x.innertube.models.Context
-import it.fast4x.innertube.models.Context.Client
-import it.fast4x.innertube.models.Context.Companion.DefaultIOS
 import it.fast4x.innertube.models.CreatePlaylistResponse
+import it.fast4x.innertube.models.MusicCarouselShelfRenderer
 import it.fast4x.innertube.models.NavigationEndpoint
-import it.fast4x.innertube.models.bodies.BrowseBodyWithLocale
-import it.fast4x.innertube.models.bodies.PlayerBody
 import it.fast4x.innertube.models.getContinuation
+import it.fast4x.innertube.models.oddElements
+import it.fast4x.innertube.requests.AlbumPage
 import it.fast4x.innertube.requests.ArtistItemsPage
 import it.fast4x.innertube.requests.ArtistPage
 import it.fast4x.innertube.requests.HistoryPage
 import it.fast4x.innertube.requests.HomePage
-import it.fast4x.innertube.requests.browse
+import it.fast4x.innertube.requests.NewReleaseAlbumPage
+import it.fast4x.innertube.requests.PlaylistContinuationPage
+import it.fast4x.innertube.requests.PlaylistPage
+import it.fast4x.innertube.utils.from
 
 object YtMusic {
 
@@ -57,6 +50,48 @@ object YtMusic {
         Innertube.removeFromPlaylist(Context.DefaultWeb.client, playlistId, videoId, setVideoId)
     }.onFailure {
         println("YtMusic removeFromPlaylist error: ${it.stackTraceToString()}")
+    }
+
+    suspend fun subscribeChannel(channelId: String) = runCatching {
+        println("YtMusic subscribeChannel channelId: $channelId")
+        Innertube.subscribeChannel(channelId)
+    }.onFailure {
+        println("YtMusic subscribeChannel error: ${it.stackTraceToString()}")
+    }
+
+    suspend fun unsubscribeChannel(channelId: String) = runCatching {
+        println("YtMusic unsubscribeChannel channelId: $channelId")
+        Innertube.unsubscribeChannel(channelId)
+    }.onFailure {
+        println("YtMusic unsubscribeChannel error: ${it.stackTraceToString()}")
+    }
+
+    suspend fun likePlaylistOrAlbum(playlistId: String) = runCatching {
+        println("YtMusic likePlaylistOrAlbum playlistId: $playlistId")
+        Innertube.likePlaylistOrAlbum(playlistId)
+    }.onFailure {
+        println("YtMusic likePlaylistOrAlbum error: ${it.stackTraceToString()}")
+    }
+
+    suspend fun removelikePlaylistOrAlbum(playlistId: String) = runCatching {
+        println("YtMusic removelikePlaylistOrAlbum playlistId: $playlistId")
+        Innertube.removelikePlaylistOrAlbum(playlistId)
+    }.onFailure {
+        println("YtMusic removelikePlaylistOrAlbum error: ${it.stackTraceToString()}")
+    }
+
+    suspend fun likeVideoOrSong(VideoId: String) = runCatching {
+        println("YtMusic likeVideoOrSong VideoId: $VideoId")
+        Innertube.likeVideoOrSong(VideoId)
+    }.onFailure {
+        println("YtMusic likeVideoOrSong error: ${it.stackTraceToString()}")
+    }
+
+    suspend fun removelikeVideoOrSong(VideoId: String) = runCatching {
+        println("YtMusic removelikeVideoOrSong playlistIdId: $VideoId")
+        Innertube.removelikeVideoOrSong(VideoId)
+    }.onFailure {
+        println("YtMusic removelikeVideoOrSong error: ${it.stackTraceToString()}")
     }
 
     suspend fun getHomePage(setLogin: Boolean = false): Result<HomePage> = runCatching {
@@ -132,7 +167,8 @@ object YtMusic {
                 thumbnail = response.header?.musicImmersiveHeaderRenderer?.thumbnail?.musicThumbnailRenderer?.thumbnail?.thumbnails?.lastOrNull()
                     ?: response.header?.musicVisualHeaderRenderer?.foregroundThumbnail?.musicThumbnailRenderer?.thumbnail?.thumbnails?.lastOrNull()
                     ?: response.header?.musicDetailHeaderRenderer?.thumbnail?.musicThumbnailRenderer?.thumbnail?.thumbnails?.lastOrNull(),
-                subscribersCountText = null,
+                channelId = response.header?.musicImmersiveHeaderRenderer?.subscriptionButton?.subscribeButtonRenderer?.channelId,
+                subscribersCountText = response.header?.musicImmersiveHeaderRenderer?.subscriptionButton?.subscribeButtonRenderer?.subscriberCountText?.runs?.firstOrNull()?.text,
             ),
             sections = sections,
             description = response.header?.musicImmersiveHeaderRenderer?.description?.runs?.firstOrNull()?.text,
@@ -170,6 +206,200 @@ object YtMusic {
                     ?.musicPlaylistShelfRenderer?.continuations?.getContinuation()
             )
         }
+    }
+
+    suspend fun getPlaylist(playlistId: String): Result<PlaylistPage> = runCatching {
+        val playlistIdChecked = if (playlistId.startsWith("VL")) playlistId else "VL$playlistId"
+        println("YtMusic getPlaylist playlistId: $playlistId Checked: $playlistIdChecked")
+        val response = Innertube.browse(
+            browseId = playlistIdChecked,
+            setLogin = true
+        ).body<BrowseResponse>()
+
+
+        if (response.header != null)
+            getPlaylistPreviousMode(playlistIdChecked, response)
+        else
+            getPlaylistNewMode(playlistIdChecked, response)
+    }.onFailure {
+        println("YtMusic getPlaylist error: ${it.stackTraceToString()}")
+    }
+
+    private fun getPlaylistPreviousMode(playlistId: String, response: BrowseResponse): PlaylistPage {
+        val header = response.header?.musicDetailHeaderRenderer ?:
+            response.header?.musicEditablePlaylistDetailHeaderRenderer?.header?.musicDetailHeaderRenderer
+
+
+        //val editable = response.header?.musicEditablePlaylistDetailHeaderRenderer != null
+
+        return PlaylistPage(
+            playlist = Innertube.PlaylistItem(
+                info = Innertube.Info(
+                    name = header?.title?.runs?.firstOrNull()?.text!!,
+                    endpoint = NavigationEndpoint.Endpoint.Browse(
+                        browseId = playlistId,
+                    )
+                ),
+                songCount = 0, //header.secondSubtitle.runs?.firstOrNull()?.text,
+                thumbnail = header.thumbnail.croppedSquareThumbnailRenderer?.thumbnail?.thumbnails?.getBestQuality(),
+                channel = null,
+//                playEndpoint = response.contents?.singleColumnBrowseResultsRenderer?.tabs?.firstOrNull()
+//                    ?.tabRenderer?.content?.sectionListRenderer?.contents?.firstOrNull()
+//                    ?.musicPlaylistShelfRenderer?.contents?.firstOrNull()?.musicResponsiveListItemRenderer
+//                    ?.overlay?.musicItemThumbnailOverlayRenderer?.content?.musicPlayButtonRenderer?.playNavigationEndpoint?.watchEndpoint,
+//                shuffleEndpoint = header.menu.menuRenderer.topLevelButtons?.firstOrNull()?.buttonRenderer?.navigationEndpoint?.watchPlaylistEndpoint!!,
+//                radioEndpoint = header.menu.menuRenderer.items?.find {
+//                    it.menuNavigationItemRenderer?.icon?.iconType == "MIX"
+//                }?.menuNavigationItemRenderer?.navigationEndpoint?.watchPlaylistEndpoint!!,
+//                isEditable = editable
+            ),
+            songs = response.contents?.singleColumnBrowseResultsRenderer?.tabs?.firstOrNull()
+                ?.tabRenderer?.content?.sectionListRenderer?.contents?.firstOrNull()
+                ?.musicPlaylistShelfRenderer?.contents?.mapNotNull {
+                    it.musicResponsiveListItemRenderer?.let { it1 ->
+                        PlaylistPage.fromMusicResponsiveListItemRenderer(
+                            it1
+                        )
+                    }
+                }!!,
+            songsContinuation = response.contents.singleColumnBrowseResultsRenderer.tabs.firstOrNull()
+                ?.tabRenderer?.content?.sectionListRenderer?.contents?.firstOrNull()
+                ?.musicPlaylistShelfRenderer?.continuations?.getContinuation(),
+            continuation = response.contents.singleColumnBrowseResultsRenderer.tabs.firstOrNull()
+                ?.tabRenderer?.content?.sectionListRenderer?.continuations?.getContinuation()
+        )
+    }
+
+    private fun getPlaylistNewMode(playlistId: String, response: BrowseResponse): PlaylistPage {
+        val header = response.contents?.twoColumnBrowseResultsRenderer?.tabs?.firstOrNull()
+            ?.tabRenderer?.content?.sectionListRenderer?.contents?.firstOrNull()?.musicResponsiveHeaderRenderer
+            ?: response.contents?.twoColumnBrowseResultsRenderer?.tabs?.firstOrNull()
+                ?.tabRenderer?.content?.sectionListRenderer?.contents?.firstOrNull()
+                ?.musicEditablePlaylistDetailHeaderRenderer?.header?.musicResponsiveHeaderRenderer
+
+//        val editable = response.contents?.twoColumnBrowseResultsRenderer?.tabs?.firstOrNull()
+//            ?.tabRenderer?.content?.sectionListRenderer?.contents?.firstOrNull()
+//            ?.musicEditablePlaylistDetailHeaderRenderer != null
+
+        return PlaylistPage(
+            playlist = Innertube.PlaylistItem(
+                info = Innertube.Info(
+                    name = header?.title?.runs?.firstOrNull()?.text!!,
+                    endpoint = NavigationEndpoint.Endpoint.Browse(
+                        browseId = playlistId,
+                    )
+                ),
+                //TODO: add description IN PLAYLISTPAGE
+                songCount = 0,//header.secondSubtitle?.runs?.firstOrNull()?.text,
+                thumbnail = response.background?.musicThumbnailRenderer?.thumbnail?.thumbnails?.getBestQuality(),
+                channel = null
+//                playEndpoint = header.buttons.getOrNull(1)?.musicPlayButtonRenderer
+//                    ?.playNavigationEndpoint?.watchEndpoint,
+//                shuffleEndpoint = header.buttons.getOrNull(2)?.menuRenderer?.items?.find {
+//                    it.menuNavigationItemRenderer?.icon?.iconType == "MUSIC_SHUFFLE"
+//                }?.menuNavigationItemRenderer?.navigationEndpoint?.watchPlaylistEndpoint,
+//                radioEndpoint = header.buttons.getOrNull(2)?.menuRenderer?.items?.find {
+//                    it.menuNavigationItemRenderer?.icon?.iconType == "MIX"
+//                }?.menuNavigationItemRenderer?.navigationEndpoint?.watchPlaylistEndpoint,
+//                isEditable = editable
+            ),
+            songs = response.contents?.twoColumnBrowseResultsRenderer?.secondaryContents?.sectionListRenderer
+                ?.contents?.firstOrNull()?.musicPlaylistShelfRenderer?.contents?.mapNotNull {
+                    it.musicResponsiveListItemRenderer?.let { it1 ->
+                        PlaylistPage.fromMusicResponsiveListItemRenderer(
+                            it1
+                        )
+                    }
+                }!!,
+            songsContinuation = response.contents.twoColumnBrowseResultsRenderer.secondaryContents.sectionListRenderer
+                .contents.firstOrNull()?.musicPlaylistShelfRenderer?.continuations?.getContinuation(),
+            continuation = response.contents.twoColumnBrowseResultsRenderer.secondaryContents.sectionListRenderer
+                .continuations?.getContinuation()
+        )
+    }
+
+    suspend fun getPlaylistContinuation(continuation: String) = runCatching {
+        val response = Innertube.browse(
+            continuation = continuation,
+            setLogin = true
+        ).body<BrowseResponse>()
+
+        println("YtMusic getPlaylistContinuation response: ${response.continuationContents?.musicPlaylistShelfContinuation}")
+
+        response.continuationContents?.musicPlaylistShelfContinuation?.contents?.mapNotNull {
+            it.musicResponsiveListItemRenderer?.let { it1 ->
+                PlaylistPage.fromMusicResponsiveListItemRenderer( it1 )
+            }
+        }?.let {
+            PlaylistContinuationPage(
+                songs = it,
+                continuation = response.continuationContents.musicPlaylistShelfContinuation.continuations?.getContinuation()
+            )
+        }
+    }.onFailure {
+        println("YtMusic getPlaylistContinuation error: ${it.stackTraceToString()}")
+    }
+
+    suspend fun getAlbum(browseId: String, withSongs: Boolean = true): Result<AlbumPage> = runCatching {
+        val response = Innertube.browse(browseId = browseId).body<BrowseResponse>()
+        val playlistId = response.microformat?.microformatDataRenderer?.urlCanonical?.substringAfterLast('=')!!
+
+        AlbumPage(
+            album = Innertube.AlbumItem(
+                playlistId = playlistId,
+                info = Innertube.Info(
+                    name = response.contents?.twoColumnBrowseResultsRenderer?.tabs?.firstOrNull()?.tabRenderer?.content?.sectionListRenderer?.contents?.firstOrNull()?.musicResponsiveHeaderRenderer?.title?.runs?.firstOrNull()?.text!!,
+                    endpoint = NavigationEndpoint.Endpoint.Browse(
+                        browseId = browseId,
+                    )
+                ),
+                authors = response.contents.twoColumnBrowseResultsRenderer.tabs.firstOrNull()?.tabRenderer?.content?.sectionListRenderer?.contents?.firstOrNull()?.musicResponsiveHeaderRenderer?.straplineTextOne?.runs?.oddElements()
+                    ?.map {
+                        Innertube.Info(
+                            name = it.text,
+                            endpoint = it.navigationEndpoint?.browseEndpoint,
+                        )
+                    }!!,
+                year = response.contents.twoColumnBrowseResultsRenderer.tabs.firstOrNull()?.tabRenderer?.content?.sectionListRenderer?.contents?.firstOrNull()?.musicResponsiveHeaderRenderer?.subtitle?.runs?.lastOrNull()?.text,
+                thumbnail = response.contents.twoColumnBrowseResultsRenderer.tabs.firstOrNull()?.tabRenderer?.content?.sectionListRenderer?.contents?.firstOrNull()?.musicResponsiveHeaderRenderer?.thumbnail?.musicThumbnailRenderer?.thumbnail?.thumbnails?.lastOrNull(),
+            ),
+            songs = if (withSongs) getAlbumSongs(playlistId).getOrThrow() else emptyList(),
+            otherVersions = response.contents.twoColumnBrowseResultsRenderer.secondaryContents?.sectionListRenderer?.contents?.getOrNull(
+                1
+            )?.musicCarouselShelfRenderer?.contents
+                ?.mapNotNull { it.musicTwoRowItemRenderer }
+                ?.map(NewReleaseAlbumPage::fromMusicTwoRowItemRenderer)
+                .orEmpty(),
+            url = response.microformat.microformatDataRenderer.urlCanonical,
+            description = response.contents.twoColumnBrowseResultsRenderer.tabs
+                .firstOrNull()
+                ?.tabRenderer
+                ?.content
+                ?.sectionListRenderer
+                ?.contents
+                ?.firstOrNull()
+                ?.musicResponsiveHeaderRenderer
+                ?.description
+                ?.musicDescriptionShelfRenderer
+                ?.description?.text,
+        )
+    }
+
+    suspend fun getAlbumSongs(playlistId: String): Result<List<Innertube.SongItem>> = runCatching {
+        val response = Innertube.browse(browseId = "VL$playlistId").body<BrowseResponse>()
+
+        val contents =
+            response.contents?.singleColumnBrowseResultsRenderer?.tabs?.firstOrNull()
+                ?.tabRenderer?.content?.sectionListRenderer?.contents?.firstOrNull()
+                ?.musicPlaylistShelfRenderer?.contents ?:
+            response.contents?.twoColumnBrowseResultsRenderer?.secondaryContents?.sectionListRenderer
+                ?.contents?.firstOrNull()?.musicPlaylistShelfRenderer?.contents
+
+        val songs = contents?.mapNotNull {
+            it.musicResponsiveListItemRenderer?.let { it1 -> AlbumPage.getSong(it1) }
+        }
+        println("mediaItem getAlbumSongs songs: $songs")
+        songs!!
     }
 
 }

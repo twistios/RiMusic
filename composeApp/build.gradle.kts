@@ -123,8 +123,8 @@ android {
         applicationId = "it.fast4x.rimusic"
         minSdk = 21
         targetSdk = 35
-        versionCode = 78
-        versionName = "0.6.66"
+        versionCode = 81
+        versionName = "0.6.69"
     }
 
     splits {
@@ -325,5 +325,7 @@ dependencies {
     implementation(projects.piped)
 
 
-    coreLibraryDesugaring(libs.desugaring)
+//    coreLibraryDesugaring(libs.desugaring)
+    coreLibraryDesugaring(libs.desugaring.nio)
+
 }

@@ -1,8 +1,8 @@
 name: Automatically update contributors.json
 
 on:
-  schedule:
-    - cron: '0 0 * * 1' # Every Monday @ 00:00
+  #schedule:
+  #  - cron: '0 0 * * 1' # Every Monday @ 00:00
   # Allow manual trigger
   workflow_dispatch:
 

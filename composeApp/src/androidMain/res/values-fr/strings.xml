@@ -11,12 +11,12 @@
     <string name="add_to_playlist">Ajouter à la playlist</string>
     <string name="go_to_album">Aller à l\'album</string>
     <string name="remove_from_queue">Supprimer de la file d\'attente</string>
-    <string name="remove_from_playlist">Supprimer de la liste de lecture</string>
+    <string name="remove_from_playlist">Supprimer de la playlist </string>
     <string name="hide">Cacher</string>
     <string name="hide_from_quick_picks">Cacher de la \"Sélection Rapide\"</string>
     <string name="related_albums">Albums Associés</string>
     <string name="similar_artists">Artistes Similaires</string>
-    <string name="playlists_you_might_like">Listes de lecture que vous pourriez aimer</string>
+    <string name="playlists_you_might_like">Playlists que vous pourriez aimer</string>
     <string name="an_error_has_occurred">Une erreur est survenue</string>
     <string name="albums">Albums</string>
     <string name="artists">Artistes</string>
@@ -55,7 +55,7 @@
     <string name="online">En ligne</string>
     <string name="no_results_found">Aucun résultat trouvé. Veuillez essayer une autre recherche ou une autre catégorie.</string>
     <string name="videos">Vidéos</string>
-    <string name="featured">En vedette</string>
+    <string name="featured">En Vedette</string>
     <string name="view_the_source_code">Afficher le code source</string>
     <string name="report_an_issue">Signaler un problème</string>
     <string name="you_will_be_redirected_to_github">Vous allez être redirigé vers GitHub.</string>
@@ -158,7 +158,7 @@
     <string name="_1_month">1 Mois</string>
     <string name="_3_month">3 Mois</string>
     <string name="_6_month">6 Mois</string>
-    <string name="_1_year">1 an</string>
+    <string name="_1_year">1 An </string>
     <string name="all">Tout</string>
     <string name="most_played_songs">Titres les plus écoutés</string>
     <string name="most_listened_artists">Artistes les plus écoutés</string>
@@ -224,6 +224,8 @@
     <string name="listen_on_piped">Écouter sur Piped</string>
     <string name="listen_on_invidious">Écouter sur Invidious</string>
     <string name="disable_horizontal_swipe">Désactiver le glissement horizontal</string>
+    <string name="disable_vertical_swipe">Désactiver le changement de chanson via le balayage vertical</string>
+    <string name="disable_vertical_swipe_secondary">Cela n\'affecte que lorsque le lecteur étendu est désactivé</string>
     <string name="disable_song_switching_via_swipe">Désactiver le changement de titre par balayage</string>
     <string name="interface_in_use">Interface en cours d\'utilisation</string>
     <string name="user_interface">Interface Utilisateur</string>
@@ -679,7 +681,8 @@
     <string name="searches_suggestions">Suggestions</string>
     <string name="searches_saved_searches">Recherches sauvegardées</string>
     <string name="event_volumekeys">Changer de chanson avec les boutons de volume</string>
-    <string name="event_volumekeysinfo">Volume HAUT : chanson suivante et volume BAS : chanson précédente</string>
+    <string name="event_volumekeysinfo">Volume HAUT : titre suivant, 
+Volume BAS : titre précédent</string>
     <string name="paste">Coller</string>
     <string name="searches_no_suggestions">Aucune suggestion</string>
     <string name="action_bar_show_discover_button">Afficher le bouton découvrir</string>
@@ -740,6 +743,7 @@
     <string name="social_reddit_info">Rejoignez la communauté sur Reddit</string>
     <string name="sleep_timer_ended">Minuterie de veille terminée</string>
     <string name="social_discord">Discord</string>
+    <string name="social_discord_info">Rejoignez la communauté sur Discord</string>
     <string name="discord_enable_rich_presence">Activer Rich Presence (Discord)</string>
     <string name="discord_disconnect">Déconnecté</string>
     <string name="discord_connect">Se connecter</string>
@@ -811,7 +815,7 @@
     <string name="about_developers_designers">Développeurs / Concepteurs</string>
     <string name="set_custom_value">Valeur personnalisée</string>
     <string name="title_youtube_music">YOUTUBE MUSIC</string>
-    <string name="enable_youtube_music_login">Activer la connexion à YouTube Music</string>
+    <string name="enable_youtube_music_login">Activer la connexion à YouTube Music </string>
     <string name="show_cover_thumbnail_animation">Afficher l\'animation de la vignette de couverture</string>
     <string name="cover_thumbnail_animation_type">Type d\'animation de couverture</string>
     <string name="jump_previous">Le bouton Précédent redémarrera le titre en cours une fois les secondes suivantes écoulées</string>
@@ -868,4 +872,31 @@
     <string name="appearancepresetssecondary">Les aperçus seront de faible qualité</string>
     <string name="yt_history">Historique de YouTube Music</string>
     <string name="albumCoverRotation">Animation de rotation d\'arrière-plan</string>
+    <string name="enable_connection_metered">Utiliser une connexion limitée pour économiser des données</string>
+    <string name="info_enable_connection_metered">L\'enregistrement des données diminue la qualité. Utilisez-le uniquement si vous avez une connexion avec des données limitées.</string>
+    <string name="use_ytm_login_only_for_browse">Utilisez la connexion YouTube Music uniquement pour naviguer</string>
+    <string name="info_use_ytm_login_only_for_browse">À utiliser si les titres ne sont pas joués lors de la connexion</string>
+    <string name="disliked_this_song">Impossible d\'effectuer cette action lorsque tous les titres ne sont pas appréciés</string>
+    <string name="removed_from_disliked">Supprimé des titres non appréciés</string>
+    <string name="disliked_this_collection">Impossible d\'effectuer cette action lorsque tous les titres sont soit détestés, soit sans correspondance</string>
+    <string name="toggle_controls_landscape">Activer / Désactiver les commandes à l\'écran</string>
+    <string name="delete_songs_not_in_library">Supprimer les titres qui ne sont pas dans la bibliothèque</string>
+    <string name="delete_in_process">Suppression des titres qui ne sont pas dans votre bibliothèque. L\'application se fermera une fois le processus terminé</string>
+    <string name="nothing_to_delete">Rien à supprimer</string>
+    <string name="get_album_version">Faire correspondre l\'album / la version audio des titres</string>
+    <string name="no_videos_found">Aucun titre trouvé pour correspondre</string>
+    <string name="matching_songs">Titres correspondants. Veuillez patienter. Ne réduisez pas ou ne quittez pas l\'application</string>
+    <string name="unmatched">Titres incomparables</string>
+    <string name="match_song">Rejouer ce titre</string>
+    <string name="match_song_grid">Titre de revanche</string>
+    <string name="songsnotfound">Titres non trouvés</string>
+    <string name="swipe_Animation_No_Thumbnail">Animation de balayage</string>
+    <string name="do_you_really_want_to_match_all">Voulez-vous vraiment remplacer tous les titres non correspondants par les titres correspondants ? Cette action est irréversible.</string>
+    <string name="online_songs">Titres en ligne</string>
+    <string name="explicit">Explicite</string>
+    <string name="filter_by">Filtrer par</string>
+    <string name="updating_playlist">Mise à jour de la playlist. Veuillez patienter. Ne réduisez pas l\'application et ne la quittez pas.</string>
+    <string name="updating_playlist_message">Mettre à jour les titres avec l\'ID d\'album manquant</string>
+    <string name="syncing">Synchronisation...</string>
+    <string name="autosync_channels">Synchronisation automatique des chaînes souscrites</string>
 </resources>

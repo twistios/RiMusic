@@ -167,11 +167,7 @@ fun Thumbnail(
 
     val coverPainter = rememberAsyncImagePainter(
         model = ImageRequest.Builder(LocalContext.current)
-            .data(
-                window.mediaItem.mediaMetadata.artworkUri.thumbnail(
-                    thumbnailSizePx
-                )
-            )
+            .data(window.mediaItem.mediaMetadata.artworkUri.thumbnail(1200))
             .size(coil.size.Size.ORIGINAL)
             .build(),
         onError = { artImageAvailable = false },

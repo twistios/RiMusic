@@ -14,8 +14,11 @@ import it.fast4x.rimusic.enums.PopupType
 import it.fast4x.rimusic.models.Song
 import it.fast4x.rimusic.ui.components.themed.SmartMessage
 import it.fast4x.rimusic.appContext
+import it.fast4x.rimusic.models.Album
+import it.fast4x.rimusic.models.Artist
 import it.fast4x.rimusic.ui.components.tab.toolbar.Descriptive
 import it.fast4x.rimusic.ui.components.tab.toolbar.MenuIcon
+import it.fast4x.rimusic.utils.formatAsDuration
 
 class ImportSongsFromCSV private constructor(
     private val launcher: ManagedActivityResultLauncher<Array<String>, Uri?>
@@ -25,7 +28,7 @@ class ImportSongsFromCSV private constructor(
         private fun openFile(
             uri: Uri,
             beforeTransaction: (Int, Map<String, String>) -> Unit = { _,_ -> },
-            afterTransaction: ( Int, Song ) -> Unit = { _,_ -> }
+            afterTransaction: ( Int, Song, Album, List<Artist> ) -> Unit = { _,_,_,_ -> }
         ) {
             appContext().applicationContext
                         .contentResolver
@@ -38,32 +41,58 @@ class ImportSongsFromCSV private constructor(
                                     Database.asyncTransaction {
                                         beforeTransaction( index, row )
                                         /**/
-                                        val mediaId = row["MediaId"]
-                                        val title = row["Title"]
+                                        val explicitPrefix = if (row["Explicit"] == "true") "e:" else ""
+                                        val pseudoMediaId = (row["Track Name"]+row["Artist Name(s)"]).filter { it.isLetterOrDigit() }
+                                        val title = row["Title"] ?: row["Track Name"] ?: return@asyncTransaction
+                                        val mediaId = row["MediaId"] ?: pseudoMediaId
+                                        val artistsText = row["Artists"] ?: row["Artist Name(s)"] ?: ""
+                                        val durationText = row["Duration"] ?: formatAsDuration(row["Track Duration (ms)"]?.toLong() ?: 0L)
 
-                                        if( mediaId == null || title == null)
-                                            return@asyncTransaction
-
-                                        val song = Song (
+                                        val song = Song(
                                             id = mediaId,
-                                            title = title,
-                                            artistsText = row["Artists"],
-                                            durationText = row["Duration"],
-                                            thumbnailUrl = row["ThumbnailUrl"],
+                                            title = explicitPrefix+title,
+                                            artistsText = artistsText,
+                                            durationText = durationText,
+                                            thumbnailUrl = row["ThumbnailUrl"] ?: "",
                                             totalPlayTimeMs = 1L
                                         )
-                                        afterTransaction( index, song )
-                                    }
-                                }
+
+                                         val albumId = row["AlbumId"] ?: ""
+                                         val albumTitle = row["AlbumTitle"]
+                                         val album = Album(
+                                            id = albumId,
+                                            title = albumTitle
+                                         )
+
+                                         val artistNames = row["Artists"]?.split(",")
+                                         val artistIds = row["ArtistIds"]?.split(",")
+                                         val artists = mutableListOf<Artist>()
+                                         if (artistIds != null && (artistNames?.size == artistIds.size)) {
+                                            for(idx in artistIds.indices){
+                                                val artistName = artistNames.getOrNull(idx)
+                                                val artistId = artistIds.getOrNull(idx)
+                                                if(artistId!=null){
+                                                    val artist = Artist(
+                                                    id = artistId,
+                                                    name = artistName
+                                                    )
+                                                    artists.add(artist)
+                                                }
+                                            }
+                                         }
+
+                                afterTransaction( index, song, album, artists )
                             }
                         }
+                    }
+                }
         }
 
         @JvmStatic
         @Composable
         fun init(
             beforeTransaction: (Int, Map<String, String>) -> Unit = { _,_ -> },
-            afterTransaction: ( Int, Song ) -> Unit = { _,_ -> }
+            afterTransaction: ( Int, Song, Album, List<Artist> ) -> Unit = { _,_,_,_ -> }
         ) = ImportSongsFromCSV(
             rememberLauncherForActivityResult(
                 ActivityResultContracts.OpenDocument()

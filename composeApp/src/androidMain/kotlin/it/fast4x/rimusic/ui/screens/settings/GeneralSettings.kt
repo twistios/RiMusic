@@ -228,7 +228,7 @@ import it.fast4x.rimusic.typography
 import it.fast4x.rimusic.utils.autoDownloadSongKey
 import it.fast4x.rimusic.utils.autoDownloadSongWhenAlbumBookmarkedKey
 import it.fast4x.rimusic.utils.autoDownloadSongWhenLikedKey
-
+import it.fast4x.rimusic.utils.isConnectionMeteredEnabledKey
 
 
 @ExperimentalAnimationApi
@@ -259,6 +259,7 @@ fun GeneralSettings(
     var skipMediaOnError by rememberPreference(skipMediaOnErrorKey, false)
     var volumeNormalization by rememberPreference(volumeNormalizationKey, false)
     var audioQualityFormat by rememberPreference(audioQualityFormatKey, AudioQualityFormat.Auto)
+    var isConnectionMeteredEnabled by rememberPreference(isConnectionMeteredEnabledKey, true)
 
 
     var keepPlayerMinimized by rememberPreference(keepPlayerMinimizedKey,   false)
@@ -458,6 +459,18 @@ fun GeneralSettings(
             RestartPlayerService(restartService, onRestart = { restartService = false } )
 
         }
+
+        if (search.input.isBlank() || stringResource(R.string.enable_connection_metered).contains(search.input,true))
+            SwitchSettingEntry(
+                title = stringResource(R.string.enable_connection_metered),
+                text = stringResource(R.string.info_enable_connection_metered),
+                isChecked = isConnectionMeteredEnabled,
+                onCheckedChange = {
+                    isConnectionMeteredEnabled = it
+                    if (it)
+                        audioQualityFormat = AudioQualityFormat.Auto
+                }
+            )
 
         if (search.input.isBlank() || stringResource(R.string.jump_previous).contains(search.input,true)) {
             BasicText(

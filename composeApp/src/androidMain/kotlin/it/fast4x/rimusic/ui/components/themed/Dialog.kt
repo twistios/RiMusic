@@ -9,6 +9,7 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
@@ -18,7 +19,9 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.absoluteOffset
 import androidx.compose.foundation.layout.defaultMinSize
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -26,6 +29,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredHeight
 import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.PageSize
 import androidx.compose.foundation.pager.rememberPagerState
@@ -44,10 +50,12 @@ import androidx.compose.material.Text
 import androidx.compose.material.TextField
 import androidx.compose.material.TextFieldDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -79,6 +87,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.TextFieldValue
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -90,7 +99,14 @@ import androidx.media3.common.util.UnstableApi
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import it.fast4x.compose.persist.persist
+import it.fast4x.innertube.Innertube
+import it.fast4x.innertube.YtMusic
+import it.fast4x.innertube.models.bodies.SearchBody
+import it.fast4x.innertube.requests.ArtistPage
+import it.fast4x.innertube.requests.searchPage
+import it.fast4x.innertube.utils.from
 import it.fast4x.rimusic.Database
+import it.fast4x.rimusic.Database.Companion.update
 import it.fast4x.rimusic.LocalPlayerServiceBinder
 import it.fast4x.rimusic.R
 import it.fast4x.rimusic.enums.ColorPaletteMode
@@ -124,18 +140,36 @@ import it.fast4x.rimusic.utils.resize
 import it.fast4x.rimusic.utils.secondary
 import it.fast4x.rimusic.utils.semiBold
 import it.fast4x.rimusic.utils.setDeviceVolume
+import it.fast4x.rimusic.utils.setGlobalVolume
 import it.fast4x.rimusic.utils.showCoverThumbnailAnimationKey
 import it.fast4x.rimusic.utils.thumbnailFadeKey
-import it.fast4x.rimusic.utils.thumbnailOffsetKey
 import it.fast4x.rimusic.utils.thumbnailRoundnessKey
 import it.fast4x.rimusic.utils.thumbnailSpacingKey
 import kotlinx.coroutines.delay
 import it.fast4x.rimusic.colorPalette
+import it.fast4x.rimusic.models.Album
+import it.fast4x.rimusic.models.Song
+import it.fast4x.rimusic.models.SongAlbumMap
+import it.fast4x.rimusic.models.SongArtistMap
+import it.fast4x.rimusic.models.SongPlaylistMap
 import it.fast4x.rimusic.typography
+import it.fast4x.rimusic.ui.styling.Dimensions
+import it.fast4x.rimusic.ui.styling.onOverlay
+import it.fast4x.rimusic.ui.styling.px
+import it.fast4x.rimusic.utils.asMediaItem
+import it.fast4x.rimusic.utils.asSong
+import it.fast4x.rimusic.utils.getLikeState
+import it.fast4x.rimusic.utils.isExplicit
+import it.fast4x.rimusic.utils.left
 import it.fast4x.rimusic.utils.lyricsSizeKey
 import it.fast4x.rimusic.utils.lyricsSizeLKey
+import it.fast4x.rimusic.utils.right
+import it.fast4x.rimusic.utils.thumbnail
 import it.fast4x.rimusic.utils.thumbnailFadeExKey
 import it.fast4x.rimusic.utils.thumbnailSpacingLKey
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
 
 @Composable
 fun TextFieldDialog(
@@ -529,6 +563,19 @@ inline fun SelectorArtistsDialog(
                         LaunchedEffect(browseId) {
                             Database.artist(values[idArtist].id).collect{artist = it}
                         }
+                        LaunchedEffect(Unit) {
+                            if (artist?.thumbnailUrl == null) {
+                                withContext(Dispatchers.IO) {
+                                    YtMusic.getArtistPage(browseId = browseId)
+                                        .onSuccess { currentArtistPage ->
+                                            artist?.copy(
+                                                thumbnailUrl = currentArtistPage.artist.thumbnail?.url
+                                            )?.let(::update)
+                                            Database.artist(values[idArtist].id).collect{artist = it}
+                                        }
+                                }
+                            }
+                        }
 
                         Box {
                             AsyncImage(
@@ -549,7 +596,7 @@ inline fun SelectorArtistsDialog(
                             )
                             values[idArtist].name?.let { it1 ->
                                 BasicText(
-                                    text = it1,
+                                    text = cleanPrefix(it1),
                                     maxLines = 3,
                                     overflow = TextOverflow.Ellipsis,
                                     style = typography().xs.medium,
@@ -558,7 +605,7 @@ inline fun SelectorArtistsDialog(
                                         .align(Alignment.BottomCenter)
                                 )
                                 BasicText(
-                                    text = it1,
+                                    text = cleanPrefix(it1),
                                     style = typography().xs.medium.merge(TextStyle(
                                         drawStyle = Stroke(width = 1.0f, join = StrokeJoin.Round),
                                         color = if (colorPaletteMode == ColorPaletteMode.Light || (colorPaletteMode == ColorPaletteMode.System && (!isSystemInDarkTheme()))) Color.White.copy(0.5f)
@@ -1740,6 +1787,349 @@ fun LyricsSizeDialog(
     }
 }
 
+@Composable
+fun InProgressDialog(
+    total : Int,
+    done : Int,
+    text : String,
+    onDismiss: (() -> Unit)? = null,
+) {
+    DefaultDialog(
+        onDismiss = {if (onDismiss != null) {onDismiss()}},
+        modifier = Modifier
+            .fillMaxWidth(if (isLandscape) 0.3f else 0.8f)
+    ) {
+        BasicText(
+            text = text,
+            style = TextStyle(
+                textAlign = TextAlign.Center,
+                fontSize = typography().l.bold.fontSize,
+                fontWeight = typography().l.bold.fontWeight,
+                color = colorPalette().text
+            ),
+            overflow = TextOverflow.Ellipsis,
+        )
+        Spacer(modifier = Modifier
+            .height(10.dp)
+        )
+        BasicText(
+            text = "$done / $total",
+            style = TextStyle(
+                textAlign = TextAlign.Center,
+                fontStyle = typography().xs.semiBold.fontStyle,
+                color = colorPalette().text
+            ),
+            overflow = TextOverflow.Ellipsis,
+        )
+    }
+}
+
+@androidx.annotation.OptIn(UnstableApi::class)
+@Composable
+fun SongMatchingDialog(
+    songToRematch : Song,
+    playlistId : Long,
+    position : Int,
+    onDismiss: (() -> Unit)
+) {
+    Dialog(
+        onDismissRequest = { onDismiss() },
+        properties = DialogProperties(usePlatformDefaultWidth = false)
+    ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier
+                .fillMaxWidth(if (isLandscape) 0.5f else 0.9f)
+                .fillMaxHeight(if (isLandscape) 0.9f else 0.7f)
+                .background(color = colorPalette().background1,shape = RoundedCornerShape(8.dp))
+        ) {
+            fun filteredText(text : String): String{
+                val filteredText = text
+                    .lowercase()
+                    .replace("(", " ")
+                    .replace(")", " ")
+                    .replace("-", " ")
+                    .replace("lyrics", "")
+                    .replace("vevo", "")
+                    .replace(" hd", "")
+                    .replace("official video", "")
+                    .filter {it.isLetterOrDigit() || it.isWhitespace() || it == '\'' || it == ',' }
+                    .replace(Regex("\\s+"), " ")
+                return filteredText
+            }
+            var songsList by remember { mutableStateOf<List<Innertube.SongItem?>>(emptyList()) }
+            var searchText by remember {mutableStateOf(filteredText("${cleanPrefix(songToRematch.title)} ${songToRematch.artistsText}"))}
+            var startSearch by remember { mutableStateOf(false) }
+
+            LaunchedEffect(Unit,startSearch) {
+                runBlocking(Dispatchers.IO) {
+                    val searchQuery = Innertube.searchPage(
+                        body = SearchBody(
+                            query = searchText,
+                            params = Innertube.SearchFilter.Song.value
+                        ),
+                        fromMusicShelfRendererContent = Innertube.SongItem.Companion::from
+                    )
+
+                    songsList = searchQuery?.getOrNull()?.items ?: emptyList()
+                    startSearch = false
+                }
+            }
+            Row(
+                horizontalArrangement = Arrangement.Start,
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .border(1.dp, colorPalette().text, shape = RoundedCornerShape(8.dp))
+                    .padding(horizontal = 5.dp)
+                    .padding(vertical = 10.dp)
+            ) {
+                Box {
+                    AsyncImage(
+                        model = songToRematch.asMediaItem.mediaMetadata.artworkUri.thumbnail(
+                            Dimensions.thumbnails.song.px / 2
+                        ),
+                        contentDescription = null,
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier
+                            .padding(end = 5.dp)
+                            .clip(RoundedCornerShape(5.dp))
+                            .size(40.dp)
+                    )
+                    if (songToRematch.likedAt != null) {
+                        HeaderIconButton(
+                            onClick = {},
+                            icon = getLikeState(songToRematch.asMediaItem.mediaId),
+                            color = colorPalette().favoritesIcon,
+                            iconSize = 12.dp,
+                            modifier = Modifier
+                                .align(Alignment.BottomStart)
+                                .absoluteOffset((-8).dp, 0.dp)
+                        )
+                    }
+                }
+                Column(
+                    horizontalAlignment = Alignment.Start,
+                    verticalArrangement = Arrangement.Center
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .basicMarquee(iterations = Int.MAX_VALUE)
+                    ) {
+                        if (songToRematch.asMediaItem.isExplicit) {
+                            IconButton(
+                                icon = R.drawable.explicit,
+                                color = colorPalette().text,
+                                enabled = true,
+                                onClick = {},
+                                modifier = Modifier
+                                    .size(18.dp)
+                            )
+                            Spacer(
+                                modifier = Modifier
+                                    .width(5.dp)
+                            )
+                        }
+                        BasicText(
+                            text = cleanPrefix(songToRematch.title),
+                            style = typography().xs.semiBold,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    }
+                    Row(
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                    ) {
+                        BasicText(
+                            text = songToRematch.artistsText ?: "",
+                            style = typography().s.semiBold.secondary,
+                            maxLines = 1,
+                            overflow = TextOverflow.Clip,
+                            modifier = Modifier
+                                .weight(1f)
+                                .basicMarquee(iterations = Int.MAX_VALUE)
+                        )
+                        BasicText(
+                            text = songToRematch.durationText ?: "",
+                            style = typography().xs.secondary.medium,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier
+                                .padding(end = 5.dp)
+                        )
+                    }
+                }
+            }
+            Row(
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                TextField(
+                    value = searchText,
+                    onValueChange = { it ->
+                        searchText = it
+                    },
+                    singleLine = true,
+                    colors = TextFieldDefaults.textFieldColors(
+                        textColor = colorPalette().text,
+                        unfocusedIndicatorColor = colorPalette().text
+                    ),
+                    modifier = Modifier
+                        .padding(horizontal = 6.dp)
+                        .weight(1f)
+                )
+                IconButton(
+                    icon = R.drawable.search,
+                    color = Color.Black,
+                    onClick = {
+                        startSearch = true
+                    },
+                    modifier = Modifier
+                        .background(shape = RoundedCornerShape(4.dp),color = Color.White)
+                        .padding(all = 4.dp)
+                        .size(24.dp)
+                        .align(Alignment.CenterVertically)
+                        .weight(0.1f)
+                )
+            }
+            if (songsList.isNotEmpty()) {
+                LazyColumn {
+                    itemsIndexed(songsList) { _, song ->
+                        val artistsNames = song?.authors?.filter { it.endpoint != null }?.map { it.name }
+                        val artistsIds = song?.authors?.filter { it.endpoint != null }?.map { it.endpoint?.browseId }
+                        if (song != null) {
+                            Row(horizontalArrangement = Arrangement.Start,
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 10.dp)
+                                    .padding(vertical = 10.dp)
+                                    .clickable(onClick = {
+                                        Database.asyncTransaction {
+                                            deleteSongFromPlaylist(songToRematch.id, playlistId)
+                                            if (songExist(song.asSong.id) == 0) {
+                                                Database.insert(song.asMediaItem)
+                                            }
+                                            insert(
+                                                SongPlaylistMap(
+                                                    songId = song.asMediaItem.mediaId,
+                                                    playlistId = playlistId,
+                                                    position = position
+                                                )
+                                            )
+                                            insert(
+                                                Album(id = song.album?.endpoint?.browseId ?: "", title = song.asMediaItem.mediaMetadata.albumTitle?.toString()),
+                                                SongAlbumMap(songId = song.asMediaItem.mediaId, albumId = song.album?.endpoint?.browseId ?: "", position = null)
+                                            )
+                                            if ((artistsNames != null) && (artistsIds != null)) {
+                                                artistsNames.let { artistNames ->
+                                                    artistsIds.let { artistIds ->
+                                                        if (artistNames.size == artistIds.size) {
+                                                            insert(
+                                                                artistNames.mapIndexed { index, artistName ->
+                                                                    Artist(id = (artistIds[index]) ?: "", name = artistName)
+                                                                },
+                                                                artistIds.map { artistId ->
+                                                                    SongArtistMap(
+                                                                        songId = song.asMediaItem.mediaId,
+                                                                        artistId = (artistId) ?: ""
+                                                                    )
+                                                                }
+                                                            )
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                        onDismiss()
+                                    }
+                                    )
+                            ) {
+                                Box {
+                                    AsyncImage(
+                                        model = song.asMediaItem.mediaMetadata.artworkUri.thumbnail(
+                                            Dimensions.thumbnails.song.px / 2
+                                        ),
+                                        contentDescription = null,
+                                        contentScale = ContentScale.Crop,
+                                        modifier = Modifier
+                                            .padding(end = 5.dp)
+                                            .clip(RoundedCornerShape(5.dp))
+                                            .size(30.dp)
+                                    )
+                                    if (song.asSong.likedAt != null) {
+                                        HeaderIconButton(
+                                            onClick = {},
+                                            icon = getLikeState(song.asMediaItem.mediaId),
+                                            color = colorPalette().favoritesIcon,
+                                            iconSize = 9.dp,
+                                            modifier = Modifier
+                                                .align(Alignment.BottomStart)
+                                                .absoluteOffset((-6.75).dp, 0.dp)
+                                        )
+                                    }
+                                }
+                                Column {
+                                    Row(
+                                        modifier = Modifier
+                                            .basicMarquee(iterations = Int.MAX_VALUE)
+                                    ) {
+                                        if (song.asMediaItem.isExplicit) {
+                                            IconButton(
+                                                icon = R.drawable.explicit,
+                                                color = colorPalette().text,
+                                                enabled = true,
+                                                onClick = {},
+                                                modifier = Modifier
+                                                    .size(18.dp)
+                                            )
+                                            Spacer(
+                                                modifier = Modifier
+                                                    .width(5.dp)
+                                            )
+                                        }
+                                        BasicText(
+                                            text = cleanPrefix(song.title ?: ""),
+                                            style = typography().xs.semiBold,
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis,
+                                        )
+                                    }
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                    ) {
+                                        BasicText(
+                                            text = song.asSong.artistsText ?: "",
+                                            style = typography().xs.semiBold.secondary,
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Clip,
+                                            modifier = Modifier
+                                                .weight(1f)
+                                                .basicMarquee(iterations = Int.MAX_VALUE)
+                                        )
+                                        BasicText(
+                                            text = song.durationText ?: "",
+                                            style = typography().xxs.secondary.medium,
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis,
+                                            modifier = Modifier
+                                                .padding(end = 5.dp)
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
   /*if (isShowingLyrics && !showlyricsthumbnail)
       DefaultDialog(
           onDismiss = {
@@ -2321,6 +2711,7 @@ fun PlaybackParamsDialog(
                     onClick = {
                         playbackVolume = 0.5f
                         binder?.player?.volume = playbackVolume
+                        binder?.player?.setGlobalVolume(playbackVolume)
                     },
                     icon = R.drawable.volume_up,
                     color = colorPalette().favoritesIcon,
@@ -2333,6 +2724,7 @@ fun PlaybackParamsDialog(
                     onSlide = {
                         playbackVolume = it
                         binder?.player?.volume = playbackVolume
+                        binder?.player?.setGlobalVolume(playbackVolume)
                     },
                     onSlideComplete = {},
                     toDisplay = { "%.1f".format(playbackVolume) },

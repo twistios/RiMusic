@@ -9,6 +9,7 @@ data class SubscriptionButton(
     @Serializable
     data class SubscribeButtonRenderer(
         val subscriberCountText: Runs,
+        val subscribed: Boolean,
+        val channelId: String,
     )
-
 }

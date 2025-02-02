@@ -224,6 +224,7 @@ import it.fast4x.rimusic.utils.showButtonPlayerVideoKey
 import it.fast4x.rimusic.utils.showSearchTabKey
 import it.fast4x.rimusic.utils.showTotalTimeQueueKey
 import it.fast4x.rimusic.utils.textCopyToClipboard
+import it.fast4x.rimusic.utils.thumbnail
 import it.fast4x.rimusic.utils.thumbnailRoundnessKey
 import it.fast4x.rimusic.utils.transitionEffectKey
 import it.fast4x.rimusic.utils.useSystemFontKey
@@ -528,7 +529,7 @@ class MainActivity :
                 )
                 //TODO Manage login
             if (preferences.getBoolean(enableYouTubeLoginKey, false)) {
-                    var visitorData by rememberEncryptedPreference(
+                    var visitorData by rememberPreference(
                         key = ytVisitorDataKey,
                         defaultValue = Innertube.DEFAULT_VISITOR_DATA
                     )
@@ -541,7 +542,7 @@ class MainActivity :
 
                     YoutubePreferences.preference =
                         YoutubePreferenceItem(
-                            cookie = encryptedPreferences.getString(ytCookieKey, ""),
+                            cookie = preferences.getString(ytCookieKey, ""),
                             visitordata = visitorData
                                 .takeIf { it != "null" }
                                 ?: Innertube.DEFAULT_VISITOR_DATA
@@ -788,7 +789,7 @@ class MainActivity :
 
                                 if (colorPaletteName == ColorPaletteName.Dynamic) {
                                     val artworkUri =
-                                        (binder?.player?.currentMediaItem?.mediaMetadata?.artworkUri
+                                        (binder?.player?.currentMediaItem?.mediaMetadata?.artworkUri.thumbnail(1200)
                                             ?: "").toString()
                                     artworkUri.let {
                                         if (it.isNotEmpty())
@@ -890,7 +891,7 @@ class MainActivity :
                         getEnum(colorPaletteNameKey, ColorPaletteName.Dynamic)
                     if (colorPaletteName == ColorPaletteName.Dynamic) {
                         setDynamicPalette(
-                            (binder?.player?.currentMediaItem?.mediaMetadata?.artworkUri
+                            (binder?.player?.currentMediaItem?.mediaMetadata?.artworkUri.thumbnail(1200)
                                 ?: "").toString()
                         )
                     }
@@ -1139,14 +1140,6 @@ class MainActivity :
                                 youtubePlayer()
                             }
 
-                            /*
-                BottomSheetMenu(
-                    state = LocalMenuState.current,
-                    modifier = Modifier
-                        .align(Alignment.BottomCenter)
-                )
-                 */
-
                             val menuState = LocalMenuState.current
                             CustomModalBottomSheet(
                                 showSheet = menuState.isDisplayed,
@@ -1196,7 +1189,7 @@ class MainActivity :
                                 }
                             }
 
-                            setDynamicPalette(mediaItem?.mediaMetadata?.artworkUri.toString())
+                            setDynamicPalette(mediaItem?.mediaMetadata?.artworkUri.thumbnail(1200).toString())
                         }
 
 

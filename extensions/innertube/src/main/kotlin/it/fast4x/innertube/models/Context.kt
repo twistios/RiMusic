@@ -46,6 +46,7 @@ data class Context(
         val osName: String? = null,
         val osVersion: String? = null,
         val acceptHeader: String? = null,
+        val xClientName: Int? = null,
         //val timeZone: String? = "UTC",
         //val utcOffsetMinutes: Int? = 0,
         @Transient
@@ -107,7 +108,9 @@ data class Context(
 
     companion object {
 
-        private const val USER_AGENT_WEB = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36"
+        //const val USER_AGENT_WEB = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36"
+        //const val USER_AGENT_WEB = "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:128.0) Gecko/20100101 Firefox/128.0"
+        const val USER_AGENT_WEB = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36 Edg/132.0.0.0,gzip(gfe)"
         private const val USER_AGENT_ANDROID = "Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/65.0.3325.181 Mobile Safari/537.36"
         private const val USER_AGENT_ANDROID_MUSIC = "com.google.android.youtube/19.29.1  (Linux; U; Android 11) gzip"
         private const val USER_AGENT_PLAYSTATION = "Mozilla/5.0 (PlayStation 4 5.55) AppleWebKit/601.2 (KHTML, like Gecko)"
@@ -120,12 +123,15 @@ data class Context(
         val DefaultWeb = Context(
             client = Client(
                 clientName = "WEB_REMIX",
-                clientVersion = "1.20220606.03.00",
+                clientVersion = "1.20250122.01.00",
+                platform = "DESKTOP",
+                //clientVersion = "1.20220606.03.00",
                 //clientVersion = "1.20230731.00.00",
                 userAgent = USER_AGENT_WEB,
                 referer = REFERER_YOUTUBE_MUSIC,
                 visitorData = Innertube.visitorData,
-                api_key = "AIzaSyC9XL3ZjWddXya6X74dJoCTL-WEYFDNX30"
+                api_key = "AIzaSyC9XL3ZjWddXya6X74dJoCTL-WEYFDNX30",
+                xClientName = 67
             )
         )
 
@@ -154,15 +160,15 @@ data class Context(
 //            )
 //        )
 //
-//        val DefaultWebCreator = Context(
-//            client = Client(
-//                clientName = "WEB_CREATOR",
-//                clientVersion = "1.20240918.03.00",
-//                userAgent = USER_AGENT_WEB,
-//                referer = REFERER_YOUTUBE_MUSIC,
-//                api_key = "AIzaSyAO_FJ2SlqU8Q4STEHLGCilw_Y9_11qcW8",
-//            )
-//        )
+        val DefaultWebCreator = Context(
+            client = Client(
+                clientName = "WEB_CREATOR",
+                clientVersion = "1.20240918.03.00",
+                userAgent = USER_AGENT_WEB,
+                referer = REFERER_YOUTUBE_MUSIC,
+                api_key = "AIzaSyAO_FJ2SlqU8Q4STEHLGCilw_Y9_11qcW8",
+            )
+        )
 
 
 
@@ -178,7 +184,8 @@ data class Context(
                 userAgent = USER_AGENT_ANDROID_MUSIC,
                 referer = REFERER_YOUTUBE_MUSIC,
                 visitorData = Innertube.visitorData,
-                api_key = "AIzaSyAOghZGza2MQSZkY_zfZ370N-PUdXEo8AI"
+                api_key = "AIzaSyAOghZGza2MQSZkY_zfZ370N-PUdXEo8AI",
+                xClientName = 21
             )
         )
 
@@ -192,7 +199,8 @@ data class Context(
                 osVersion = "17.5.1.21F90",
                 acceptHeader = "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
                 userAgent = USER_AGENT_IOS,
-                api_key = "AIzaSyB-63vPrdThhKuerbB2N_l7Kwwcxj6yUAc"
+                api_key = "AIzaSyB-63vPrdThhKuerbB2N_l7Kwwcxj6yUAc",
+                xClientName = 5
             )
         )
 
@@ -202,7 +210,7 @@ data class Context(
                 clientVersion = "2.0",
                 api_key = "AIzaSyDCU8hByM-4DrUqRUYnGn-3llEO78bcxq8",
                 platform = "TV",
-                userAgent = USER_AGENT_PLAYSTATION
+                userAgent = USER_AGENT_PLAYSTATION,
             )
         )
 

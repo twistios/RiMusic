@@ -11,7 +11,9 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.Dp
@@ -21,6 +23,7 @@ import it.fast4x.compose.persist.persistList
 import it.fast4x.rimusic.Database
 import it.fast4x.rimusic.PIPED_PREFIX
 import it.fast4x.rimusic.R
+import it.fast4x.rimusic.YTP_PREFIX
 import it.fast4x.rimusic.cleanPrefix
 import it.fast4x.rimusic.colorPalette
 import it.fast4x.rimusic.models.PlaylistPreview
@@ -93,7 +96,8 @@ fun Playlist(
             ) {
                 Image(
                     painter = painterResource(R.drawable.ytmusic),
-                    colorFilter = ColorFilter.tint(colorPalette().text),
+                    colorFilter = ColorFilter.tint(if (playlist.playlist.name.contains(YTP_PREFIX)) Color.Red.copy(0.75f).compositeOver(
+                        Color.White) else colorPalette().text),
                     modifier = Modifier
                         .size(40.dp)
                         .padding(all = 5.dp),

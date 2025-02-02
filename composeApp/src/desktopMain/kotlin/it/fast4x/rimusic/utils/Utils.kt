@@ -92,7 +92,7 @@ val Innertube.SongItem.asSong: Song
     get() = Song (
         id = key,
         title = info?.name ?: "",
-        artistsText = authors?.joinToString("") { it.name ?: "" },
+        artistsText = authors?.joinToString(", ") { it.name ?: "" },
         durationText = durationText,
         thumbnailUrl = thumbnail?.url
     )
@@ -102,7 +102,7 @@ val Innertube.SongItem.asSongEntity: SongEntity
         song = Song (
             id = key,
             title = info?.name ?: "",
-            artistsText = authors?.joinToString("") { it.name ?: "" },
+            artistsText = authors?.joinToString(", ") { it.name ?: "" },
             durationText = durationText,
             thumbnailUrl = thumbnail?.url
             ),

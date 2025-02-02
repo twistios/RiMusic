@@ -2,6 +2,7 @@ package it.fast4x.rimusic.service
 
 import android.annotation.SuppressLint
 import android.content.Context
+import android.graphics.Bitmap
 import android.net.Uri
 import androidx.media3.common.MediaItem
 import androidx.media3.common.util.UnstableApi
@@ -15,11 +16,15 @@ import androidx.media3.exoplayer.offline.DownloadManager
 import androidx.media3.exoplayer.offline.DownloadNotificationHelper
 import androidx.media3.exoplayer.offline.DownloadRequest
 import androidx.media3.exoplayer.offline.DownloadService
-import androidx.media3.exoplayer.offline.DownloadService.sendAddDownload
-import androidx.media3.exoplayer.offline.DownloadService.sendRemoveDownload
 import androidx.media3.exoplayer.scheduler.Requirements
+import coil.imageLoader
+import coil.request.CachePolicy
+import coil.request.ImageRequest
 import it.fast4x.rimusic.Database
 import it.fast4x.rimusic.enums.AudioQualityFormat
+import it.fast4x.rimusic.models.SongEntity
+import it.fast4x.rimusic.utils.DownloadSyncedLyrics
+import it.fast4x.rimusic.utils.asSong
 import it.fast4x.rimusic.utils.audioQualityFormatKey
 import it.fast4x.rimusic.utils.autoDownloadSongKey
 import it.fast4x.rimusic.utils.autoDownloadSongWhenAlbumBookmarkedKey
@@ -28,25 +33,20 @@ import it.fast4x.rimusic.utils.download
 import it.fast4x.rimusic.utils.getEnum
 import it.fast4x.rimusic.utils.preferences
 import it.fast4x.rimusic.utils.removeDownload
+import it.fast4x.rimusic.utils.thumbnail
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.asCoroutineDispatcher
-import kotlinx.coroutines.channels.BufferOverflow
-import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import timber.log.Timber
 import java.io.File
-import java.util.Timer
-import java.util.concurrent.Executor
 import java.util.concurrent.Executors
-import kotlin.concurrent.schedule
 
 @UnstableApi
 object MyDownloadHelper {
@@ -222,39 +222,52 @@ object MyDownloadHelper {
     }
 
 
-        fun addDownload(context: Context, mediaItem: MediaItem) {
-            if (mediaItem.isLocal) return
+    fun addDownload(context: Context, mediaItem: MediaItem) {
+        if (mediaItem.isLocal) return
 
-            val downloadRequest = DownloadRequest
-                .Builder(
-                    /* id      = */ mediaItem.mediaId,
-                    /* uri     = */ mediaItem.requestMetadata.mediaUri
-                        ?: Uri.parse("https://music.youtube.com/watch?v=${mediaItem.mediaId}")
-                )
-                .setCustomCacheKey(mediaItem.mediaId)
-                .setData("${mediaItem.mediaMetadata.artist.toString()} - ${mediaItem.mediaMetadata.title.toString()}".encodeToByteArray()) // Title in notification
-                .build()
+        val downloadRequest = DownloadRequest
+            .Builder(
+                /* id      = */ mediaItem.mediaId,
+                /* uri     = */ mediaItem.requestMetadata.mediaUri
+                    ?: Uri.parse("https://music.youtube.com/watch?v=${mediaItem.mediaId}")
+            )
+            .setCustomCacheKey(mediaItem.mediaId)
+            .setData("${mediaItem.mediaMetadata.artist.toString()} - ${mediaItem.mediaMetadata.title.toString()}".encodeToByteArray()) // Title in notification
+            .build()
 
-            Database.asyncTransaction {
-                runCatching {
-                    insert(mediaItem)
-                }.also { if (it.isFailure) return@asyncTransaction }
-            }
+        Database.asyncTransaction {
+            runCatching {
+                insert(mediaItem)
+            }.also { if (it.isFailure) return@asyncTransaction }
+        }
+
+        val imageUrl = mediaItem.mediaMetadata.artworkUri.thumbnail(1200)
 
 //            sendAddDownload(
 //                context,MyDownloadService::class.java,downloadRequest,false
 //            )
 
-                coroutineScope.launch {
-                    context.download<MyDownloadService>(downloadRequest).exceptionOrNull()?.let {
-                        if (it is CancellationException) throw it
+        coroutineScope.launch {
+            context.download<MyDownloadService>(downloadRequest).exceptionOrNull()?.let {
+                if (it is CancellationException) throw it
 
-                        Timber.e(it.stackTraceToString())
-                        println("MyDownloadHelper scheduleDownload exception ${it.stackTraceToString()}")
-                    }
-                }
-
+                Timber.e("MyDownloadHelper scheduleDownload exception ${it.stackTraceToString()}")
+                println("MyDownloadHelper scheduleDownload exception ${it.stackTraceToString()}")
+            }
+            DownloadSyncedLyrics(it = SongEntity(mediaItem.asSong), coroutineScope = coroutineScope)
+            context.imageLoader.execute(
+                ImageRequest.Builder(context)
+                    .networkCachePolicy(CachePolicy.ENABLED)
+                    .data(imageUrl)
+                    .size(1200)
+                    .bitmapConfig(Bitmap.Config.ARGB_8888)
+                    .allowHardware(false)
+                    .diskCacheKey(imageUrl.toString())
+                    .build()
+            )
         }
+
+    }
 
     fun removeDownload(context: Context, mediaItem: MediaItem) {
         if (mediaItem.isLocal) return
@@ -270,27 +283,28 @@ object MyDownloadHelper {
         }
     }
 
-    fun resumeDownloads(context: Context){
+    fun resumeDownloads(context: Context) {
         DownloadService.sendResumeDownloads(
             context,
             MyDownloadService::class.java,
-            false)
+            false
+        )
     }
 
-    fun autoDownload(context: Context, mediaItem: MediaItem){
+    fun autoDownload(context: Context, mediaItem: MediaItem) {
         if (context.preferences.getBoolean(autoDownloadSongKey, false)) {
             if (downloads.value[mediaItem.mediaId]?.state != Download.STATE_COMPLETED)
                 addDownload(context, mediaItem)
         }
     }
 
-    fun autoDownloadWhenLiked(context: Context, mediaItem: MediaItem){
+    fun autoDownloadWhenLiked(context: Context, mediaItem: MediaItem) {
         if (context.preferences.getBoolean(autoDownloadSongWhenLikedKey, false)) {
-                autoDownload(context, mediaItem)
+            autoDownload(context, mediaItem)
         }
     }
 
-    fun autoDownloadWhenAlbumBookmarked(context: Context, mediaItems: List<MediaItem>){
+    fun autoDownloadWhenAlbumBookmarked(context: Context, mediaItems: List<MediaItem>) {
         if (context.preferences.getBoolean(autoDownloadSongWhenAlbumBookmarkedKey, false)) {
             mediaItems.forEach { mediaItem ->
                 autoDownload(context, mediaItem)

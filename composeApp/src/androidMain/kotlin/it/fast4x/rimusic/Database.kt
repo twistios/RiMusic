@@ -32,6 +32,7 @@ import androidx.room.migration.Migration
 import androidx.sqlite.db.SimpleSQLiteQuery
 import androidx.sqlite.db.SupportSQLiteDatabase
 import androidx.sqlite.db.SupportSQLiteQuery
+import it.fast4x.innertube.Innertube
 import it.fast4x.rimusic.enums.AlbumSortBy
 import it.fast4x.rimusic.enums.ArtistSortBy
 import it.fast4x.rimusic.enums.BuiltInPlaylist
@@ -59,6 +60,7 @@ import it.fast4x.rimusic.models.SongPlaylistMap
 import it.fast4x.rimusic.models.SongWithContentLength
 import it.fast4x.rimusic.models.SortedSongPlaylistMap
 import it.fast4x.rimusic.service.LOCAL_KEY_PREFIX
+import it.fast4x.rimusic.utils.isExplicit
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import org.intellij.lang.annotations.MagicConstant
@@ -557,6 +559,9 @@ interface Database {
     @RewriteQueriesToDropUnusedColumns
     fun eventWithSongByPeriod(date: Long, limit:Long = Long.MAX_VALUE): Flow<List<EventWithSong>>
 
+    @Transaction
+    @Query("SELECT * FROM Playlist WHERE name LIKE '${YTP_PREFIX}' || '%'")
+    fun ytmPrivatePlaylists(): Flow<List<Playlist?>>
 
     @Transaction
     @Query("SELECT * FROM Song WHERE totalPlayTimeMs > 0 ORDER BY totalPlayTimeMs DESC LIMIT :count")
@@ -571,6 +576,10 @@ interface Database {
     @Transaction
     @Query("SELECT playlistId, position FROM SongPlaylistMap WHERE songId = :id")
     fun playlistsUsedForSong(id: String): List<PlayListIdPosition>
+
+    @Transaction
+    @Query("SELECT position FROM SongPlaylistMap WHERE playlistId = :playlistId AND songId = :id")
+    fun positionInPlaylist(id: String, playlistId: Long): Int
 
     @Query("SELECT COUNT(1) FROM Song WHERE likedAt IS NOT NULL")
     fun likedSongsCount(): Flow<Int>
@@ -609,10 +618,18 @@ interface Database {
     @Query("UPDATE Album SET title = :title WHERE id = :id")
     fun updateAlbumTitle(id: String, title: String): Int
 
+    @Query("UPDATE Artist SET name = :name WHERE id = :id")
+    fun updateArtistName(id: String, name: String): Int
+
     @Transaction
     @Query("SELECT * FROM Artist WHERE id in (:idsList)")
     @RewriteQueriesToDropUnusedColumns
     fun getArtistsList(idsList: List<String>): Flow<List<Artist?>>
+
+    @Transaction
+    @Query("SELECT * FROM Artist")
+    @RewriteQueriesToDropUnusedColumns
+    fun getArtistsList(): Flow<List<Artist?>>
 
     @Transaction
     @Query("SELECT * FROM Song WHERE id in (:idsList) ")
@@ -1341,6 +1358,9 @@ interface Database {
     @Query("SELECT likedAt FROM Song WHERE id = :songId")
     fun likedAt(songId: String): Flow<Long?>
 
+    @Query("SELECT likedAt FROM Song WHERE id = :songId")
+    fun getLikedAt(songId: String): Long?
+
     @Query("UPDATE Album SET bookmarkedAt = :bookmarkedAt WHERE id = :id")
     fun bookmarkAlbum(id: String, bookmarkedAt: Long?): Int
 
@@ -1468,6 +1488,9 @@ interface Database {
 
     @Query("SELECT * FROM Album WHERE id = :id")
     fun album(id: String): Flow<Album?>
+
+    @Query("SELECT * FROM Album")
+    fun getAlbumsList(): Flow<List<Album?>>
 
     @Query("SELECT timestamp FROM Album WHERE id = :id")
     fun albumTimestamp(id: String): Long?
@@ -1807,12 +1830,20 @@ interface Database {
     fun playlistWithSongs(id: Long): Flow<PlaylistWithSongs?>
 
     @Transaction
+    @Query("SELECT * FROM Playlist WHERE browseId = :browseId")
+    fun playlistWithBrowseId(browseId: String): Playlist?
+
+    @Transaction
     @Query("SELECT * FROM Playlist WHERE trim(name) COLLATE NOCASE = trim(:name) COLLATE NOCASE")
     fun playlistWithSongsNoFlow(name: String): PlaylistWithSongs?
 
     @Transaction
     @Query("SELECT * FROM Playlist WHERE trim(name) COLLATE NOCASE = trim(:name) COLLATE NOCASE")
     fun playlistWithSongs(name: String): Flow<PlaylistWithSongs?>
+
+    @Transaction
+    @Query("SELECT * FROM Playlist WHERE browseId = :browseId")
+    fun playlistWithSongsByBrowseId(browseId: String): Flow<PlaylistWithSongs?>
 
     @Transaction
     @Query("SELECT * FROM Playlist WHERE name LIKE '${MONTHLY_PREFIX}' || :name || '%'  ")
@@ -1863,8 +1894,8 @@ interface Database {
 
     @Transaction
     @Query("SELECT DISTINCT S.* FROM Song S INNER JOIN songplaylistmap SM ON S.id=SM.songId " +
-            "INNER JOIN Playlist P ON P.id=SM.playlistId WHERE P.browseId IS NOT NULL")
-    fun songsInAllYTPlaylists(): Flow<List<Song>>
+            "INNER JOIN Playlist P ON P.id=SM.playlistId WHERE P.browseId LIKE '${YTP_PREFIX}' || '%'")
+    fun songsInAllYTPrivatePlaylists(): Flow<List<Song>>
 
     @Transaction
     @Query("SELECT DISTINCT S.* FROM Song S INNER JOIN songplaylistmap SM ON S.id=SM.songId " +
@@ -2067,6 +2098,15 @@ interface Database {
     @Query("SELECT SP.position FROM Song S INNER JOIN songplaylistmap SP ON S.id=SP.songId WHERE SP.playlistId=:id AND S.id NOT LIKE '$LOCAL_KEY_PREFIX%' ORDER BY SP.position")
     fun songsPlaylistMap(id: Long): Flow<List<Int>>
 
+    @Transaction
+    @Query("SELECT id FROM SONG WHERE likedAt IS NOT NULL AND likedAt < 0")
+    fun dislikedSongsById(): Flow<List<String>>
+
+    @SuppressWarnings(RoomWarnings.QUERY_MISMATCH)
+    @Transaction
+    @Query("SELECT * FROM Playlist WHERE browseId = :browseId")
+    fun playlist(browseId: String): Flow<Playlist?>
+
     @SuppressWarnings(RoomWarnings.QUERY_MISMATCH)
     @Transaction
     @Query("SELECT id, name, browseId, (SELECT COUNT(*) FROM SongPlaylistMap WHERE playlistId = id) as songCount FROM Playlist WHERE id=:id")
@@ -2151,7 +2191,7 @@ interface Database {
         }
     }
 
-    @Query("SELECT thumbnailUrl FROM Song JOIN SongPlaylistMap ON id = songId WHERE playlistId = :id ORDER BY position LIMIT 4")
+    @Query("SELECT thumbnailUrl FROM Song JOIN SongPlaylistMap ON id = songId WHERE playlistId = :id AND thumbnailUrl <>'' ORDER BY position LIMIT 4")
     fun playlistThumbnailUrls(id: Long): Flow<List<String?>>
 
 
@@ -2226,7 +2266,7 @@ interface Database {
     @Query("SELECT * FROM Song WHERE title LIKE :query OR artistsText LIKE :query")
     fun search(query: String): Flow<List<Song>>
 
-    @Query("SELECT albumId AS id, NULL AS name, 0 AS size FROM SongAlbumMap WHERE songId = :songId")
+    @Query("SELECT albumId AS id, Album.title AS name, 0 AS size FROM SongAlbumMap LEFT JOIN Album ON id=albumId WHERE songId = :songId")
     fun songAlbumInfo(songId: String): Info?
 
     @Query("SELECT id, name, 0 AS size FROM Artist LEFT JOIN SongArtistMap ON id = artistId WHERE songId = :songId")
@@ -2298,6 +2338,12 @@ interface Database {
     fun insert(format: Format)
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
+    fun insert(artist: Artist)
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    fun insert(album: Album)
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
     fun insert(searchQuery: SearchQuery)
 
     @Insert(onConflict = OnConflictStrategy.IGNORE)
@@ -2326,9 +2372,13 @@ interface Database {
 
     @Transaction
     fun insert(mediaItem: MediaItem, block: (Song) -> Song = { it }) {
+        var title = mediaItem.mediaMetadata.title!!.toString()
+        if(!title.startsWith(EXPLICIT_PREFIX, true) && mediaItem.isExplicit){
+            title = EXPLICIT_PREFIX + title
+        }
         val song = Song(
             id = mediaItem.mediaId,
-            title = mediaItem.mediaMetadata.title!!.toString(),
+            title = title,
             artistsText = mediaItem.mediaMetadata.artist?.toString(),
             durationText = mediaItem.mediaMetadata.extras?.getString("durationText"),
             thumbnailUrl = mediaItem.mediaMetadata.artworkUri?.toString()
@@ -2368,6 +2418,14 @@ interface Database {
     @Update
     fun update(playlist: Playlist)
 
+    @Update
+    fun update(playlist: Playlist, playlistItem: Innertube.PlaylistItem) {
+        update(playlist.copy(
+            name = playlistItem.title ?: "",
+            browseId = playlistItem.key
+        ))
+    }
+
     @Upsert
     fun upsert(lyrics: Lyrics)
 
@@ -2397,6 +2455,12 @@ interface Database {
 
     @Delete
     fun delete(song: Song)
+
+    @Delete
+    fun delete(album: Album)
+
+    @Delete
+    fun delete(artist: Artist)
 
     /**
      * Reset [Format.contentLength] of provided song.

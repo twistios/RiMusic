@@ -10,7 +10,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.ExperimentalTextApi
 import androidx.media3.common.util.UnstableApi
 import androidx.navigation.NavController
-import it.fast4x.compose.persist.PersistMapCleanup
 import it.fast4x.rimusic.R
 import it.fast4x.rimusic.ui.components.Skeleton
 
@@ -31,22 +30,20 @@ fun PlaylistScreen(
     val saveableStateHolder = rememberSaveableStateHolder()
     //PersistMapCleanup(tagPrefix = "playlist/$browseId")
 
-            Skeleton(
-                navController,
-                miniPlayer = miniPlayer,
-                navBarContent = { item ->
-                    item(0, stringResource(R.string.songs), R.drawable.musical_notes)
-                }
-            ) { currentTabIndex ->
-                saveableStateHolder.SaveableStateProvider(key = currentTabIndex) {
-                    when (currentTabIndex) {
-                        0 -> PlaylistSongList(
-                            navController = navController,
-                            browseId = browseId,
-                            params = params,
-                            maxDepth = maxDepth
-                        )
-                    }
-                }
+    Skeleton(
+        navController,
+        miniPlayer = miniPlayer,
+        navBarContent = { item ->
+            item(0, stringResource(R.string.songs), R.drawable.musical_notes)
+        }
+    ) { currentTabIndex ->
+        saveableStateHolder.SaveableStateProvider(key = currentTabIndex) {
+            when (currentTabIndex) {
+                0 -> PlaylistSongList(
+                    navController = navController,
+                    browseId = browseId,
+                )
             }
+        }
+    }
 }

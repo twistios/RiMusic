@@ -142,6 +142,7 @@ import it.fast4x.rimusic.colorPalette
 import it.fast4x.rimusic.enums.AnimatedGradient
 import it.fast4x.rimusic.enums.ColorPaletteMode
 import it.fast4x.rimusic.enums.ColorPaletteName
+import it.fast4x.rimusic.enums.SwipeAnimationNoThumbnail
 import it.fast4x.rimusic.typography
 import it.fast4x.rimusic.ui.components.themed.Search
 import it.fast4x.rimusic.ui.components.themed.AppearancePresetDialog
@@ -152,6 +153,7 @@ import it.fast4x.rimusic.utils.colorPaletteModeKey
 import it.fast4x.rimusic.utils.colorPaletteNameKey
 import it.fast4x.rimusic.utils.playerThumbnailSizeLKey
 import it.fast4x.rimusic.utils.semiBold
+import it.fast4x.rimusic.utils.swipeAnimationsNoThumbnailKey
 import it.fast4x.rimusic.utils.thumbnailFadeExKey
 import it.fast4x.rimusic.utils.thumbnailFadeKey
 import it.fast4x.rimusic.utils.thumbnailSpacingKey
@@ -572,6 +574,7 @@ fun AppearanceSettings(
         var thumbnailSpacing  by rememberPreference(thumbnailSpacingKey, 0f)
         var colorPaletteName by rememberPreference(colorPaletteNameKey, ColorPaletteName.Dynamic)
         var colorPaletteMode by rememberPreference(colorPaletteModeKey, ColorPaletteMode.Dark)
+        var swipeAnimationNoThumbnail by rememberPreference(swipeAnimationsNoThumbnailKey, SwipeAnimationNoThumbnail.Sliding)
 
         if (appearanceChooser){
             AppearancePresetDialog(
@@ -942,6 +945,28 @@ fun AppearanceSettings(
                     text = "",
                     isChecked = showthumbnail,
                     onCheckedChange = {showthumbnail = it},
+                )
+        }
+        AnimatedVisibility(visible = !showthumbnail && playerType == PlayerType.Modern && !isLandscape) {
+            if (search.input.isBlank() || stringResource(R.string.swipe_Animation_No_Thumbnail).contains(
+                    search.input,
+                    true
+                )
+            )
+                EnumValueSelectorSettingsEntry(
+                    title = stringResource(R.string.swipe_Animation_No_Thumbnail),
+                    selectedValue = swipeAnimationNoThumbnail,
+                    onValueSelected = { swipeAnimationNoThumbnail = it },
+                    valueText = {
+                        when (it) {
+                            SwipeAnimationNoThumbnail.Sliding -> stringResource(R.string.te_slide_vertical)
+                            SwipeAnimationNoThumbnail.Fade -> stringResource(R.string.te_fade)
+                            SwipeAnimationNoThumbnail.Scale -> stringResource(R.string.te_scale)
+                            SwipeAnimationNoThumbnail.Carousel -> stringResource(R.string.carousel)
+                            SwipeAnimationNoThumbnail.Circle -> stringResource(R.string.vt_circular)
+                        }
+                    },
+                    modifier = Modifier.padding(start = if (playerBackgroundColors == PlayerBackgroundColors.BlurredCoverColor) 25.dp else 0.dp)
                 )
         }
         AnimatedVisibility(visible = showthumbnail) {
@@ -1591,19 +1616,18 @@ fun AppearanceSettings(
                 isChecked = disableScrollingText,
                 onCheckedChange = { disableScrollingText = it }
             )
-        if (playerType == PlayerType.Essential) {
-            if (search.input.isBlank() || stringResource(R.string.disable_horizontal_swipe).contains(
-                    search.input,
-                    true
-                )
+
+        if (search.input.isBlank() || stringResource(if (playerType == PlayerType.Modern && !isLandscape) R.string.disable_horizontal_swipe else R.string.disable_vertical_swipe).contains(
+                search.input,
+                true
             )
-                SwitchSettingEntry(
-                    title = stringResource(R.string.disable_horizontal_swipe),
-                    text = stringResource(R.string.disable_song_switching_via_swipe),
-                    isChecked = disablePlayerHorizontalSwipe,
-                    onCheckedChange = { disablePlayerHorizontalSwipe = it }
-                )
-        }
+        )
+            SwitchSettingEntry(
+                title = stringResource(if (playerType == PlayerType.Modern && !isLandscape) R.string.disable_vertical_swipe else R.string.disable_horizontal_swipe),
+                text = stringResource(if (playerType == PlayerType.Modern && !isLandscape) R.string.disable_vertical_swipe_secondary else R.string.disable_song_switching_via_swipe),
+                isChecked = disablePlayerHorizontalSwipe,
+                onCheckedChange = { disablePlayerHorizontalSwipe = it }
+            )
 
         if (search.input.isBlank() || stringResource(R.string.player_rotating_buttons).contains(
                 search.input,
