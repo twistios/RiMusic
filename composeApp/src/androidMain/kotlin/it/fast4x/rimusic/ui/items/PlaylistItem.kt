@@ -43,6 +43,7 @@ import it.fast4x.rimusic.ui.styling.onOverlay
 import it.fast4x.rimusic.ui.styling.overlay
 import it.fast4x.rimusic.ui.styling.shimmer
 import it.fast4x.rimusic.MONTHLY_PREFIX
+import it.fast4x.rimusic.YTEDITABLEPLAYLIST_PREFIX
 import it.fast4x.rimusic.YTP_PREFIX
 import it.fast4x.rimusic.cleanPrefix
 import it.fast4x.rimusic.utils.checkFileExists
@@ -326,6 +327,19 @@ fun PlaylistItem(
                     modifier = Modifier
                         .size(40.dp)
                         .padding(all = 5.dp),
+                    contentDescription = "Background Image",
+                    contentScale = ContentScale.Fit
+                )
+            }
+
+            if (browseId?.startsWith(YTEDITABLEPLAYLIST_PREFIX) == true){
+                Image(
+                    painter = painterResource(R.drawable.cover_edit),
+                    colorFilter = ColorFilter.tint(colorPalette().text),
+                    modifier = Modifier
+                        .size(40.dp)
+                        .padding(all = 5.dp)
+                        .align(Alignment.BottomStart),
                     contentDescription = "Background Image",
                     contentScale = ContentScale.Fit
                 )

@@ -177,6 +177,7 @@ import it.fast4x.rimusic.cleanPrefix
 import it.fast4x.rimusic.MONTHLY_PREFIX
 import it.fast4x.rimusic.PINNED_PREFIX
 import it.fast4x.rimusic.PIPED_PREFIX
+import it.fast4x.rimusic.YTEDITABLEPLAYLIST_PREFIX
 import it.fast4x.rimusic.YTP_PREFIX
 import it.fast4x.rimusic.enums.PlaylistSongsTypeFilter
 import it.fast4x.rimusic.ui.components.themed.NowPlayingSongIndicator
@@ -197,6 +198,7 @@ import it.fast4x.rimusic.ui.components.themed.SongMatchingDialog
 import it.fast4x.rimusic.utils.asSong
 import it.fast4x.rimusic.utils.getAlbumVersionFromVideo
 import it.fast4x.rimusic.utils.isExplicit
+import it.fast4x.rimusic.utils.isNetworkConnected
 import it.fast4x.rimusic.utils.mediaItemToggleLike
 import it.fast4x.rimusic.utils.playlistSongsTypeFilterKey
 import it.fast4x.rimusic.utils.updateLocalPlaylist
@@ -439,13 +441,13 @@ fun LocalPlaylistSongs(
             onDismiss = { isDeleting = false },
             onConfirm = {
                 CoroutineScope(Dispatchers.IO).launch {
-                    if (isYouTubeSyncEnabled()) {
-                        /*if (playlistPreview?.playlist?.name?.contains(YTP_PREFIX) == true && playlistPreview?.playlist?.browseId?.startsWith("RD") == true){
-                            playlistPreview?.playlist?.browseId?.let { YtMusic.removelikePlaylistOrAlbum(it) }
-                        } else*/ //when we can figure out how to recognize an editable playlist
-                        playlistPreview?.playlist?.browseId?.let { YtMusic.removelikePlaylistOrAlbum(it) }
-                        playlistPreview?.playlist?.browseId?.let { YtMusic.deletePlaylist(it) }
-                        println("Innertube YtMusic deletetePlaylist")
+                    if (isYouTubeSyncEnabled() && playlistPreview?.playlist?.name?.contains(YTP_PREFIX) == true) {
+                        if (playlistPreview?.playlist?.browseId?.startsWith(YTEDITABLEPLAYLIST_PREFIX) == true) {
+                            playlistPreview?.playlist?.browseId?.let {YtMusic.deletePlaylist(cleanPrefix(it))
+                            }
+                        } else {
+                            playlistPreview?.playlist?.browseId?.let {YtMusic.removelikePlaylistOrAlbum(cleanPrefix(it))}
+                        }
                     }
                     Database.asyncTransaction {
                         playlistPreview?.playlist?.let(Database::delete)
@@ -457,7 +459,7 @@ fun LocalPlaylistSongs(
                         context = context,
                         coroutineScope = coroutineScope,
                         pipedSession = pipedSession.toApiSession(),
-                        id = UUID.fromString(playlistPreview?.playlist?.browseId)
+                        id = UUID.fromString(cleanPrefix(playlistPreview?.playlist?.browseId ?: ""))
                     )
 
 
@@ -504,11 +506,17 @@ fun LocalPlaylistSongs(
                         withContext(Dispatchers.IO) {
                             playlistPreview.playlist.browseId?.let {
                                 YtMusic.getPlaylist(
-                                    playlistId = it
+                                    playlistId = cleanPrefix(it)
                                 ).completed()
                             }
                         }
                     }?.getOrNull()?.let { remotePlaylist ->
+                        val playlistIdChecked =
+                            if (remotePlaylist.playlist.key.startsWith("VL")) remotePlaylist.playlist.key.substringAfter("VL") else remotePlaylist.playlist.key
+//                        // If remote playlist is editable, it update local playlist key with editable prefix
+                        if (remotePlaylist.isEditable == true && playlistPreview.playlist.browseId?.startsWith(YTEDITABLEPLAYLIST_PREFIX) == false)
+                            Database.update(playlistPreview.playlist.copy(browseId = "$YTEDITABLEPLAYLIST_PREFIX$playlistIdChecked"))
+
                         Database.clearPlaylist(playlistId)
 
                         remotePlaylist.songs
@@ -529,7 +537,7 @@ fun LocalPlaylistSongs(
                     coroutineScope = coroutineScope,
                     pipedSession = pipedSession.toApiSession(),
                     idPipedPlaylist = UUID.fromString(
-                        playlistPreview.playlist.browseId
+                        cleanPrefix(playlistPreview.playlist.browseId ?: "")
                     ),
                     playlistId = playlistPreview.playlist.id
 
@@ -759,10 +767,12 @@ fun LocalPlaylistSongs(
             setValue = { text ->
                 if (isRenaming) {
                     CoroutineScope(Dispatchers.IO).launch {
-                        println("Innertube YtMusic try to rename Playlist with browseId: ${playlistPreview?.playlist?.browseId}, name: $text")
-                        playlistPreview?.playlist?.browseId?.let {
-                            println("Innertube YtMusic renamePlaylist with id: $it, name: $text")
-                            YtMusic.renamePlaylist(it, text)
+                        if (isYouTubeSyncEnabled() && (playlistPreview?.playlist?.browseId?.startsWith(YTEDITABLEPLAYLIST_PREFIX) == true)) {
+                            println("Innertube YtMusic try to rename Playlist with browseId: ${playlistPreview?.playlist?.browseId}, name: $text")
+                            playlistPreview?.playlist?.browseId?.let {
+                                println("Innertube YtMusic renamePlaylist with id: $it, name: $text")
+                                YtMusic.renamePlaylist(cleanPrefix(it), text)
+                            }
                         }
                         Database.asyncTransaction {
                             playlistPreview?.playlist?.copy(
@@ -777,7 +787,7 @@ fun LocalPlaylistSongs(
                             context = context,
                             coroutineScope = coroutineScope,
                             pipedSession = pipedSession.toApiSession(),
-                            id = UUID.fromString(playlistPreview?.playlist?.browseId),
+                            id = UUID.fromString(cleanPrefix(playlistPreview?.playlist?.browseId ?: "")),
                             name = text
                         )
 
@@ -971,6 +981,8 @@ fun LocalPlaylistSongs(
         }
     }
 
+
+    println("LocalPlaylistSongs playlist browseId ${playlistPreview?.playlist?.browseId}")
 
     Box(
         modifier = Modifier
@@ -1294,25 +1306,48 @@ fun LocalPlaylistSongs(
                     )
 
 
-                    HeaderIconButton(
-                        icon = R.drawable.random,
-                        enabled = playlistSongs.any {(it.song.thumbnailUrl?.startsWith("https://lh3.googleusercontent.com") == false) && !(it.song.id.startsWith(LOCAL_KEY_PREFIX))},
-                        color = if (playlistSongs.any {(it.song.thumbnailUrl?.startsWith("https://lh3.googleusercontent.com") == false) && !(it.song.id.startsWith(LOCAL_KEY_PREFIX))}) colorPalette.text else colorPalette.textDisabled,
-                        onClick = {},
-                        modifier = Modifier
-                            .combinedClickable(
-                                onClick = {
-                                    if (playlistSongs.any {(it.song.thumbnailUrl?.startsWith("https://lh3.googleusercontent.com") == false) && !(it.song.id.startsWith(LOCAL_KEY_PREFIX))}) {
-                                        showConfirmMatchAllDialog = true
-                                    } else {
-                                        SmartMessage(context.resources.getString(R.string.no_videos_found), context = context)
+
+                    if ((playlistPreview?.playlist?.browseId == null) || (playlistPreview?.playlist?.browseId?.startsWith(YTEDITABLEPLAYLIST_PREFIX) == true)) {
+                        HeaderIconButton(
+                            icon = R.drawable.random,
+                            enabled = playlistSongs.any {
+                                (it.song.thumbnailUrl?.startsWith("https://lh3.googleusercontent.com") == false) && !(it.song.id.startsWith(
+                                    LOCAL_KEY_PREFIX
+                                ))
+                            },
+                            color = if (playlistSongs.any {
+                                    (it.song.thumbnailUrl?.startsWith("https://lh3.googleusercontent.com") == false) && !(it.song.id.startsWith(
+                                        LOCAL_KEY_PREFIX
+                                    ))
+                                }) colorPalette.text else colorPalette.textDisabled,
+                            onClick = {},
+                            modifier = Modifier
+                                .combinedClickable(
+                                    onClick = {
+                                        if (!isNetworkConnected(context) && (playlistPreview?.playlist?.browseId?.startsWith(YTEDITABLEPLAYLIST_PREFIX) == true) && isYouTubeSyncEnabled()){
+                                            SmartMessage(context.resources.getString(R.string.no_connection), context = context, type = PopupType.Error)
+                                        } else if (playlistSongs.any {
+                                                (it.song.thumbnailUrl?.startsWith("https://lh3.googleusercontent.com") == false) && !(it.song.id.startsWith(
+                                                    LOCAL_KEY_PREFIX
+                                                ))
+                                            }) {
+                                            showConfirmMatchAllDialog = true
+                                        } else {
+                                            SmartMessage(
+                                                context.resources.getString(R.string.no_videos_found),
+                                                context = context
+                                            )
+                                        }
+                                    },
+                                    onLongClick = {
+                                        SmartMessage(
+                                            context.resources.getString(R.string.get_album_version),
+                                            context = context
+                                        )
                                     }
-                                },
-                                onLongClick = {
-                                    SmartMessage(context.resources.getString(R.string.get_album_version), context = context)
-                                }
-                            )
-                    )
+                                )
+                        )
+                    }
 
                     if (showConfirmDeleteDownloadDialog) {
                         ConfirmationDialog(
@@ -1458,6 +1493,7 @@ fun LocalPlaylistSongs(
                                             }
                                         },
                                         showOnSyncronize = !playlistPreview.playlist.browseId.isNullOrBlank(),
+                                        showLinkUnlink = isNetworkConnected(context) && playlistPreview.playlist.name.contains(YTP_PREFIX),
                                         /*
                                         onSyncronize = {
                                             if (!playlistPreview.playlist.name.startsWith(
@@ -1512,16 +1548,35 @@ fun LocalPlaylistSongs(
                                         },
                                         */
                                         onSyncronize = {sync();SmartMessage(context.resources.getString(R.string.done), context = context) },
+                                        onLinkUnlink = {
+                                            if (!isNetworkConnected(context)){
+                                                SmartMessage(context.resources.getString(R.string.no_connection), context = context, type = PopupType.Error)
+                                            } else if (playlistPreview.playlist.name.contains(YTP_PREFIX)){
+                                                CoroutineScope(Dispatchers.IO).launch {
+                                                    if (playlistPreview.playlist.browseId?.startsWith(YTEDITABLEPLAYLIST_PREFIX) == true) {
+                                                        playlistPreview.playlist.browseId.let {YtMusic.deletePlaylist(it.substringAfter(YTEDITABLEPLAYLIST_PREFIX) ?: "")}
+                                                    } else {
+                                                        playlistPreview.playlist.browseId.let {YtMusic.removelikePlaylistOrAlbum(it?.substringAfter(YTEDITABLEPLAYLIST_PREFIX) ?: "")}
+                                                    }
+                                                    Database.update(
+                                                        playlistPreview.playlist.copy(
+                                                            name = (playlistPreview.playlist.name).replace(YTP_PREFIX,""),
+                                                            browseId = null
+                                                        )
+                                                    )
+                                                }
+                                            }
+                                        },
                                         onRename = {
-                                            //if (playlistPreview.playlist.browseId == null || playlistNotMonthlyType || playlistNotPipedType)
-                                            if ((playlistPreview.playlist.browseId == null) && playlistNotMonthlyType) {
+                                            if (!isNetworkConnected(context) && playlistPreview.playlist.browseId?.startsWith(YTEDITABLEPLAYLIST_PREFIX) == true && isYouTubeSyncEnabled()){
+                                                SmartMessage(context.resources.getString(R.string.no_connection), context = context, type = PopupType.Error)
+                                            } else if ((((playlistPreview.playlist.browseId == null) && playlistNotMonthlyType)
+                                                        || (playlistPreview.playlist.browseId?.startsWith(YTEDITABLEPLAYLIST_PREFIX) == true))
+                                                || !playlistPreview.playlist.name.contains(YTP_PREFIX)
+                                            ){
                                                 isRenaming = true
                                             }
-                                            else
-                                            /*
-                                            SmartToast(context.resources.getString(R.string.info_cannot_rename_a_monthly_or_piped_playlist))
-                                             */
-                                                SmartMessage(context.resources.getString(R.string.info_cannot_rename_a_monthly_or_piped_playlist), context = context)
+                                            else SmartMessage(context.resources.getString(R.string.info_cannot_rename_a_monthly_or_piped_playlist), context = context)
                                         },
                                         onAddToPlaylist = { playlistPreview ->
                                             position =
@@ -1553,7 +1608,7 @@ fun LocalPlaylistSongs(
                                                         context = context,
                                                         coroutineScope = coroutineScope,
                                                         pipedSession = pipedSession.toApiSession(),
-                                                        id = UUID.fromString(playlistPreview.playlist.browseId),
+                                                        id = UUID.fromString(cleanPrefix(playlistPreview.playlist.browseId ?: "")),
                                                         videos = listMediaItems.map { it.mediaId }
                                                             .toList()
                                                     )
@@ -1582,7 +1637,7 @@ fun LocalPlaylistSongs(
                                                         context = context,
                                                         coroutineScope = coroutineScope,
                                                         pipedSession = pipedSession.toApiSession(),
-                                                        id = UUID.fromString(playlistPreview.playlist.browseId),
+                                                        id = UUID.fromString(cleanPrefix(playlistPreview.playlist.browseId ?: "")),
                                                         videos = listMediaItems.map { it.mediaId }
                                                             .toList()
                                                     )
@@ -1607,16 +1662,18 @@ fun LocalPlaylistSongs(
                                                 SmartMessage(context.resources.getString(R.string.info_cannot_renumbering_a_monthly_playlist), context = context)
                                         },
                                         onDelete = {
-                                            isDeleting = true
+                                            if (!isNetworkConnected(context) && playlistPreview.playlist.name.contains(YTP_PREFIX) && isYouTubeSyncEnabled()){
+                                                SmartMessage(context.resources.getString(R.string.no_connection), context = context, type = PopupType.Error)
+                                            } else isDeleting = true
                                         },
                                         showonListenToYT = !playlistPreview.playlist.browseId.isNullOrBlank(),
                                         onListenToYT = {
                                             binder?.player?.pause()
                                             uriHandler.openUri(
                                                 "https://youtube.com/playlist?list=${
-                                                    playlistPreview?.playlist?.browseId?.removePrefix(
-                                                        "VL"
-                                                    )
+                                                    playlistPreview.playlist.browseId?.let { 
+                                                        cleanPrefix(it).removePrefix("VL")
+                                                    }
                                                 }"
                                             )
                                         },
@@ -2014,34 +2071,45 @@ fun LocalPlaylistSongs(
                     SwipeableQueueItem(
                         mediaItem = song.asMediaItem,
                         onRemoveFromQueue = {
-                            Database.asyncTransaction {
-                                Database.move(playlistId, positionInPlaylist, Int.MAX_VALUE)
-                                Database.delete(SongPlaylistMap(song.song.id, playlistId, Int.MAX_VALUE))
-                            }
-
-                            if(isYouTubeSyncEnabled() && playlistNotPipedType && playlistNotMonthlyType && playlistPreview?.playlist?.browseId != null)
-                                CoroutineScope(Dispatchers.IO).launch {
-                                    playlistPreview?.playlist?.browseId?.let { YtMusic.removeFromPlaylist(
-                                        it, song.song.id
-                                    ) }
+                            if (!isNetworkConnected(context) && (playlistPreview?.playlist?.browseId?.startsWith(YTEDITABLEPLAYLIST_PREFIX) == true) && isYouTubeSyncEnabled()){
+                                SmartMessage(context.resources.getString(R.string.no_connection), context = context, type = PopupType.Error)
+                            } else if ((playlistPreview?.playlist?.browseId == null)
+                                || playlistPreview?.playlist?.browseId?.startsWith(YTEDITABLEPLAYLIST_PREFIX) == true
+                                || (playlistPreview?.playlist?.name?.contains(YTP_PREFIX) == false)) {
+                                Database.asyncTransaction {
+                                    Database.move(playlistId, positionInPlaylist, Int.MAX_VALUE)
+                                    Database.delete(
+                                        SongPlaylistMap(song.song.id, playlistId, Int.MAX_VALUE)
+                                    )
                                 }
+                                if (isYouTubeSyncEnabled() && playlistNotPipedType && playlistNotMonthlyType && playlistPreview?.playlist?.browseId != null)
+                                    CoroutineScope(Dispatchers.IO).launch {
+                                        playlistPreview?.playlist?.browseId?.let {
+                                            YtMusic.removeFromPlaylist(it, song.song.id)
+                                        }
+                                    }
 
-                            if (playlistPreview?.playlist?.name?.startsWith(PIPED_PREFIX) == true && isPipedEnabled && pipedSession.token.isNotEmpty()) {
-                                removeFromPipedPlaylist(
-                                    context = context,
-                                    coroutineScope = coroutineScope,
-                                    pipedSession = pipedSession.toApiSession(),
-                                    id = UUID.fromString(playlistPreview?.playlist?.browseId),
-                                    positionInPlaylist
-                                )
-                            }
-                            coroutineScope.launch {
+                                if (playlistPreview?.playlist?.name?.startsWith(PIPED_PREFIX) == true && isPipedEnabled && pipedSession.token.isNotEmpty()) {
+                                    removeFromPipedPlaylist(
+                                        context = context,
+                                        coroutineScope = coroutineScope,
+                                        pipedSession = pipedSession.toApiSession(),
+                                        id = UUID.fromString(playlistPreview?.playlist?.browseId),
+                                        positionInPlaylist
+                                    )
+                                }
+                                coroutineScope.launch {
+                                    SmartMessage(
+                                        context.resources.getString(R.string.deleted) + " \"" + song.asMediaItem.mediaMetadata.title.toString() + " - " + song.asMediaItem.mediaMetadata.artist.toString() + "\" ",
+                                        type = PopupType.Warning,
+                                        context = context,
+                                        durationLong = true
+                                    )
+                                }
+                            } else {
                                 SmartMessage(
-                                    context.resources.getString(R.string.deleted) + " \"" + song.asMediaItem.mediaMetadata.title.toString() + " - " + song.asMediaItem.mediaMetadata.artist.toString() + "\" ",
-                                    type = PopupType.Warning, context = context, durationLong = true
-                                )
+                                    context.resources.getString(R.string.cannot_delete_from_online_playlists),type = PopupType.Warning, context = context)
                             }
-
                         },
                         onPlayNext = {
                             binder?.player?.addNext(song.asMediaItem)
@@ -2188,8 +2256,18 @@ fun LocalPlaylistSongs(
                                         menuState.display {
                                             InPlaylistMediaItemMenu(
                                                 onMatchingSong = {
-                                                    songMatchingDialogEnable = true
-                                                    matchingSongEntity = song
+                                                    if (!isNetworkConnected(context) && (playlistPreview?.playlist?.browseId?.startsWith(YTEDITABLEPLAYLIST_PREFIX) == true) && isYouTubeSyncEnabled()){
+                                                        SmartMessage(context.resources.getString(R.string.no_connection), context = context, type = PopupType.Error)
+                                                    } else if (((playlistPreview?.playlist?.browseId == null)
+                                                                || (playlistPreview?.playlist?.browseId?.startsWith(YTEDITABLEPLAYLIST_PREFIX) == true))
+                                                        || (playlistPreview?.playlist?.name?.contains(YTP_PREFIX) == false)
+                                                    ){
+                                                        songMatchingDialogEnable = true
+                                                        matchingSongEntity = song
+                                                    } else {
+                                                        SmartMessage(
+                                                            context.resources.getString(R.string.cannot_delete_from_online_playlists),type = PopupType.Warning, context = context)
+                                                        }
                                                 },
                                                 navController = navController,
                                                 playlist = playlistPreview,

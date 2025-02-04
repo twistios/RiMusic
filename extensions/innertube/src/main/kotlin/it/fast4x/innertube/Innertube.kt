@@ -331,6 +331,7 @@ object Innertube {
         val info: Info<NavigationEndpoint.Endpoint.Browse>?,
         val channel: Info<NavigationEndpoint.Endpoint.Browse>?,
         val songCount: Int?,
+        val isEditable: Boolean?,
         override val thumbnail: Thumbnail?
     ) : Item() {
         override val key get() = info!!.endpoint!!.browseId!!
@@ -650,6 +651,23 @@ object Innertube {
                         removedVideoId = videoId,
                         setVideoId = setVideoId,
                     )
+                )
+            )
+        )
+    }
+
+    suspend fun addPlaylistToPlaylist(
+        ytClient: Client,
+        playlistId: String,
+        addPlaylistId: String,
+    ) = client.post(playlistEdit) {
+        setLogin(ytClient, setLogin = true)
+        setBody(
+            EditPlaylistBody(
+                context = Context.DefaultWebWithLocale,
+                playlistId = playlistId.removePrefix("VL"),
+                actions = listOf(
+                    Action.AddPlaylistAction(addedFullListId = addPlaylistId)
                 )
             )
         )
