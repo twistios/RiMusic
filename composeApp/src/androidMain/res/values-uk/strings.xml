@@ -740,7 +740,7 @@
     <string name="social_reddit_info">Приєднатися до спільноти на Reddit</string>
     <string name="sleep_timer_ended">Таймер сну завершено</string>
     <string name="social_discord">Discord</string>
-    <string name="social_discord_info">Приєднатися до спільноти у Discord</string>
+    <string name="social_discord_info">Приєднайтесь до спільноти Discord</string>
     <string name="discord_enable_rich_presence">Увімкнути Rich Presence</string>
     <string name="discord_disconnect">Вимкнутись</string>
     <string name="discord_connect">Підключитися</string>
@@ -896,4 +896,13 @@
     <string name="updating_playlist_message">Оновити пісні з відсутнім ідентифікатором альбому</string>
     <string name="syncing">Синхронізація...</string>
     <string name="autosync_channels">Автосинхронізація підписаних каналів</string>
+    <string name="autosync_albums">Автосинхронізація збережених альбомів</string>
+    <string name="save_youtube_library">Зберегти у бібліотеці YouTube</string>
+    <string name="cant_rename_Saved_albums">Неможливо перейменувати альбоми, збережені в бібліотеці Youtube</string>
+    <string name="ytm_library">Бібліотека YTM</string>
+    <string name="cannot_delete_from_online_playlists">Cannot Delete Songs from an Online Playlist</string>
+    <string name="ytm_playlists">YTM Playlists</string>
+    <string name="no_connection">No Connection</string>
+    <string name="unlink_from_ytm">Unlink from Youtube Library</string>
+    <string name="unlink_from_yt">Unlink from Youtube</string>
 </resources>

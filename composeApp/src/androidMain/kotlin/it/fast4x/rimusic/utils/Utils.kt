@@ -28,6 +28,7 @@ import com.zionhuang.innertube.pages.LibraryPage
 import io.ktor.client.HttpClient
 import io.ktor.client.plugins.UserAgent
 import it.fast4x.innertube.Innertube
+import it.fast4x.innertube.YtMusic
 import it.fast4x.innertube.models.bodies.ContinuationBody
 import it.fast4x.innertube.models.bodies.SearchBody
 import it.fast4x.innertube.requests.playlistPage
@@ -44,6 +45,7 @@ import it.fast4x.rimusic.models.Album
 import it.fast4x.rimusic.models.Artist
 import it.fast4x.rimusic.models.Info
 import it.fast4x.rimusic.models.Lyrics
+import it.fast4x.rimusic.models.Playlist
 import it.fast4x.rimusic.models.Song
 import it.fast4x.rimusic.models.SongAlbumMap
 import it.fast4x.rimusic.models.SongArtistMap
@@ -52,6 +54,7 @@ import it.fast4x.rimusic.models.SongPlaylistMap
 import it.fast4x.rimusic.service.LOCAL_KEY_PREFIX
 import it.fast4x.rimusic.service.isLocal
 import it.fast4x.rimusic.ui.components.themed.NewVersionDialog
+import it.fast4x.rimusic.ui.screens.settings.isYouTubeSyncEnabled
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.firstOrNull
@@ -194,7 +197,8 @@ val Innertube.SongItem.asMediaItem: MediaItem
                         "artistNames" to authors?.filter { it.endpoint != null }
                             ?.mapNotNull { it.name },
                         "artistIds" to authors?.mapNotNull { it.endpoint?.browseId },
-                        EXPLICIT_BUNDLE_TAG to explicit
+                        EXPLICIT_BUNDLE_TAG to explicit,
+                        "setVideoId" to setVideoId,
                     )
                 )
                 .build()
@@ -688,7 +692,7 @@ fun Modifier.conditional(condition : Boolean, modifier : Modifier.() -> Modifier
 }
 
 @OptIn(UnstableApi::class)
-suspend fun getAlbumVersionFromVideo(song: Song,playlistId : Long, position : Int){
+suspend fun getAlbumVersionFromVideo(song: Song,playlistId : Long, position : Int, playlist : Playlist?){
     val isExtPlaylist = (song.thumbnailUrl == "") && (song.durationText != "0:00")
     var songNotFound: Song
     var random4Digit  = Random.nextInt(1000, 10000)
@@ -776,7 +780,21 @@ suspend fun getAlbumVersionFromVideo(song: Song,playlistId : Long, position : In
 
     Database.asyncTransaction {
         if (findSongIndex() != -1) {
-            deleteSongFromPlaylist(song.id, playlistId)
+            if (isYouTubeSyncEnabled() && playlist?.isYoutubePlaylist == true && playlist.isEditable){
+                Database.asyncTransaction {
+                    CoroutineScope(Dispatchers.IO).launch {
+                        if (removeYTSongFromPlaylist(
+                                song.id,
+                                playlist.browseId ?: "",
+                                playlist.id
+                            )
+                        )
+                            deleteSongFromPlaylist(song.id, playlist.id)
+
+                    }
+                }
+
+            }
             if (matchedSong != null) {
                 if (songExist(matchedSong.asSong.id) == 0) {
                     Database.insert(matchedSong.asMediaItem)
@@ -786,7 +804,7 @@ suspend fun getAlbumVersionFromVideo(song: Song,playlistId : Long, position : In
                         songId = matchedSong.asMediaItem.mediaId,
                         playlistId = playlistId,
                         position = position
-                    )
+                    ).default()
                 )
                 insert(
                     Album(id = matchedSong.album?.endpoint?.browseId ?: "", title = matchedSong.asMediaItem.mediaMetadata.albumTitle?.toString()),
@@ -795,6 +813,10 @@ suspend fun getAlbumVersionFromVideo(song: Song,playlistId : Long, position : In
                 CoroutineScope(Dispatchers.IO).launch {
                     val album = Database.album(matchedSong.album?.endpoint?.browseId ?: "").firstOrNull()
                     album?.copy(thumbnailUrl = matchedSong.thumbnail?.url)?.let { update(it) }
+
+                    if (isYouTubeSyncEnabled() && playlist?.isYoutubePlaylist == true && playlist.isEditable){
+                        YtMusic.addToPlaylist(playlist.browseId ?: "", matchedSong.asMediaItem.mediaId)
+                    }
                 }
                 if ((artistsNames != null) && (artistsIds != null)) {
                     artistsNames.let { artistNames ->
@@ -823,7 +845,7 @@ suspend fun getAlbumVersionFromVideo(song: Song,playlistId : Long, position : In
                     songId = songNotFound.id,
                     playlistId = playlistId,
                     position = position
-                )
+                ).default()
             )
         }
     }

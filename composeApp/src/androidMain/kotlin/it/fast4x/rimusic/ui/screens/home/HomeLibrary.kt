@@ -179,7 +179,7 @@ fun HomeLibrary(
                         .also {
                             println("Innertube YtMusic createPlaylist: $it")
                             Database.asyncTransaction {
-                                insert(Playlist(name = YTP_PREFIX+newValue, browseId = it))
+                                insert(Playlist(name = newValue, browseId = it, isYoutubePlaylist = true, isEditable = true))
                             }
                         }
 
@@ -233,7 +233,7 @@ fun HomeLibrary(
                     songId = song.id,
                     playlistId = plistId,
                     position = index
-                )
+                ).default()
             )
 
             if(album.id !=""){
@@ -383,7 +383,7 @@ fun HomeLibrary(
                         }
                     val condition: (PlaylistPreview) -> Boolean = {
                         if (playlistType == PlaylistsType.YTPlaylist){
-                            it.playlist.name.contains(listPrefix)
+                            it.playlist.isYoutubePlaylist
                         } else it.playlist.name.startsWith( listPrefix, true )
                     }
                     items(
@@ -402,7 +402,9 @@ fun HomeLibrary(
                                     search.onItemSelected()
                                     onPlaylistClick(preview.playlist)
                                 }),
-                            disableScrollingText = disableScrollingText
+                            disableScrollingText = disableScrollingText,
+                            isYoutubePlaylist = preview.playlist.isYoutubePlaylist,
+                            isEditable = preview.playlist.isEditable
                         )
                     }
 

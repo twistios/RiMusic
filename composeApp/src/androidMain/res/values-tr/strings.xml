@@ -579,7 +579,7 @@
     <string name="info_prevent_play_songs_with_age_limitation">Yaş sınırlaması olan şarkıların oynatılmasını engelle</string>
     <string name="cache_location_private">Özel</string>
     <string name="cache_location_system">Sistem</string>
-    <string name="info_cannot_rename_a_monthly_or_piped_playlist">Aylık veya piped oynatma listesi yeniden adlandırılamaz</string>
+    <string name="info_cannot_rename_a_monthly_or_piped_playlist">Aylık veya çevrimiçi veya piped çalma listesi yeniden adlandırılamıyor</string>
     <string name="debug">DEBUG</string>
     <string name="enable_log_debug">Hata ayıklama günlüğünü etkinleştir</string>
     <string name="if_enabled_create_a_log_file_to_highlight_errors">Etkinleştirilmişse, hataları vurgulamak için bir günlük dosyası oluştur</string>
@@ -896,4 +896,13 @@
     <string name="updating_playlist_message">Eksik Albüm Kimliğine Sahip Şarkıları Güncelleyin</string>
     <string name="syncing">Senkronize ediliyor...</string>
     <string name="autosync_channels">Abone Olunan Kanalları Otomatik Senkronize Et</string>
+    <string name="autosync_albums">Kayıtlı Albümleri Otomatik Senkronize Et</string>
+    <string name="save_youtube_library">Çalma listesini Youtube Kitaplığına kaydet</string>
+    <string name="cant_rename_Saved_albums">Youtube Müzik Kütüphanesinde Kayıtlı Albümler Yeniden Adlandırılamıyor</string>
+    <string name="ytm_library">YTM Kütüphanesi</string>
+    <string name="cannot_delete_from_online_playlists">Çevrimiçi Çalma Listesinden Şarkı Silinemez</string>
+    <string name="ytm_playlists">YTM Çalma Listeleri</string>
+    <string name="no_connection">Bağlantı yok</string>
+    <string name="unlink_from_ytm">Youtube Kitaplığından Bağlantıyı Kaldır</string>
+    <string name="unlink_from_yt">Youtube bağlantısını kaldır</string>
 </resources>

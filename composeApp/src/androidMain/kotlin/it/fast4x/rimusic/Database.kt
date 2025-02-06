@@ -560,8 +560,8 @@ interface Database {
     fun eventWithSongByPeriod(date: Long, limit:Long = Long.MAX_VALUE): Flow<List<EventWithSong>>
 
     @Transaction
-    @Query("SELECT * FROM Playlist WHERE name LIKE '%' || '${YTP_PREFIX}' || '%'")
-    fun ytmPrivatePlaylists(): Flow<List<Playlist?>>
+    @Query("SELECT * FROM Playlist WHERE isYoutubePlaylist = 1")
+    fun ytmPrivatePlaylists(): Flow<List<Playlist>>
 
     @Transaction
     @Query("SELECT * FROM Song WHERE totalPlayTimeMs > 0 ORDER BY totalPlayTimeMs DESC LIMIT :count")
@@ -1850,7 +1850,7 @@ interface Database {
     fun monthlyPlaylists(name: String?): Flow<List<PlaylistWithSongs?>>
 
     @Transaction
-    @Query("SELECT id, name, browseId, (SELECT COUNT(*) FROM SongPlaylistMap WHERE playlistId = id) as songCount FROM Playlist WHERE name LIKE '${MONTHLY_PREFIX}' || :name || '%'  ")
+    @Query("SELECT *, (SELECT COUNT(*) FROM SongPlaylistMap WHERE playlistId = id) as songCount FROM Playlist WHERE name LIKE '${MONTHLY_PREFIX}' || :name || '%'  ")
     fun monthlyPlaylistsPreview(name: String?): Flow<List<PlaylistPreview>>
 
     @RewriteQueriesToDropUnusedColumns
@@ -1894,7 +1894,7 @@ interface Database {
 
     @Transaction
     @Query("SELECT DISTINCT S.* FROM Song S INNER JOIN songplaylistmap SM ON S.id=SM.songId " +
-            "INNER JOIN Playlist P ON P.id=SM.playlistId WHERE P.browseId LIKE '${YTP_PREFIX}' || '%'")
+            "INNER JOIN Playlist P ON P.id=SM.playlistId WHERE P.isYoutubePlaylist = 1")
     fun songsInAllYTPrivatePlaylists(): Flow<List<Song>>
 
     @Transaction
@@ -2058,6 +2058,18 @@ interface Database {
     @Query("""
         SELECT DISTINCT S.*, Album.title as albumTitle, Format.contentLength as contentLength
         FROM Song S 
+        INNER JOIN SongPlaylistMap SP ON S.id = SP.songId 
+        LEFT JOIN SongAlbumMap ON SongAlbumMap.songId = S.id 
+        LEFT JOIN Album ON Album.id = SongAlbumMap.albumId 
+        LEFT JOIN Format ON Format.songId = S.id
+        WHERE SP.playlistId = :id 
+        ORDER BY SP.dateAdded
+    """)
+    fun sortSongsFromPlaylistByDateAdded( id: Long ): Flow<List<SongEntity>>
+
+    @Query("""
+        SELECT DISTINCT S.*, Album.title as albumTitle, Format.contentLength as contentLength
+        FROM Song S 
         INNER JOIN songplaylistmap SP ON S.id = SP.songId 
         LEFT JOIN SongAlbumMap ON SongAlbumMap.songId = S.id 
         LEFT JOIN Album ON Album.id = SongAlbumMap.albumId 
@@ -2080,7 +2092,7 @@ interface Database {
             PlaylistSongSortBy.Title -> sortSongsFromPlaylistByTitle( id )
             PlaylistSongSortBy.Duration -> sortSongsFromPlaylistByDuration( id )
             PlaylistSongSortBy.DateLiked -> sortSongsFromPlaylistByLikedAt( id )
-            PlaylistSongSortBy.DateAdded -> sortSongsFromPlaylistByRowId( id )
+            PlaylistSongSortBy.DateAdded -> sortSongsFromPlaylistByDateAdded( id )
         }.map {
             it.run {
                 if( sortOrder == SortOrder.Descending )
@@ -2109,62 +2121,62 @@ interface Database {
 
     @SuppressWarnings(RoomWarnings.QUERY_MISMATCH)
     @Transaction
-    @Query("SELECT id, name, browseId, (SELECT COUNT(*) FROM SongPlaylistMap WHERE playlistId = id) as songCount FROM Playlist WHERE id=:id")
+    @Query("SELECT *, (SELECT COUNT(*) FROM SongPlaylistMap WHERE playlistId = id) as songCount FROM Playlist WHERE id=:id")
     fun singlePlaylistPreview(id: Long): Flow<PlaylistPreview?>
 
     @SuppressWarnings(RoomWarnings.QUERY_MISMATCH)
     @Transaction
-    @Query("SELECT id, name, browseId, (SELECT COUNT(*) FROM SongPlaylistMap WHERE playlistId = id) as songCount FROM Playlist WHERE name LIKE '${PINNED_PREFIX}%' ORDER BY name COLLATE NOCASE ASC")
+    @Query("SELECT *, (SELECT COUNT(*) FROM SongPlaylistMap WHERE playlistId = id) as songCount FROM Playlist WHERE name LIKE '${PINNED_PREFIX}%' ORDER BY name COLLATE NOCASE ASC")
     fun playlistPinnedPreviewsByNameAsc(): Flow<List<PlaylistPreview>>
 
     @SuppressWarnings(RoomWarnings.QUERY_MISMATCH)
     @Transaction
-    @Query("SELECT id, name, browseId, (SELECT COUNT(*) FROM SongPlaylistMap WHERE playlistId = id) as songCount FROM Playlist ORDER BY name COLLATE NOCASE ASC")
+    @Query("SELECT *, (SELECT COUNT(*) FROM SongPlaylistMap WHERE playlistId = id) as songCount FROM Playlist ORDER BY name COLLATE NOCASE ASC")
     fun playlistPreviewsByNameAsc(): Flow<List<PlaylistPreview>>
 
     @SuppressWarnings(RoomWarnings.QUERY_MISMATCH)
     @Transaction
-    @Query("SELECT id, name, browseId, (SELECT COUNT(*) FROM SongPlaylistMap WHERE playlistId = id) as songCount FROM Playlist ORDER BY ROWID ASC")
+    @Query("SELECT *, (SELECT COUNT(*) FROM SongPlaylistMap WHERE playlistId = id) as songCount FROM Playlist ORDER BY ROWID ASC")
     fun playlistPreviewsByDateAddedAsc(): Flow<List<PlaylistPreview>>
 
     @SuppressWarnings(RoomWarnings.QUERY_MISMATCH)
     @Transaction
-    @Query("SELECT id, name, browseId, (SELECT COUNT(*) FROM SongPlaylistMap WHERE playlistId = id) as songCount FROM Playlist ORDER BY songCount ASC")
+    @Query("SELECT *, (SELECT COUNT(*) FROM SongPlaylistMap WHERE playlistId = id) as songCount FROM Playlist ORDER BY songCount ASC")
     fun playlistPreviewsByDateSongCountAsc(): Flow<List<PlaylistPreview>>
 
     @SuppressWarnings(RoomWarnings.QUERY_MISMATCH)
     @Transaction
-    @Query("SELECT id, name, browseId, (SELECT COUNT(*) FROM SongPlaylistMap WHERE playlistId = id) as songCount FROM Playlist ORDER BY name COLLATE NOCASE DESC")
+    @Query("SELECT *, (SELECT COUNT(*) FROM SongPlaylistMap WHERE playlistId = id) as songCount FROM Playlist ORDER BY name COLLATE NOCASE DESC")
     fun playlistPreviewsByNameDesc(): Flow<List<PlaylistPreview>>
 
     @SuppressWarnings(RoomWarnings.QUERY_MISMATCH)
     @Transaction
-    @Query("SELECT id, name, browseId, (SELECT COUNT(*) FROM SongPlaylistMap WHERE playlistId = id) as songCount FROM Playlist ORDER BY ROWID DESC")
+    @Query("SELECT *, (SELECT COUNT(*) FROM SongPlaylistMap WHERE playlistId = id) as songCount FROM Playlist ORDER BY ROWID DESC")
     fun playlistPreviewsByDateAddedDesc(): Flow<List<PlaylistPreview>>
     @SuppressWarnings(RoomWarnings.QUERY_MISMATCH)
     @Transaction
-    @Query("SELECT id, name, browseId, (SELECT COUNT(*) FROM SongPlaylistMap WHERE playlistId = id) as songCount FROM Playlist ORDER BY songCount DESC")
+    @Query("SELECT *, (SELECT COUNT(*) FROM SongPlaylistMap WHERE playlistId = id) as songCount FROM Playlist ORDER BY songCount DESC")
     fun playlistPreviewsByDateSongCountDesc(): Flow<List<PlaylistPreview>>
     @SuppressWarnings(RoomWarnings.QUERY_MISMATCH)
     @Transaction
-    @Query("SELECT id, name, browseId, " +
+    @Query("SELECT *, " +
             "(SELECT COUNT(*) FROM SongPlaylistMap WHERE playlistId = id) as songCount, " +
             "(SELECT SUM(Song.totalPlayTimeMs) FROM Song " +
             "JOIN SongPlaylistMap ON Song.id = SongPlaylistMap.songId " +
             "WHERE SongPlaylistMap.playlistId = Playlist.id ) as TotPlayTime " +
             "FROM Playlist " +
-            "ORDER BY 4")
+            "ORDER BY 6")
     fun playlistPreviewsByMostPlayedSongsAsc(): Flow<List<PlaylistPreview>>
 
     @SuppressWarnings(RoomWarnings.QUERY_MISMATCH)
     @Transaction
-    @Query("SELECT id, name, browseId, " +
+    @Query("SELECT *, " +
             "(SELECT COUNT(*) FROM SongPlaylistMap WHERE playlistId = id) as songCount, " +
             "(SELECT SUM(Song.totalPlayTimeMs) FROM Song " +
             "JOIN SongPlaylistMap ON Song.id = SongPlaylistMap.songId " +
             "WHERE SongPlaylistMap.playlistId = Playlist.id ) as TotPlayTime " +
             "FROM Playlist " +
-            "ORDER BY 4 DESC")
+            "ORDER BY 6 DESC")
     fun playlistPreviewsByMostPlayedSongsDesc(): Flow<List<PlaylistPreview>>
 
     fun playlistPreviews(
@@ -2256,6 +2268,9 @@ interface Database {
 
     @Query("DELETE FROM SongPlaylistMap WHERE songId = :id and playlistId = :playlistId")
     fun deleteSongFromPlaylist(id: String, playlistId: Long)
+
+    @Query("SELECT setVideoId FROM SongPlaylistMap WHERE songId = :id and playlistId = :playlistId")
+    fun getSetVideoIdFromPlaylist(id: String, playlistId: Long): Flow<String?>
 
     @Query("DELETE FROM SongAlbumMap WHERE albumId = :id")
     fun clearAlbum(id: String)
@@ -2556,7 +2571,7 @@ interface Database {
     views = [
         SortedSongPlaylistMap::class
     ],
-    version = 23,
+    version = 27,
     exportSchema = true,
     autoMigrations = [
         AutoMigration(from = 1, to = 2),
@@ -2593,12 +2608,15 @@ abstract class DatabaseInitializer protected constructor() : RoomDatabase() {
                 From8To9Migration(),
                 From10To11Migration(),
                 From14To15Migration(),
-                From22To23Migration()
+                From22To23Migration(),
+                From23To24Migration(),
+                From24To25Migration(),
+                From25To26Migration(),
+                From26To27Migration()
             )
             .build()
 
 
-        //context(Context)
         operator fun invoke() {
             if (!::Instance.isInitialized) reload()
         }
@@ -2747,6 +2765,60 @@ abstract class DatabaseInitializer protected constructor() : RoomDatabase() {
             db.execSQL("INSERT INTO Song_new(id, title, artistsText, durationText, thumbnailUrl, likedAt, totalPlayTimeMs) SELECT id, title, artistsText, durationText, thumbnailUrl, likedAt, totalPlayTimeMs FROM Song;")
             db.execSQL("DROP TABLE Song;")
             db.execSQL("ALTER TABLE Song_new RENAME TO Song;")
+        }
+    }
+
+
+    class From23To24Migration : Migration(23, 24) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            try {
+                db.execSQL("ALTER TABLE SongPlaylistMap ADD COLUMN setVideoId TEXT;")
+            } catch (e: Exception) {
+                println("Database From23To24Migration error ${e.stackTraceToString()}")
+            }
+
+        }
+    }
+
+    class From24To25Migration : Migration(24, 25) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            try {
+                db.execSQL("ALTER TABLE Playlist ADD COLUMN isEditable INTEGER NOT NULL DEFAULT 0;")
+            } catch (e: Exception) {
+                println("Database From24To25Migration error ${e.stackTraceToString()}")
+            }
+
+        }
+    }
+
+    class From25To26Migration : Migration(25, 26) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            try {
+                db.execSQL("ALTER TABLE Playlist ADD COLUMN isYoutubePlaylist INTEGER NOT NULL DEFAULT 0;")
+            } catch (e: Exception) {
+                println("Database From25To26Migration error ${e.stackTraceToString()}")
+            }
+
+        }
+    }
+    class From26To27Migration : Migration(26, 27) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            try {
+                db.execSQL("ALTER TABLE Album ADD COLUMN isYoutubeAlbum INTEGER NOT NULL DEFAULT 0;")
+            } catch (e: Exception) {
+                println("Database From26To27Migration error ${e.stackTraceToString()}")
+            }
+            try {
+                db.execSQL("ALTER TABLE Artist ADD COLUMN isYoutubeArtist INTEGER NOT NULL DEFAULT 0;")
+            } catch (e: Exception) {
+                println("Database From26To27Migration error ${e.stackTraceToString()}")
+            }
+            try {
+                db.execSQL("ALTER TABLE SongPlaylistMap ADD COLUMN dateAdded INTEGER NULL;")
+            } catch (e: Exception) {
+                println("Database From26To27Migration error ${e.stackTraceToString()}")
+            }
+
         }
     }
 }

@@ -24,6 +24,8 @@ import it.fast4x.innertube.utils.from
 
 object YtMusic {
 
+    const val PLAYLIST_SIZE_LIMIT = 5000
+
     suspend fun createPlaylist(title: String) = runCatching {
         Innertube.createPlaylist(Context.DefaultWeb.client, title).body<CreatePlaylistResponse>().playlistId
     }.onFailure {
@@ -45,19 +47,37 @@ object YtMusic {
     suspend fun addToPlaylist(playlistId: String, videoId: String) = runCatching {
         Innertube.addToPlaylist(Context.DefaultWeb.client, playlistId, videoId)
     }.onFailure {
-        println("YtMusic addToPlaylist error: ${it.stackTraceToString()}")
+        println("YtMusic addToPlaylist(single) error: ${it.stackTraceToString()}")
+    }
+
+    suspend fun addToPlaylist(playlistId: String, videoIds: List<String>) = runCatching {
+        val requestedVideoIds = videoIds.take(PLAYLIST_SIZE_LIMIT)
+        val difference = videoIds.size - requestedVideoIds.size
+        if (difference > 0) {
+            println("YtMusic addToPlaylist warning: only adding (at most) $PLAYLIST_SIZE_LIMIT ids, (surpassed limit by $difference)")
+        }
+        Innertube.addToPlaylist(Context.DefaultWeb.client, playlistId, requestedVideoIds)
+    }.onFailure {
+        println("YtMusic addToPlaylist (list of size ${videoIds.size}) error: ${it.stackTraceToString()}")
     }
 
     suspend fun removeFromPlaylist(playlistId: String, videoId: String, setVideoId: String? = null) = runCatching {
-        Innertube.removeFromPlaylist(Context.DefaultWeb.client, playlistId, videoId, setVideoId)
-    }.onFailure {
-        println("YtMusic removeFromPlaylist error: ${it.stackTraceToString()}")
-    }
+        println("YtMusic removeFromPlaylist params: playlistId: $playlistId, videoId: $videoId, setVideoId: $setVideoId")
+            Innertube.removeFromPlaylist(Context.DefaultWeb.client, playlistId, videoId, setVideoId)
+        }.onFailure {
+            println("YtMusic removeFromPlaylist error: ${it.stackTraceToString()}")
+        }
 
     suspend fun addPlaylistToPlaylist(playlistId: String, videoId: String) = runCatching {
         Innertube.addPlaylistToPlaylist(Context.DefaultWeb.client, playlistId, videoId)
     }.onFailure {
         println("YtMusic addPlaylistToPlaylist error: ${it.stackTraceToString()}")
+    }
+
+    suspend fun removeFromPlaylist(playlistId: String, videoId: String, setVideoIds: List<String?>) = runCatching {
+        Innertube.removeFromPlaylist(Context.DefaultWeb.client, playlistId, videoId, setVideoIds)
+    }.onFailure {
+        println("YtMusic removeFromPlaylist (list of size ${setVideoIds.size}) error: ${it.stackTraceToString()}")
     }
 
     suspend fun subscribeChannel(channelId: String) = runCatching {

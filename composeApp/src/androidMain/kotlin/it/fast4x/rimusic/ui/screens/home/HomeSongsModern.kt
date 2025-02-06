@@ -1376,20 +1376,24 @@ fun HomeSongsModern(
                                                                 songId = song.song.asMediaItem.mediaId,
                                                                 playlistId = playlistPreview.playlist.id,
                                                                 position = position + index
-                                                            )
+                                                            ).default()
                                                         )
                                                     }
                                                 }.onFailure {
                                                     Timber.e("Failed addToPlaylist in HomeSongsModern ${it.stackTraceToString()}")
                                                     println("Failed addToPlaylist in HomeSongsModern ${it.stackTraceToString()}")
                                                 }
-                                                if(isYouTubeSyncEnabled() && !song.song.id.startsWith(
-                                                        LOCAL_KEY_PREFIX))
-                                                    CoroutineScope(Dispatchers.IO).launch {
-                                                        playlistPreview.playlist.browseId?.let {
-                                                            YtMusic.addToPlaylist(cleanPrefix(it), song.song.asMediaItem.mediaId) }
-                                                    }
                                             }
+                                            if(isYouTubeSyncEnabled() && playlistPreview.playlist.isEditable) {
+                                                CoroutineScope(Dispatchers.IO).launch {
+                                                    playlistPreview.playlist.browseId.let { id ->
+                                                        YtMusic.addToPlaylist(cleanPrefix(id ?: ""),items
+                                                            .filterNot {it.song.id.startsWith(LOCAL_KEY_PREFIX)}
+                                                            .map { it.asMediaItem.mediaId })
+                                                    }
+                                                }
+                                            }
+
                                             CoroutineScope(Dispatchers.Main).launch {
                                                 SmartMessage(
                                                     context.resources.getString(R.string.done),

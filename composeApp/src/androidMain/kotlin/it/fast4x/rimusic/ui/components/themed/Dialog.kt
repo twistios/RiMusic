@@ -148,11 +148,13 @@ import it.fast4x.rimusic.utils.thumbnailSpacingKey
 import kotlinx.coroutines.delay
 import it.fast4x.rimusic.colorPalette
 import it.fast4x.rimusic.models.Album
+import it.fast4x.rimusic.models.Playlist
 import it.fast4x.rimusic.models.Song
 import it.fast4x.rimusic.models.SongAlbumMap
 import it.fast4x.rimusic.models.SongArtistMap
 import it.fast4x.rimusic.models.SongPlaylistMap
 import it.fast4x.rimusic.typography
+import it.fast4x.rimusic.ui.screens.settings.isYouTubeSyncEnabled
 import it.fast4x.rimusic.ui.styling.Dimensions
 import it.fast4x.rimusic.ui.styling.onOverlay
 import it.fast4x.rimusic.ui.styling.px
@@ -163,6 +165,7 @@ import it.fast4x.rimusic.utils.isExplicit
 import it.fast4x.rimusic.utils.left
 import it.fast4x.rimusic.utils.lyricsSizeKey
 import it.fast4x.rimusic.utils.lyricsSizeLKey
+import it.fast4x.rimusic.utils.removeYTSongFromPlaylist
 import it.fast4x.rimusic.utils.right
 import it.fast4x.rimusic.utils.thumbnail
 import it.fast4x.rimusic.utils.thumbnailFadeExKey
@@ -1833,6 +1836,7 @@ fun SongMatchingDialog(
     songToRematch : Song,
     playlistId : Long,
     position : Int,
+    playlist : Playlist?,
     onDismiss: (() -> Unit)
 ) {
     Dialog(
@@ -2011,16 +2015,23 @@ fun SongMatchingDialog(
                                     .padding(vertical = 10.dp)
                                     .clickable(onClick = {
                                         Database.asyncTransaction {
-                                            deleteSongFromPlaylist(songToRematch.id, playlistId)
+                                            if (isYouTubeSyncEnabled() && playlist?.isYoutubePlaylist == true && playlist.isEditable){
+                                                CoroutineScope(Dispatchers.IO).launch {
+                                                    if (removeYTSongFromPlaylist(songToRematch.id, playlist.browseId ?: "", playlistId))
+                                                        deleteSongFromPlaylist(songToRematch.id, playlistId)
+                                                }
+                                            }
+
                                             if (songExist(song.asSong.id) == 0) {
                                                 Database.insert(song.asMediaItem)
                                             }
+
                                             insert(
                                                 SongPlaylistMap(
                                                     songId = song.asMediaItem.mediaId,
                                                     playlistId = playlistId,
                                                     position = position
-                                                )
+                                                ).default()
                                             )
                                             insert(
                                                 Album(id = song.album?.endpoint?.browseId ?: "", title = song.asMediaItem.mediaMetadata.albumTitle?.toString()),
@@ -2029,6 +2040,10 @@ fun SongMatchingDialog(
                                             CoroutineScope(Dispatchers.IO).launch {
                                                 val album = Database.album(song.album?.endpoint?.browseId ?: "").firstOrNull()
                                                 album?.copy(thumbnailUrl = song.thumbnail?.url)?.let { update(it) }
+
+                                                if (isYouTubeSyncEnabled() && playlist?.isYoutubePlaylist == true && playlist.isEditable){
+                                                    YtMusic.addToPlaylist(playlist.browseId ?: "", song.asMediaItem.mediaId)
+                                                }
                                             }
                                             if ((artistsNames != null) && (artistsIds != null)) {
                                                 artistsNames.let { artistNames ->

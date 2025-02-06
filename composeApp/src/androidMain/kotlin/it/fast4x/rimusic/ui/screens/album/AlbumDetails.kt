@@ -82,7 +82,6 @@ import it.fast4x.rimusic.EXPLICIT_PREFIX
 import it.fast4x.rimusic.LocalPlayerServiceBinder
 import it.fast4x.rimusic.MODIFIED_PREFIX
 import it.fast4x.rimusic.R
-import it.fast4x.rimusic.YTP_PREFIX
 import it.fast4x.rimusic.cleanPrefix
 import it.fast4x.rimusic.enums.NavRoutes
 import it.fast4x.rimusic.enums.UiType
@@ -231,14 +230,15 @@ fun AlbumDetails(
                 Database.upsert(
                     Album(
                         id = browseId,
-                        title = if (album?.title?.startsWith(YTP_PREFIX) == true) YTP_PREFIX+albumPage?.album?.title else albumPage?.album?.title,
+                        title = if (album?.title?.startsWith(MODIFIED_PREFIX) == true) album?.title else albumPage?.album?.title,
                         thumbnailUrl = if (album?.thumbnailUrl?.startsWith(MODIFIED_PREFIX) == true) album?.thumbnailUrl else albumPage?.album?.thumbnail?.url,
                         year = albumPage?.album?.year,
                         authorsText = if (album?.authorsText?.startsWith(MODIFIED_PREFIX) == true) album?.authorsText else albumPage?.album?.authors
                             ?.joinToString("") { it.name ?: "" },
                         shareUrl = albumPage?.url,
                         timestamp = System.currentTimeMillis(),
-                        bookmarkedAt = album?.bookmarkedAt
+                        bookmarkedAt = album?.bookmarkedAt,
+                        isYoutubeAlbum = album?.isYoutubeAlbum == true
                     ),
                     albumPage
                         ?.songs?.distinct()
@@ -265,7 +265,7 @@ fun AlbumDetails(
                                     songId = albumSongsState.song.id,
                                     playlistId = item.playlistId,
                                     position = item.position
-                                )
+                                ).default()
                             )
                         }
                     }
@@ -383,8 +383,7 @@ fun AlbumDetails(
             setValue = {
                 if (it.isNotEmpty()) {
                     Database.asyncTransaction {
-                        updateAlbumTitle(browseId,
-                            if (album?.title?.startsWith(YTP_PREFIX) == true) YTP_PREFIX+it else it)
+                        updateAlbumTitle(browseId, it)
                     }
                 }
             },
@@ -586,10 +585,7 @@ fun AlbumDetails(
                     key = "header"
                 ) {
 
-                    val modifierArt =
-                        if (isLandscape) Modifier.fillMaxWidth() else Modifier
-                            .fillMaxWidth()
-                            .aspectRatio(4f / 3)
+                    val modifierArt = Modifier.fillMaxWidth()
 
                     Box(
                         modifier = modifierArt
@@ -598,7 +594,7 @@ fun AlbumDetails(
                             if (!isLandscape)
                                 Box {
                                     AsyncImage(
-                                        model = album?.thumbnailUrl?.resize(1200, 900),
+                                        model = album?.thumbnailUrl?.resize(1200, 1200),
                                         contentDescription = "loading...",
                                         modifier = Modifier
                                             .fillMaxWidth()
@@ -610,7 +606,7 @@ fun AlbumDetails(
                                                 bottom = Dimensions.fadeSpacingBottom
                                             )
                                     )
-                                    if (album?.title?.startsWith(YTP_PREFIX) == true){
+                                    if (album?.isYoutubeAlbum == true){
                                         Image(
                                             painter = painterResource(R.drawable.ytmusic),
                                             colorFilter = ColorFilter.tint(Color.Red.copy(0.75f).compositeOver(Color.White)),
@@ -764,15 +760,7 @@ fun AlbumDetails(
                                                             if (it != null) {
                                                                 YtMusic.removelikePlaylistOrAlbum(it)
                                                                 Database.asyncTransaction {
-                                                                    updateAlbumTitle(
-                                                                        browseId,
-                                                                        (album?.title
-                                                                            ?: "").replace(
-                                                                            YTP_PREFIX,
-                                                                            "",
-                                                                            true
-                                                                        )
-                                                                    )
+                                                                    update(album!!.copy(isYoutubeAlbum = false))
                                                                 }
                                                             }
                                                         }
@@ -782,10 +770,7 @@ fun AlbumDetails(
                                                                 YtMusic.likePlaylistOrAlbum(it)
                                                                 if (album != null) {
                                                                     Database.asyncTransaction {
-                                                                        updateAlbumTitle(
-                                                                            browseId,
-                                                                            YTP_PREFIX + album?.title
-                                                                        )
+                                                                        update(album!!.copy(isYoutubeAlbum = true))
                                                                     }
                                                                 }
                                                             }
@@ -1003,7 +988,7 @@ fun AlbumDetails(
                                         },
                                          */
                                             onChangeAlbumTitle = {
-                                                if (album?.title?.startsWith(YTP_PREFIX) == true){
+                                                if (album?.isYoutubeAlbum == true){
                                                     SmartMessage(context.resources.getString(R.string.cant_rename_Saved_albums),type = PopupType.Error, context = context)
                                                 } else
                                                 showDialogChangeAlbumTitle = true
@@ -1064,15 +1049,20 @@ fun AlbumDetails(
                                                                     songId = song.asMediaItem.mediaId,
                                                                     playlistId = playlistPreview.playlist.id,
                                                                     position = position + index
-                                                                )
+                                                                ).default()
                                                             )
                                                         }
-
-                                                        if(isYouTubeSyncEnabled())
-                                                            CoroutineScope(Dispatchers.IO).launch {
-                                                                playlistPreview.playlist.browseId?.let { it -> YtMusic.addToPlaylist(cleanPrefix(it), song.id) }
-                                                            }
                                                     }
+
+                                                if (isYouTubeSyncEnabled() && playlistPreview.playlist.isEditable) {
+                                                        CoroutineScope(Dispatchers.IO).launch {
+                                                            YtMusic.addPlaylistToPlaylist(
+                                                                cleanPrefix(playlistPreview.playlist.browseId ?: ""),
+                                                                cleanPrefix(albumPage?.album?.playlistId ?: "")
+
+                                                            )
+                                                        }
+                                                }
                                                 } else {
                                                     listMediaItems.forEachIndexed { index, song ->
                                                         //Log.d("mediaItemMaxPos", position.toString())
@@ -1083,13 +1073,18 @@ fun AlbumDetails(
                                                                     songId = song.mediaId,
                                                                     playlistId = playlistPreview.playlist.id,
                                                                     position = position + index
-                                                                )
+                                                                ).default()
                                                             )
                                                         }
-                                                        if(isYouTubeSyncEnabled())
-                                                            CoroutineScope(Dispatchers.IO).launch {
-                                                                playlistPreview.playlist.browseId?.let { it ->  YtMusic.addToPlaylist(cleanPrefix(it), song.mediaId) }
-                                                            }
+                                                    }
+                                                    if (isYouTubeSyncEnabled() && playlistPreview.playlist.isEditable) {
+                                                        CoroutineScope(Dispatchers.IO).launch {
+                                                            YtMusic.addToPlaylist(
+                                                                cleanPrefix(playlistPreview.playlist.browseId ?: ""),
+                                                                listMediaItems.map { it.mediaId }
+
+                                                            )
+                                                        }
                                                     }
                                                     listMediaItems.clear()
                                                     selectItems = false
