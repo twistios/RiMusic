@@ -713,11 +713,6 @@ fun DeviceListSongs(
                                                         ).default()
                                                     )
                                                 }
-                                                if(isYouTubeSyncEnabled())
-                                                    CoroutineScope(Dispatchers.IO).launch {
-                                                        playlistPreview.playlist.browseId?.let {
-                                                            YtMusic.addToPlaylist(cleanPrefix(it), song.asMediaItem.mediaId) }
-                                                    }
                                             }
                                         } else {
                                             listMediaItems.forEachIndexed { index, song ->
@@ -732,11 +727,6 @@ fun DeviceListSongs(
                                                         ).default()
                                                     )
                                                 }
-                                                if(isYouTubeSyncEnabled())
-                                                    CoroutineScope(Dispatchers.IO).launch {
-                                                        playlistPreview.playlist.browseId?.let {
-                                                            YtMusic.addToPlaylist(cleanPrefix(it), song.mediaId) }
-                                                    }
                                             }
                                             listMediaItems.clear()
                                             selectItems = false

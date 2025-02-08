@@ -973,6 +973,7 @@ fun AlbumDetails(
                                 menuState.display {
                                     album?.let {
                                         AlbumsItemMenu(
+                                            navController = navController,
                                             onDismiss = menuState::hide,
                                             onSelectUnselect = {
                                                 selectItems = !selectItems
@@ -1054,7 +1055,7 @@ fun AlbumDetails(
                                                         }
                                                     }
 
-                                                if (isYouTubeSyncEnabled() && playlistPreview.playlist.isEditable) {
+                                                if (isYouTubeSyncEnabled() && playlistPreview.playlist.isYoutubePlaylist && playlistPreview.playlist.isEditable) {
                                                         CoroutineScope(Dispatchers.IO).launch {
                                                             YtMusic.addPlaylistToPlaylist(
                                                                 cleanPrefix(playlistPreview.playlist.browseId ?: ""),
@@ -1077,7 +1078,7 @@ fun AlbumDetails(
                                                             )
                                                         }
                                                     }
-                                                    if (isYouTubeSyncEnabled() && playlistPreview.playlist.isEditable) {
+                                                    if (isYouTubeSyncEnabled() && playlistPreview.playlist.isYoutubePlaylist && playlistPreview.playlist.isEditable) {
                                                         CoroutineScope(Dispatchers.IO).launch {
                                                             YtMusic.addToPlaylist(
                                                                 cleanPrefix(playlistPreview.playlist.browseId ?: ""),
@@ -1098,6 +1099,9 @@ fun AlbumDetails(
                                                             mediaItemToggleLike(song.asMediaItem)
                                                         }
                                                   }
+                                            },
+                                            onGoToPlaylist = {
+                                                navController.navigate("${NavRoutes.localPlaylist.name}/$it")
                                             },
                                             disableScrollingText = disableScrollingText
                                         )

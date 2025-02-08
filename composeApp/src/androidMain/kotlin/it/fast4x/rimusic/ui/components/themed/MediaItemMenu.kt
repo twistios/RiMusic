@@ -190,29 +190,21 @@ fun InPlaylistMediaItemMenu(
                 SmartMessage(context.resources.getString(R.string.no_connection), context = context, type = PopupType.Error)
             } else if (playlist?.playlist?.isEditable == true) {
 
-                if (isYouTubeSyncEnabled() && playlist.playlist.browseId != null && !playlist.playlist.name.startsWith(
-                        PIPED_PREFIX
-                    )
-                )
-                    Database.asyncTransaction {
-                        CoroutineScope(Dispatchers.IO).launch {
-                            playlist.playlist.browseId.let {
-                                println("InPlaylistMediaItemMenu isYoutubePlaylist ${playlist.playlist.isYoutubePlaylist} isEditable ${playlist.playlist.isEditable} songId ${song.id} browseId ${playlist.playlist.browseId} playlistId $playlistId")
-                                if (isYouTubeSyncEnabled() && playlist.playlist.isYoutubePlaylist && playlist.playlist.isEditable) {
-                                    CoroutineScope(Dispatchers.IO).launch {
-                                        if (removeYTSongFromPlaylist(
-                                                song.id,
-                                                playlist.playlist.browseId,
-                                                playlistId
-                                            )
-                                        )
-                                            deleteSongFromPlaylist(song.id, playlistId)
-                                    }
+                Database.asyncTransaction {
+                    CoroutineScope(Dispatchers.IO).launch {
+                        playlist.playlist.browseId.let {
+                            println("InPlaylistMediaItemMenu isYoutubePlaylist ${playlist.playlist.isYoutubePlaylist} isEditable ${playlist.playlist.isEditable} songId ${song.id} browseId ${playlist.playlist.browseId} playlistId $playlistId")
+                            if (isYouTubeSyncEnabled() && playlist.playlist.isYoutubePlaylist && playlist.playlist.isEditable) {
+                                CoroutineScope(Dispatchers.IO).launch {
+                                    if (removeYTSongFromPlaylist(song.id,playlist.playlist.browseId ?: "",playlistId))
+                                        deleteSongFromPlaylist(song.id, playlistId)
                                 }
+                            } else {
+                                deleteSongFromPlaylist(song.id, playlistId)
                             }
                         }
                     }
-
+                }
 
                 if (playlist.playlist.name.startsWith(PIPED_PREFIX) && isPipedEnabled && pipedSession.token.isNotEmpty()) {
                     Timber.d("MediaItemMenu InPlaylistMediaItemMenu onRemoveFromPlaylist browseId ${playlist.playlist.browseId}")
@@ -601,7 +593,7 @@ fun BaseMediaItemMenu(
                 )
             }
 
-            if(isYouTubeSyncEnabled())
+            if(isYouTubeSyncEnabled() && playlist.isYoutubePlaylist && playlist.isEditable)
                 CoroutineScope(Dispatchers.IO).launch {
                     playlist.browseId?.let { YtMusic.addToPlaylist(cleanPrefix(it), mediaItem.mediaId) }
                 }
@@ -688,7 +680,7 @@ fun MiniMediaItemMenu(
                 )
             }
 
-            if(isYouTubeSyncEnabled())
+            if(isYouTubeSyncEnabled() && playlist.isYoutubePlaylist && playlist.isEditable)
                 CoroutineScope(Dispatchers.IO).launch {
                     playlist.browseId?.let { YtMusic.addToPlaylist(cleanPrefix(it), mediaItem.mediaId) }
                 }
@@ -960,8 +952,7 @@ fun MediaItemMenu(
                 it.playlist.name.startsWith(PINNED_PREFIX, 0, true)
                         && if (isNetworkConnected(context)) !(it.playlist.isYoutubePlaylist && !it.playlist.isEditable) else !it.playlist.isYoutubePlaylist
             }
-            val youtubePlaylists = playlistPreviews.filter { it.playlist.isEditable
-                    && !it.playlist.name.startsWith(PINNED_PREFIX)}
+            val youtubePlaylists = playlistPreviews.filter { it.playlist.isEditable && it.playlist.isYoutubePlaylist && !it.playlist.name.startsWith(PINNED_PREFIX) }
 
             val unpinnedPlaylists = playlistPreviews.filter {
                 !it.playlist.name.startsWith(PINNED_PREFIX, 0, true) &&
@@ -1832,8 +1823,7 @@ fun AddToPlaylistItemMenu(
                 && if (isNetworkConnected(context)) !(it.playlist.isYoutubePlaylist && !it.playlist.isEditable) else !it.playlist.isYoutubePlaylist
     }
 
-    val youtubePlaylists = playlistPreviews.filter { it.playlist.isEditable
-            && !it.playlist.name.startsWith(PINNED_PREFIX)}
+    val youtubePlaylists = playlistPreviews.filter { it.playlist.isEditable && it.playlist.isYoutubePlaylist && !it.playlist.name.startsWith(PINNED_PREFIX) }
 
     val unpinnedPlaylists = playlistPreviews.filter {
         !it.playlist.name.startsWith(PINNED_PREFIX, 0, true) &&

@@ -6,6 +6,7 @@ import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.ui.platform.LocalContext
 import it.fast4x.rimusic.ui.styling.LocalAppearance
 import it.fast4x.rimusic.utils.autosyncKey
+import it.fast4x.rimusic.utils.handleAudioFocusEnabledKey
 import it.fast4x.rimusic.utils.isConnectionMetered
 import it.fast4x.rimusic.utils.isConnectionMeteredEnabledKey
 import it.fast4x.rimusic.utils.preferences
@@ -47,3 +48,4 @@ fun isVideoEnabled() = appContext().preferences.getBoolean(showButtonPlayerVideo
 fun isConnectionMetered() = appContext().isConnectionMetered()
 fun isConnectionMeteredEnabled() = appContext().preferences.getBoolean(isConnectionMeteredEnabledKey, true)
 fun isAutoSyncEnabled() = appContext().preferences.getBoolean(autosyncKey, false)
+fun isHandleAudioFocusEnabled() = appContext().preferences.getBoolean(handleAudioFocusEnabledKey, true)

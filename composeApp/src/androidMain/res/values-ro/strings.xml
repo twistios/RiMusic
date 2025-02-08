@@ -897,12 +897,21 @@
     <string name="syncing">Sincronizare...</string>
     <string name="autosync_channels">Sincronizare automată a canale-rol abonate</string>
     <string name="autosync_albums">Sincronizare automată a albumelor salvate</string>
-    <string name="save_youtube_library">Save in the Youtube Library</string>
+    <string name="save_youtube_library">Salvează playlistul în biblioteca YouTube</string>
     <string name="cant_rename_Saved_albums">Albumele salvate în Biblioteca Muzică Youtube nu pot fi redenumite</string>
     <string name="ytm_library">Biblioteca YTM</string>
     <string name="cannot_delete_from_online_playlists">Nu se pot șterge melodii dintr-un playlist online</string>
     <string name="ytm_playlists">Playlist-uri YTM</string>
     <string name="no_connection">Nici o conexiune</string>
     <string name="unlink_from_ytm">Deconectează biblioteca Youtube</string>
-    <string name="unlink_from_yt">Unlink from Youtube</string>
+    <string name="unlink_from_yt">Deconectează de la YouTube</string>
+    <string name="yt_playlist_limited">Youtube Playlists are Limited to 5000 songs</string>
+    <string name="songs_added_in_yt">songs are added in the YouTube Playlist. Repeat the process if there are any Missing Songs</string>
+    <string name="songs_adding_in_yt">songs will be added in the YTM playlist</string>
+    <string name="settings_audio_bass_boost">Audio bass boost</string>
+    <string name="settings_bass_boost_level">Bass boost level</string>
+    <string name="settings_audio_reverb">Audio reverb</string>
+    <string name="settings_audio_reverb_info_apply_a_depth_effect_to_the_audio">Apply a depth effect to the audio</string>
+    <string name="settings_audio_focus">Audio focus</string>
+    <string name="settings_audio_focus_info">Allows automatic pause and resume playback after a call for example</string>
 </resources>

@@ -1018,8 +1018,7 @@ fun Queue(
                                                     )
                                                 }
                                             }
-                                            if(isYouTubeSyncEnabled()
-                                                && playlistPreview.playlist.isEditable == true) {
+                                            if(isYouTubeSyncEnabled() && playlistPreview.playlist.isYoutubePlaylist && playlistPreview.playlist.isEditable) {
                                                 CoroutineScope(Dispatchers.IO).launch {
                                                     playlistPreview.playlist.browseId.let { id ->
                                                         YtMusic.addToPlaylist(
@@ -1044,11 +1043,11 @@ fun Queue(
                                                 }
                                                 //Log.d("mediaItemPos", "add position $position")
                                             }
-                                            if (isYouTubeSyncEnabled() && playlistPreview.playlist.isEditable == true) {
+                                            if(isYouTubeSyncEnabled() && playlistPreview.playlist.isYoutubePlaylist && playlistPreview.playlist.isEditable) {
                                                 CoroutineScope(Dispatchers.IO).launch {
                                                     YtMusic.addToPlaylist(
                                                         cleanPrefix(playlistPreview.playlist.browseId ?: ""),
-                                                        listMediaItems.map { it.mediaId }
+                                                        listMediaItems.filterNot {it.mediaId.startsWith(LOCAL_KEY_PREFIX)}.map { it.mediaId }
 
                                                     )
                                                 }

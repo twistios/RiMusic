@@ -171,7 +171,7 @@ fun PlaylistsItemMenu(
                             && if (isNetworkConnected(context)) !(it.playlist.isYoutubePlaylist && !it.playlist.isEditable) else !it.playlist.isYoutubePlaylist
                 }
 
-                val youtubePlaylists = playlistPreviews.filter { it.playlist.isEditable && !it.playlist.name.startsWith(PINNED_PREFIX) }
+                val youtubePlaylists = playlistPreviews.filter { it.playlist.isEditable && it.playlist.isYoutubePlaylist && !it.playlist.name.startsWith(PINNED_PREFIX) }
 
                 val unpinnedPlaylists = playlistPreviews.filter {
                     !it.playlist.name.startsWith(PINNED_PREFIX, 0, true) &&

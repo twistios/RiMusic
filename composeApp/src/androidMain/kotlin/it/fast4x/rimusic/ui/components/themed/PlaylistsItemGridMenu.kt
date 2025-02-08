@@ -29,7 +29,10 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.graphics.compositeOver
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.ExperimentalTextApi
@@ -43,6 +46,7 @@ import it.fast4x.rimusic.MONTHLY_PREFIX
 import it.fast4x.rimusic.PINNED_PREFIX
 import it.fast4x.rimusic.PIPED_PREFIX
 import it.fast4x.rimusic.R
+import it.fast4x.rimusic.cleanPrefix
 import it.fast4x.rimusic.enums.MenuStyle
 import it.fast4x.rimusic.enums.NavRoutes
 import it.fast4x.rimusic.enums.PlaylistSortBy
@@ -60,6 +64,7 @@ import it.fast4x.rimusic.utils.semiBold
 import kotlinx.coroutines.Dispatchers
 import it.fast4x.rimusic.colorPalette
 import it.fast4x.rimusic.typography
+import it.fast4x.rimusic.utils.isNetworkConnected
 
 @ExperimentalTextApi
 @SuppressLint("SuspiciousIndentation")
@@ -128,6 +133,7 @@ fun PlaylistsItemGridMenu(
         }, label = ""
     ) { currentIsViewingPlaylists ->
         if (currentIsViewingPlaylists) {
+            val context = LocalContext.current
             val sortBy by rememberPreference(playlistSortByKey, PlaylistSortBy.DateAdded)
             val sortOrder by rememberPreference(playlistSortOrderKey, SortOrder.Descending)
             val playlistPreviews by remember {
@@ -136,12 +142,15 @@ fun PlaylistsItemGridMenu(
 
             val pinnedPlaylists = playlistPreviews.filter {
                 it.playlist.name.startsWith(PINNED_PREFIX, 0, true)
+                        && if (isNetworkConnected(context)) !(it.playlist.isYoutubePlaylist && !it.playlist.isEditable) else !it.playlist.isYoutubePlaylist
             }
+
+            val youtubePlaylists = playlistPreviews.filter { it.playlist.isEditable && it.playlist.isYoutubePlaylist && !it.playlist.name.startsWith(PINNED_PREFIX) }
 
             val unpinnedPlaylists = playlistPreviews.filter {
                 !it.playlist.name.startsWith(PINNED_PREFIX, 0, true) &&
-                !it.playlist.name.startsWith(MONTHLY_PREFIX, 0, true) //&&
-                //!it.playlist.name.startsWith(PIPED_PREFIX, 0, true)
+                        !it.playlist.name.startsWith(MONTHLY_PREFIX, 0, true) &&
+                        !it.playlist.isYoutubePlaylist
             }
 
             var isCreatingNewPlaylist by rememberSaveable {
@@ -216,12 +225,71 @@ fun PlaylistsItemGridMenu(
                         pinnedPlaylists.forEach { playlistPreview ->
                             MenuEntry(
                                 icon = R.drawable.add_in_playlist,
-                                text = playlistPreview.playlist.name.substringAfter(
-                                    PINNED_PREFIX
-                                ),
+                                text = cleanPrefix(playlistPreview.playlist.name),
                                 secondaryText = "${playlistPreview.songCount} " + stringResource(
                                     R.string.songs
                                 ),
+                                onClick = {
+                                    onDismiss()
+                                    onAddToPlaylist(
+                                        PlaylistPreview(
+                                            playlistPreview.playlist,
+                                            playlistPreview.songCount
+                                        )
+                                    )
+                                },
+                                trailingContent = {
+                                    if (playlistPreview.playlist.name.startsWith(PIPED_PREFIX, 0, true))
+                                        Image(
+                                            painter = painterResource(R.drawable.piped_logo),
+                                            contentDescription = null,
+                                            colorFilter = ColorFilter.tint(colorPalette().red),
+                                            modifier = Modifier
+                                                .size(18.dp)
+                                        )
+                                    if (playlistPreview.playlist.isYoutubePlaylist) {
+                                        Image(
+                                            painter = painterResource(R.drawable.ytmusic),
+                                            contentDescription = null,
+                                            colorFilter = ColorFilter.tint(
+                                                Color.Red.copy(0.75f).compositeOver(Color.White)
+                                            ),
+                                            modifier = Modifier
+                                                .size(18.dp)
+                                        )
+                                    }
+                                    IconButton(
+                                        icon = R.drawable.open,
+                                        color = colorPalette().text,
+                                        onClick = {
+                                            if (onGoToPlaylist != null) {
+                                                onGoToPlaylist(playlistPreview.playlist.id)
+                                                onDismiss()
+                                            }
+                                            navController.navigate(route = "${NavRoutes.localPlaylist.name}/${playlistPreview.playlist.id}")
+                                        },
+                                        modifier = Modifier
+                                            .size(24.dp)
+                                    )
+                                }
+                            )
+                        }
+                    }
+                }
+
+                if (youtubePlaylists.isNotEmpty() && isNetworkConnected(context)) {
+                    BasicText(
+                        text = stringResource(R.string.ytm_playlists),
+                        style = typography().m.semiBold,
+                        modifier = Modifier.padding(start = 20.dp, top = 5.dp)
+                    )
+
+                    onAddToPlaylist?.let { onAddToPlaylist ->
+                        youtubePlaylists.forEach { playlistPreview ->
+                            MenuEntry(
+                                icon = R.drawable.add_in_playlist,
+                                text = cleanPrefix(playlistPreview.playlist.name),
+                                secondaryText = "${playlistPreview.songCount} " + stringResource(R.string.songs),
                                 onClick = {
                                     onDismiss()
                                     onAddToPlaylist(
@@ -262,7 +330,7 @@ fun PlaylistsItemGridMenu(
                         unpinnedPlaylists.forEach { playlistPreview ->
                             MenuEntry(
                                 icon = R.drawable.add_in_playlist,
-                                text = playlistPreview.playlist.name,
+                                text = cleanPrefix(playlistPreview.playlist.name),
                                 secondaryText = "${playlistPreview.songCount} " + stringResource(
                                     R.string.songs
                                 ),

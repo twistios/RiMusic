@@ -692,39 +692,45 @@ fun PlaylistSongList(
                                                         if (position > 0) position++ else position =
                                                             0
 
-                                                        playlistPage!!.songs.forEachIndexed { index, song ->
-                                                            runCatching {
-                                                                coroutineScope.launch(Dispatchers.IO) {
-                                                                    Database.insert(song.asSong)
-                                                                    Database.insert(
-                                                                        SongPlaylistMap(
-                                                                            songId = song.asMediaItem.mediaId,
-                                                                            playlistId = playlistPreview.playlist.id,
-                                                                            position = position + index
-                                                                        ).default()
+                                                        val playlistSize = playlistPage?.songs?.size ?: 0
+
+                                                        if ((playlistSize + playlistPreview.songCount) > 5000 && playlistPreview.playlist.isYoutubePlaylist && isYouTubeSyncEnabled()){
+                                                            SmartMessage(context.resources.getString(R.string.yt_playlist_limited), context = context, type = PopupType.Error)
+                                                        } else {
+                                                            playlistPage!!.songs.forEachIndexed { index, song ->
+                                                                runCatching {
+                                                                    coroutineScope.launch(Dispatchers.IO) {
+                                                                        Database.insert(song.asSong)
+                                                                        Database.insert(
+                                                                            SongPlaylistMap(
+                                                                                songId = song.asMediaItem.mediaId,
+                                                                                playlistId = playlistPreview.playlist.id,
+                                                                                position = position + index
+                                                                            ).default()
+                                                                        )
+                                                                    }
+                                                                }.onFailure {
+                                                                    Timber.e("Failed onAddToPlaylist in PlaylistSongListModern  ${it.stackTraceToString()}")
+                                                                }
+                                                            }
+                                                            if (isYouTubeSyncEnabled() && playlistPreview.playlist.isEditable) {
+                                                                CoroutineScope(Dispatchers.IO).launch {
+                                                                    YtMusic.addPlaylistToPlaylist(
+                                                                        cleanPrefix(playlistPreview.playlist.browseId ?: ""),
+                                                                        browseId.substringAfter("VL")
+
                                                                     )
                                                                 }
-                                                            }.onFailure {
-                                                                Timber.e("Failed onAddToPlaylist in PlaylistSongListModern  ${it.stackTraceToString()}")
                                                             }
-                                                        }
-                                                        if (isYouTubeSyncEnabled() && playlistPreview.playlist.isEditable) {
-                                                            CoroutineScope(Dispatchers.IO).launch {
-                                                                YtMusic.addPlaylistToPlaylist(
-                                                                    cleanPrefix(playlistPreview.playlist.browseId ?: ""),
-                                                                    browseId.substringAfter("VL")
-
+                                                            CoroutineScope(Dispatchers.Main).launch {
+                                                                SmartMessage(
+                                                                    context.resources.getString(
+                                                                        R.string.done
+                                                                    ),
+                                                                    type = PopupType.Success,
+                                                                    context = context
                                                                 )
                                                             }
-                                                        }
-                                                        CoroutineScope(Dispatchers.Main).launch {
-                                                            SmartMessage(
-                                                                context.resources.getString(
-                                                                    R.string.done
-                                                                ),
-                                                                type = PopupType.Success,
-                                                                context = context
-                                                            )
                                                         }
                                                     },
 

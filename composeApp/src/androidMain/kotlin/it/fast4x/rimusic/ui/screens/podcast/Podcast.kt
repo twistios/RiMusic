@@ -558,10 +558,13 @@ fun Podcast(
                                                             }.onFailure {
                                                                 Timber.e("Failed onAddToPlaylist in PlaylistSongListModern  ${it.stackTraceToString()}")
                                                             }
-                                                            if(isYouTubeSyncEnabled())
-                                                                CoroutineScope(Dispatchers.IO).launch {
-                                                                    playlistPreview.playlist.browseId?.let { YtMusic.addToPlaylist(it, song.asMediaItem.mediaId) }
+                                                        }
+                                                        if(isYouTubeSyncEnabled() && playlistPreview.playlist.isYoutubePlaylist && playlistPreview.playlist.isEditable) {
+                                                            CoroutineScope(Dispatchers.IO).launch {
+                                                                playlistPreview.playlist.browseId?.let { id ->
+                                                                    YtMusic.addToPlaylist(id, podcastPage?.listEpisode?.map { it.asMediaItem.mediaId } ?: emptyList())
                                                                 }
+                                                            }
                                                         }
                                                         CoroutineScope(Dispatchers.Main).launch {
                                                             SmartMessage(context.resources.getString(R.string.done), type = PopupType.Success, context = context)

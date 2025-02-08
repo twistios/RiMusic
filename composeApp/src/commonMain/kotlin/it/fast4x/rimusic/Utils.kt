@@ -10,7 +10,7 @@ const val PIPED_PREFIX = "piped:"
 const val EXPLICIT_PREFIX = "e:"
 const val LOCAL_KEY_PREFIX = "local:"
 const val YTP_PREFIX = "account:"
-const val YTEDITABLEPLAYLIST_PREFIX = "editable:"
+
 
 /**
  * Assumption: all prefixes end with ":" and have at least 1 (other) character.
@@ -21,7 +21,7 @@ fun cleanPrefix(text: String): String {
     var i = 0
     while (i < splitText.size-1) {
         if ("${splitText[i]}:" !in listOf(PINNED_PREFIX, MODIFIED_PREFIX, MONTHLY_PREFIX, PIPED_PREFIX,
-                EXPLICIT_PREFIX, LOCAL_KEY_PREFIX, YTP_PREFIX, YTEDITABLEPLAYLIST_PREFIX)) {
+                EXPLICIT_PREFIX, LOCAL_KEY_PREFIX, YTP_PREFIX)) {
             break
         }
         i++

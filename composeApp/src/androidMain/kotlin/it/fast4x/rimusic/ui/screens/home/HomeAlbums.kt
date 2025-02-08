@@ -41,6 +41,7 @@ import androidx.compose.ui.text.ExperimentalTextApi
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.media3.common.util.UnstableApi
+import androidx.navigation.NavController
 import it.fast4x.compose.persist.persistList
 import it.fast4x.innertube.YtMusic
 import it.fast4x.rimusic.Database
@@ -76,6 +77,7 @@ import it.fast4x.rimusic.utils.showFloatingIconKey
 import kotlinx.coroutines.flow.map
 import it.fast4x.rimusic.colorPalette
 import it.fast4x.rimusic.enums.FilterBy
+import it.fast4x.rimusic.enums.NavRoutes
 import it.fast4x.rimusic.models.Artist
 import it.fast4x.rimusic.ui.components.themed.Search
 import it.fast4x.rimusic.ui.components.navigation.header.TabToolBar
@@ -111,6 +113,7 @@ import kotlinx.coroutines.withContext
 @ExperimentalAnimationApi
 @Composable
 fun HomeAlbums(
+    navController: NavController,
     onAlbumClick: (Album) -> Unit,
     onSearchClick: () -> Unit,
     onSettingsClick: () -> Unit
@@ -401,6 +404,7 @@ fun HomeAlbums(
                                     onLongClick = {
                                         menuState.display {
                                             AlbumsItemMenu(
+                                                navController = navController,
                                                 onDismiss = menuState::hide,
                                                 album = album,
                                                 onChangeAlbumTitle = {
@@ -445,12 +449,15 @@ fun HomeAlbums(
                                                             )
                                                         }
                                                     }
-                                                    if (isYouTubeSyncEnabled() && playlistPreview.playlist.isEditable == true) {
+                                                    if (isYouTubeSyncEnabled() && playlistPreview.playlist.isYoutubePlaylist && playlistPreview.playlist.isEditable) {
                                                         CoroutineScope(Dispatchers.IO).launch {
                                                             cleanPrefix(playlistPreview.playlist.browseId ?: "").let { id -> YtMusic.addToPlaylist(id, songs.map{it.asMediaItem.mediaId})}
                                                         }
                                                     }
 
+                                                },
+                                                onGoToPlaylist = {
+                                                    navController.navigate("${NavRoutes.localPlaylist.name}/$it")
                                                 },
                                                 disableScrollingText = disableScrollingText
                                             )

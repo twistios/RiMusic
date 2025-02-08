@@ -1,7 +1,9 @@
 package it.fast4x.innertube
 
 import io.ktor.client.call.body
+import io.ktor.client.plugins.ClientRequestException
 import io.ktor.client.statement.bodyAsText
+import io.ktor.http.HttpStatusCode
 import it.fast4x.innertube.Innertube.getBestQuality
 import it.fast4x.innertube.models.BrowseEndpoint
 import it.fast4x.innertube.models.BrowseResponse
@@ -21,6 +23,7 @@ import it.fast4x.innertube.requests.NewReleaseAlbumPage
 import it.fast4x.innertube.requests.PlaylistContinuationPage
 import it.fast4x.innertube.requests.PlaylistPage
 import it.fast4x.innertube.utils.from
+import kotlinx.coroutines.delay
 
 object YtMusic {
 
@@ -59,6 +62,17 @@ object YtMusic {
         Innertube.addToPlaylist(Context.DefaultWeb.client, playlistId, requestedVideoIds)
     }.onFailure {
         println("YtMusic addToPlaylist (list of size ${videoIds.size}) error: ${it.stackTraceToString()}")
+        if(it is ClientRequestException && it.response.status == HttpStatusCode.BadRequest) {
+            val videoIdsChunks = videoIds.chunked(50)
+            videoIdsChunks.forEach { ids ->
+                ids.forEach { id ->
+                    delay(500)
+                    addToPlaylist(playlistId, id).onFailure {
+                        println("YtMusic addToPlaylist (list insert backup) error: ${it.stackTraceToString()}")
+                    }
+                }
+            }
+        }
     }
 
     suspend fun removeFromPlaylist(playlistId: String, videoId: String, setVideoId: String? = null) = runCatching {

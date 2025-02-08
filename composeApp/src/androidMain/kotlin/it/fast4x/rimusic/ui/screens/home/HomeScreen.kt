@@ -159,6 +159,7 @@ fun HomeScreen(
                         )
 
                         3 -> HomeAlbums(
+                            navController = navController,
                             onAlbumClick = {
                                 //albumRoute(it.id)
                                 navController.navigate(route = "${NavRoutes.album.name}/${it.id}")

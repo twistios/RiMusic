@@ -794,6 +794,8 @@ suspend fun getAlbumVersionFromVideo(song: Song,playlistId : Long, position : In
                     }
                 }
 
+            } else {
+                deleteSongFromPlaylist(song.id, playlist?.id ?: 0L)
             }
             if (matchedSong != null) {
                 if (songExist(matchedSong.asSong.id) == 0) {

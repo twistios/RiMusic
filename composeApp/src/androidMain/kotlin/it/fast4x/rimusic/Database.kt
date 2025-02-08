@@ -1968,6 +1968,18 @@ interface Database {
         LEFT JOIN Album ON Album.id = SongAlbumMap.albumId 
         LEFT JOIN Format ON Format.songId = S.id
         WHERE SP.playlistId = :id 
+        ORDER BY SP.position
+    """)
+    fun sortSongsPlaylistByPositionNoFlow( id: Long ): List<SongEntity>
+
+    @Query("""
+        SELECT DISTINCT S.*, Album.title as albumTitle, Format.contentLength as contentLength
+        FROM Song S 
+        INNER JOIN songplaylistmap SP ON S.id = SP.songId 
+        LEFT JOIN SongAlbumMap ON SongAlbumMap.songId = S.id 
+        LEFT JOIN Album ON Album.id = SongAlbumMap.albumId 
+        LEFT JOIN Format ON Format.songId = S.id
+        WHERE SP.playlistId = :id 
         ORDER BY S.totalPlayTimeMs
     """)
     fun sortSongsFromPlaylistByPlaytime( id: Long ): Flow<List<SongEntity>>

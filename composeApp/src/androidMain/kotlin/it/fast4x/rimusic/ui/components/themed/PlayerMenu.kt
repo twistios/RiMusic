@@ -243,7 +243,7 @@ fun AddToPlaylistPlayerMenu(
                 )
             }
 
-            if(isYouTubeSyncEnabled())
+            if(isYouTubeSyncEnabled() && playlist.isYoutubePlaylist && playlist.isEditable)
                 CoroutineScope(Dispatchers.IO).launch {
                     playlist.browseId?.let { YtMusic.addToPlaylist(cleanPrefix(it), mediaItem.mediaId) }
                 }
@@ -260,7 +260,6 @@ fun AddToPlaylistPlayerMenu(
         },
         onRemoveFromPlaylist = { playlist ->
             Database.asyncTransaction {
-                deleteSongFromPlaylist(mediaItem.mediaId,playlist.id)
                 if (playlist.name.startsWith(PIPED_PREFIX) && isPipedEnabled && pipedSession.token.isNotEmpty()) {
                     Timber.d("MediaItemMenu InPlaylistMediaItemMenu onRemoveFromPlaylist browseId ${playlist.browseId}")
                     removeFromPipedPlaylist(
@@ -271,19 +270,24 @@ fun AddToPlaylistPlayerMenu(
                     )
                 }
             }
-            if(isYouTubeSyncEnabled() && playlist.browseId != null && !playlist.name.startsWith(PIPED_PREFIX))
+            if(isYouTubeSyncEnabled() && playlist.isYoutubePlaylist && playlist.isEditable) {
                 Database.asyncTransaction {
                     CoroutineScope(Dispatchers.IO).launch {
-                            if (removeYTSongFromPlaylist(
-                                    mediaItem.mediaId,
-                                    playlist.browseId,
-                                    playlist.id
-                                )
+                        if (removeYTSongFromPlaylist(
+                                mediaItem.mediaId,
+                                playlist.browseId ?: "",
+                                playlist.id
                             )
-                                deleteSongFromPlaylist(mediaItem.mediaId, playlist.id)
+                        )
+                            deleteSongFromPlaylist(mediaItem.mediaId, playlist.id)
 
                     }
                 }
+            } else {
+                Database.asyncTransaction {
+                    deleteSongFromPlaylist(mediaItem.mediaId, playlist.id)
+                }
+            }
         },
         onDismiss = onDismiss,
     )

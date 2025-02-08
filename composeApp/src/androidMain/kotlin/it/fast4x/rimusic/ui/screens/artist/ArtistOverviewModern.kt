@@ -12,6 +12,7 @@ import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.asPaddingValues
@@ -19,6 +20,7 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
@@ -498,6 +500,64 @@ fun ArtistOverviewModern(
                     }
                 }
 
+                item {
+                    artistPage.description?.let { description ->
+                        val attributionsIndex = description.lastIndexOf("\n\nFrom Wikipedia")
+
+                        BasicText(
+                            text = stringResource(R.string.information),
+                            style = typography().m.semiBold.align(TextAlign.Start),
+                            modifier = sectionTextModifier
+                                .fillMaxWidth()
+                        )
+
+                        Row(
+                            modifier = Modifier
+                                .padding(vertical = 16.dp, horizontal = 8.dp)
+                        ) {
+                            BasicText(
+                                text = "“",
+                                style = typography().xxl.semiBold,
+                                modifier = Modifier
+                                    .offset(y = (-8).dp)
+                                    .align(Alignment.Top)
+                            )
+
+                            BasicText(
+                                text = if (attributionsIndex == -1) {
+                                    description
+                                } else {
+                                    description.substring(0, attributionsIndex)
+                                },
+                                style = typography().xxs.secondary.align(TextAlign.Justify),
+                                modifier = Modifier
+                                    .padding(horizontal = 8.dp)
+                                    .weight(1f)
+                            )
+
+                            BasicText(
+                                text = "„",
+                                style = typography().xxl.semiBold,
+                                modifier = Modifier
+                                    .offset(y = 4.dp)
+                                    .align(Alignment.Bottom)
+                            )
+                        }
+
+                        if (attributionsIndex != -1) {
+                            BasicText(
+                                text = stringResource(R.string.from_wikipedia_cca),
+                                style = typography().xxs.color(colorPalette().textDisabled)
+                                    .align(TextAlign.Start),
+                                modifier = Modifier
+                                    .padding(horizontal = 16.dp)
+                                    .padding(bottom = 16.dp)
+                            )
+                        }
+
+                    }
+                }
+
                 artistPage.sections.forEach() {
                     //println("ArtistOverviewModern title: ${it.title} browseId: ${it.moreEndpoint?.browseId} params: ${it.moreEndpoint?.params}")
                     item {
@@ -632,62 +692,8 @@ fun ArtistOverviewModern(
                     }
                 }
 
-                item {
-                    artistPage.description?.let { description ->
-                        val attributionsIndex = description.lastIndexOf("\n\nFrom Wikipedia")
-
-                        BasicText(
-                            text = stringResource(R.string.information),
-                            style = typography().m.semiBold.align(TextAlign.Start),
-                            modifier = sectionTextModifier
-                                .fillMaxWidth()
-                        )
-
-                        Row(
-                            modifier = Modifier
-                                .padding(vertical = 16.dp, horizontal = 8.dp)
-                        ) {
-                            BasicText(
-                                text = "“",
-                                style = typography().xxl.semiBold,
-                                modifier = Modifier
-                                    .offset(y = (-8).dp)
-                                    .align(Alignment.Top)
-                            )
-
-                            BasicText(
-                                text = if (attributionsIndex == -1) {
-                                    description
-                                } else {
-                                    description.substring(0, attributionsIndex)
-                                },
-                                style = typography().xxs.secondary.align(TextAlign.Justify),
-                                modifier = Modifier
-                                    .padding(horizontal = 8.dp)
-                                    .weight(1f)
-                            )
-
-                            BasicText(
-                                text = "„",
-                                style = typography().xxl.semiBold,
-                                modifier = Modifier
-                                    .offset(y = 4.dp)
-                                    .align(Alignment.Bottom)
-                            )
-                        }
-
-                        if (attributionsIndex != -1) {
-                            BasicText(
-                                text = stringResource(R.string.from_wikipedia_cca),
-                                style = typography().xxs.color(colorPalette().textDisabled)
-                                    .align(TextAlign.Start),
-                                modifier = Modifier
-                                    .padding(horizontal = 16.dp)
-                                    .padding(bottom = 16.dp)
-                            )
-                        }
-
-                    }
+                item(key = "bottom") {
+                    Spacer(modifier = Modifier.height(Dimensions.bottomSpacer))
                 }
 
             } else {

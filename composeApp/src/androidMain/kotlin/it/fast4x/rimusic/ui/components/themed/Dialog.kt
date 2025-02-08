@@ -2020,6 +2020,8 @@ fun SongMatchingDialog(
                                                     if (removeYTSongFromPlaylist(songToRematch.id, playlist.browseId ?: "", playlistId))
                                                         deleteSongFromPlaylist(songToRematch.id, playlistId)
                                                 }
+                                            } else {
+                                                deleteSongFromPlaylist(songToRematch.id, playlistId)
                                             }
 
                                             if (songExist(song.asSong.id) == 0) {
