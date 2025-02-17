@@ -6,10 +6,14 @@ import androidx.compose.animation.core.LinearOutSlowInEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.pager.PagerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -23,6 +27,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Outline
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.PathOperation
@@ -31,6 +36,7 @@ import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.LayoutDirection
+import androidx.compose.ui.unit.dp
 import it.fast4x.rimusic.R
 import it.fast4x.rimusic.enums.ThumbnailCoverType
 import it.fast4x.rimusic.utils.VinylSizeKey
@@ -67,7 +73,7 @@ fun RotateThumbnailCover(
             val p3 = Path()
             p3.op(p1, p2, PathOperation.Difference)
 
-            return Outline.Generic(p3)
+            return Outline.Generic(p1)
         }
     }
 
@@ -77,21 +83,29 @@ fun RotateThumbnailCover(
             .clip(roundedShape)
     ) {
 
-        Image(
-            modifier = Modifier
-                .fillMaxSize()
-                .rotate(rotationDegrees),
-            painter = painterResource(id = when (type) {
-                ThumbnailCoverType.Vinyl -> R.drawable.vinyl_background
-                ThumbnailCoverType.CD -> R.drawable.cd
-            }),
-            contentDescription = "disc background"
-        )
-
-        if (type == ThumbnailCoverType.Vinyl)
             Image(
                 modifier = Modifier
-                    .fillMaxSize(imageCoverSize*0.01f)
+                    .fillMaxSize()
+                    .rotate(rotationDegrees)
+                    .aspectRatio(1.0f),
+                painter = painterResource(id = when (type) {
+                    ThumbnailCoverType.Vinyl -> R.drawable.vinyl_background
+                    ThumbnailCoverType.CD, ThumbnailCoverType.CDwithCover -> R.drawable.cd
+                }),
+                contentDescription = "disc background"
+            )
+
+        if (type in listOf(ThumbnailCoverType.Vinyl, ThumbnailCoverType.CDwithCover))
+            Image(
+                modifier = Modifier
+                    .fillMaxSize(
+                        when (type) {
+                            ThumbnailCoverType.Vinyl -> imageCoverSize * 0.01f
+                            ThumbnailCoverType.CD -> 1f
+                            ThumbnailCoverType.CDwithCover -> 0.85f
+                        }
+
+                    )
                     .rotate(rotationDegrees)
                     .aspectRatio(1.0f)
                     .align(Alignment.Center)
@@ -99,6 +113,30 @@ fun RotateThumbnailCover(
                 painter = painter,
                 contentDescription = "song album cover"
             )
+
+        if (type == ThumbnailCoverType.CDwithCover) {
+            Box(
+                modifier = Modifier
+                    .clip(roundedShape)
+                    .fillMaxSize(0.3f)
+                    .border(BorderStroke(2.dp, Color.LightGray), roundedShape)
+                    .align(Alignment.Center)
+            )
+            Box(
+                modifier = Modifier
+                    .clip(roundedShape)
+                    .fillMaxSize(0.2f)
+                    .background(Color.LightGray)
+                    .align(Alignment.Center)
+            )
+            Box(
+                modifier = Modifier
+                    .clip(roundedShape)
+                    .fillMaxSize(0.1f)
+                    .background(Color.Black)
+                    .align(Alignment.Center)
+            )
+        }
     }
 }
 

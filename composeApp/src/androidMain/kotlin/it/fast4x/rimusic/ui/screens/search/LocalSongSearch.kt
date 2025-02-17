@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.only
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -33,6 +34,7 @@ import androidx.compose.ui.text.ExperimentalTextApi
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.offline.Download
 import androidx.navigation.NavController
@@ -67,8 +69,8 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import me.knighthat.colorPalette
-import me.knighthat.typography
+import it.fast4x.rimusic.colorPalette
+import it.fast4x.rimusic.typography
 
 @ExperimentalTextApi
 @SuppressLint("SuspiciousIndentation")
@@ -178,6 +180,7 @@ fun LocalSongSearch(
                                     colorPalette().background1,
                                     shape = thumbnailRoundness.shape()
                                 )
+                                .padding(all = 4.dp)
                                 .focusRequester(focusRequester)
                                 .fillMaxWidth()
                         )
@@ -263,7 +266,7 @@ fun LocalSongSearch(
                     onDownloadClick = {
                         binder?.cache?.removeResource(song.asMediaItem.mediaId)
                         CoroutineScope(Dispatchers.IO).launch {
-                            Database.resetContentLength( song.asMediaItem.mediaId )
+                            Database.deleteFormat( song.asMediaItem.mediaId )
                         }
 
                         if (!isLocal)

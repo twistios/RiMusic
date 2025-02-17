@@ -16,6 +16,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
@@ -86,7 +87,7 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import me.knighthat.colorPalette
+import it.fast4x.rimusic.colorPalette
 
 @ExperimentalMaterialApi
 @ExperimentalTextApi
@@ -106,22 +107,22 @@ fun ArtistScreen(
 
     val binder = LocalPlayerServiceBinder.current
 
-    var tabIndex by remember {
+    var tabIndex by rememberSaveable {
         mutableStateOf(0)
     }
 
-    PersistMapCleanup(tagPrefix = "artist/$browseId/")
+    //PersistMapCleanup(tagPrefix = "artist/$browseId/")
 
     var artist by persist<Artist?>("artist/$browseId/artist")
 
-    var artistPage by persist<Innertube.ArtistPage?>("artist/$browseId/artistPage")
+    var artistPage by persist<Innertube.ArtistInfoPage?>("artist/$browseId/artistPage")
 
     var downloadState by remember {
         mutableStateOf(Download.STATE_STOPPED)
     }
     val context = LocalContext.current
 
-    var thumbnailRoundness by rememberPreference(
+    val thumbnailRoundness by rememberPreference(
         thumbnailRoundnessKey,
         ThumbnailRoundness.Heavy
     )
@@ -181,8 +182,6 @@ fun ArtistScreen(
                                 .shimmer()
                         )
                     } else {
-                        val context = LocalContext.current
-
                         Header(title = artist?.name ?: "Unknown", actionsContent = {
                                 Row(
                                     horizontalArrangement = Arrangement.spacedBy(10.dp),
@@ -214,27 +213,6 @@ fun ArtistScreen(
                                         alternative = artist?.bookmarkedAt == null
                                     )
 
-                                    /*
-                                HeaderIconButton(
-                                    icon = if (artist?.bookmarkedAt == null) {
-                                        R.drawable.bookmark_outline
-                                    } else {
-                                        R.drawable.bookmark
-                                    },
-                                    color = colorPalette.accent,
-                                    onClick = {
-                                        val bookmarkedAt =
-                                            if (artist?.bookmarkedAt == null) System.currentTimeMillis() else null
-
-                                        query {
-                                            artist
-                                                ?.copy(bookmarkedAt = bookmarkedAt)
-                                                ?.let(Database::update)
-                                        }
-                                    }
-                                )
-                                 */
-
                                     HeaderIconButton(
                                         icon = R.drawable.share_social,
                                         color = colorPalette().text,
@@ -258,102 +236,6 @@ fun ArtistScreen(
                                     )
                                 }
                             },
-                            disableScrollingText = disableScrollingText)
-                    }
-                }
-
-            val localHeaderContent: @Composable (textButton: (@Composable () -> Unit)?) -> Unit =
-                { textButton ->
-                    if (artist?.timestamp == null) {
-                        HeaderPlaceholder(
-                            modifier = Modifier
-                                .shimmer()
-                        )
-                    } else {
-                        val context = LocalContext.current
-
-                        Header(title = artist?.name ?: "Unknown",
-                            actionsContent = {
-                            textButton?.invoke()
-
-
-                            listMediaItems.let { songs ->
-                                HeaderIconButton(
-                                    icon = R.drawable.enqueue,
-                                    enabled = true,
-                                    color = colorPalette().text,
-                                    onClick = {},
-                                    modifier = Modifier
-                                        .combinedClickable(
-                                            onClick = {
-                                                binder?.player?.enqueue(songs, context)
-                                            },
-                                            onLongClick = {
-                                                SmartMessage(context.resources.getString(R.string.info_enqueue_songs), context = context)
-                                            }
-                                        )
-                                )
-                            }
-
-                            Spacer(
-                                modifier = Modifier
-                                    .weight(1f)
-                            )
-
-                            SecondaryTextButton(
-                                text = if (artist?.bookmarkedAt == null) stringResource(R.string.follow) else stringResource(
-                                    R.string.following
-                                ),
-                                onClick = {
-                                    val bookmarkedAt =
-                                        if (artist?.bookmarkedAt == null) System.currentTimeMillis() else null
-
-                                    Database.asyncTransaction {
-                                        artist?.copy( bookmarkedAt = bookmarkedAt )
-                                              ?.let( ::update )
-                                    }
-                                },
-                                alternative = if (artist?.bookmarkedAt == null) true else false     // WHY??
-                            )
-
-                            /*
-                            HeaderIconButton(
-                                icon = if (artist?.bookmarkedAt == null) {
-                                    R.drawable.bookmark_outline
-                                } else {
-                                    R.drawable.bookmark
-                                },
-                                color = colorPalette.accent,
-                                onClick = {
-                                    val bookmarkedAt =
-                                        if (artist?.bookmarkedAt == null) System.currentTimeMillis() else null
-
-                                    query {
-                                        artist
-                                            ?.copy(bookmarkedAt = bookmarkedAt)
-                                            ?.let(Database::update)
-                                    }
-                                }
-                            )
-                             */
-
-                            HeaderIconButton(
-                                icon = R.drawable.share_social,
-                                color = colorPalette().text,
-                                onClick = {
-                                    val sendIntent = Intent().apply {
-                                        action = Intent.ACTION_SEND
-                                        type = "text/plain"
-                                        putExtra(
-                                            Intent.EXTRA_TEXT,
-                                            "https://music.youtube.com/channel/$browseId"
-                                        )
-                                    }
-
-                                    context.startActivity(Intent.createChooser(sendIntent, null))
-                                }
-                            )
-                        },
                             disableScrollingText = disableScrollingText)
                     }
                 }
@@ -409,7 +291,6 @@ fun ArtistScreen(
                         }
 
                         1 -> {
-                            val binder = LocalPlayerServiceBinder.current
                             val menuState = LocalMenuState.current
                             val thumbnailSizeDp = Dimensions.thumbnails.song
                             val thumbnailSizePx = thumbnailSizeDp.px
@@ -442,22 +323,38 @@ fun ArtistScreen(
                                 itemContent = { song ->
                                     if (parentalControlEnabled && song.explicit) return@ItemsPage
 
+                                    downloadState = getDownloadState(song.asMediaItem.mediaId)
+                                    val isDownloaded = isDownloadedSong(song.asMediaItem.mediaId)
+
                                     SwipeablePlaylistItem(
                                         mediaItem = song.asMediaItem,
-                                        onSwipeToRight = {
+                                        onPlayNext = {
                                             binder?.player?.addNext(song.asMediaItem)
+                                        },
+                                        onDownload = {
+                                            binder?.cache?.removeResource(song.asMediaItem.mediaId)
+                                            CoroutineScope(Dispatchers.IO).launch {
+                                                Database.resetContentLength( song.asMediaItem.mediaId )
+                                            }
+
+                                            manageDownload(
+                                                context = context,
+                                                mediaItem = song.asMediaItem,
+                                                downloadState = isDownloaded
+                                            )
+                                        },
+                                        onEnqueue = {
+                                            binder?.player?.enqueue(song.asMediaItem)
                                         }
                                     ) {
                                         listMediaItems.add(song.asMediaItem)
-                                        downloadState = getDownloadState(song.asMediaItem.mediaId)
-                                        val isDownloaded = isDownloadedSong(song.asMediaItem.mediaId)
                                         var forceRecompose by remember { mutableStateOf(false) }
                                         SongItem(
                                             song = song,
                                             onDownloadClick = {
                                                 binder?.cache?.removeResource(song.asMediaItem.mediaId)
                                                 CoroutineScope(Dispatchers.IO).launch {
-                                                    Database.resetContentLength( song.asMediaItem.mediaId )
+                                                    Database.deleteFormat( song.asMediaItem.mediaId )
                                                 }
 
                                                 manageDownload(
@@ -524,21 +421,6 @@ fun ArtistScreen(
                                                                      */
                                                                 }
                                                         }
-                                                    /*
-                                                        binder?.stopRadio()
-                                                        binder?.player?.forcePlayAtIndex(
-                                                            listMediaItems.distinct(),
-                                                            listMediaItems.distinct()
-                                                                .indexOf(song.asMediaItem)
-                                                        )
-
-                                                     */
-
-                                                        /*
-                                                    binder?.stopRadio()
-                                                    binder?.player?.forcePlay(song.asMediaItem)
-                                                    binder?.setupRadio(song.info?.endpoint)
-                                                         */
 
                                                     }
                                                 ),

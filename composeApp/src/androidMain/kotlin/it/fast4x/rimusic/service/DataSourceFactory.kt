@@ -14,7 +14,7 @@ import it.fast4x.rimusic.utils.okHttpDataSourceFactory
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
-import me.knighthat.appContext
+import it.fast4x.rimusic.appContext
 import java.io.IOException
 
 @OptIn(UnstableApi::class)
@@ -80,17 +80,13 @@ internal fun MyDownloadHelper.createDataSourceFactory(): DataSource.Factory {
             }
     ) { dataSpec: DataSpec ->
         try {
+
             return@Factory runBlocking {
                 dataSpecProcess(dataSpec, appContext(), appContext().isConnectionMetered())
-                /*
-                .also {
-                //loudnessEnhancer?.update(current_song, context)
-                }
-                 */
             }
         }
         catch (e: Throwable) {
-            println("MyDownloadHelper DataSourcefactory Error: ${e.message}")
+            println("MyDownloadHelper DataSourcefactory Error: ${e.stackTraceToString()}")
             throw IOException(e)
         }
     }

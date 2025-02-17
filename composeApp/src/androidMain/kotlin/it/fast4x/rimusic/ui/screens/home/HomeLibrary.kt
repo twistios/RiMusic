@@ -27,6 +27,7 @@ import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -34,11 +35,13 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.media3.common.util.UnstableApi
 import it.fast4x.compose.persist.persistList
+import it.fast4x.innertube.YtMusic
 import it.fast4x.rimusic.Database
 import it.fast4x.rimusic.MONTHLY_PREFIX
 import it.fast4x.rimusic.PINNED_PREFIX
 import it.fast4x.rimusic.PIPED_PREFIX
 import it.fast4x.rimusic.R
+import it.fast4x.rimusic.YTP_PREFIX
 import it.fast4x.rimusic.enums.NavigationBarPosition
 import it.fast4x.rimusic.enums.PlaylistSortBy
 import it.fast4x.rimusic.enums.PlaylistsType
@@ -70,19 +73,31 @@ import it.fast4x.rimusic.utils.showMonthlyPlaylistsKey
 import it.fast4x.rimusic.utils.showPinnedPlaylistsKey
 import it.fast4x.rimusic.utils.showPipedPlaylistsKey
 import kotlinx.coroutines.flow.map
-import me.knighthat.colorPalette
-import me.knighthat.component.IDialog
-import me.knighthat.component.Search
-import me.knighthat.component.header.TabToolBar
-import me.knighthat.component.screen.playlistSync
-import me.knighthat.component.tab.ImportSongsFromCSV
-import me.knighthat.component.tab.ItemSize
-import me.knighthat.component.tab.Sort
-import me.knighthat.component.tab.TabHeader
-import me.knighthat.component.tab.toolbar.Descriptive
-import me.knighthat.component.tab.toolbar.MenuIcon
-import me.knighthat.component.tab.toolbar.SongsShuffle
-import me.knighthat.preference.Preference.HOME_LIBRARY_ITEM_SIZE
+import it.fast4x.rimusic.colorPalette
+import it.fast4x.rimusic.models.SongAlbumMap
+import it.fast4x.rimusic.models.SongArtistMap
+import it.fast4x.rimusic.ui.components.PullToRefreshBox
+import it.fast4x.rimusic.ui.components.themed.IDialog
+import it.fast4x.rimusic.ui.components.themed.Search
+import it.fast4x.rimusic.ui.components.navigation.header.TabToolBar
+import it.fast4x.rimusic.ui.components.tab.ImportSongsFromCSV
+import it.fast4x.rimusic.ui.components.tab.ItemSize
+import it.fast4x.rimusic.ui.components.tab.Sort
+import it.fast4x.rimusic.ui.components.tab.TabHeader
+import it.fast4x.rimusic.ui.components.tab.toolbar.Descriptive
+import it.fast4x.rimusic.ui.components.tab.toolbar.MenuIcon
+import it.fast4x.rimusic.ui.components.tab.toolbar.SongsShuffle
+import it.fast4x.rimusic.ui.screens.settings.isYouTubeSyncEnabled
+import it.fast4x.rimusic.utils.importYTMPrivatePlaylists
+import it.fast4x.rimusic.utils.Preference.HOME_LIBRARY_ITEM_SIZE
+import it.fast4x.rimusic.utils.autoSyncToolbutton
+import it.fast4x.rimusic.utils.autosyncKey
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 
 
 @ExperimentalMaterial3Api
@@ -132,6 +147,7 @@ fun HomeLibrary(
             PlaylistsType.PinnedPlaylist -> Database.songsInAllPinnedPlaylists()
             PlaylistsType.MonthlyPlaylist -> Database.songsInAllMonthlyPlaylists()
             PlaylistsType.PipedPlaylist -> Database.songsInAllPipedPlaylists()
+            PlaylistsType.YTPlaylist -> Database.songsInAllYTPrivatePlaylists()
         }.map { it.map( Song::asMediaItem ) }
     }
     //<editor-fold desc="New playlist dialog">
@@ -151,12 +167,31 @@ fun HomeLibrary(
                 newPlaylistToggleState.value = value
                 field = value
             }
-        // TODO: Add a random name generator
+
         override var value: String = ""
 
         override fun onShortClick() = super.onShortClick()
 
         override fun onSet(newValue: String) {
+            if (isYouTubeSyncEnabled()) {
+                CoroutineScope(Dispatchers.IO).launch {
+                    YtMusic.createPlaylist(newValue).getOrNull()
+                        .also {
+                            println("Innertube YtMusic createPlaylist: $it")
+                            Database.asyncTransaction {
+                                insert(Playlist(name = newValue, browseId = it, isYoutubePlaylist = true, isEditable = true))
+                            }
+                        }
+
+                }
+            } else {
+                CoroutineScope(Dispatchers.IO).launch {
+                    Database.asyncTransaction {
+                        insert(Playlist(name = newValue))
+                    }
+                }
+            }
+
             if ( isPipedEnabled && pipedSession.token.isNotEmpty() )
                 createPipedPlaylist(
                     context = context,
@@ -164,28 +199,32 @@ fun HomeLibrary(
                     pipedSession = pipedSession.toApiSession(),
                     name = newValue
                 )
-            else
-                Database.asyncTransaction {
-                    insert( Playlist( name = newValue ) )
-                }
+
+
 
             onDismiss()
         }
 
     }
+    val currentDateTime = LocalDateTime.now()
+    val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd-HH:mm:ss")
+    var time by remember {mutableStateOf("")}
+    val formattedDate = currentDateTime.format(formatter)
     //</editor-fold>
     val importPlaylistDialog = ImportSongsFromCSV.init(
         beforeTransaction = { _, row ->
-            plistId = row["PlaylistName"]?.let {
+            time = formattedDate
+            val playlistName = row["PlaylistName"] ?: "New Playlist $time"
+            plistId = playlistName.let {
                 Database.playlistExistByName( it )
-            } ?: 0L
+            }
 
             if (plistId == 0L)
-                plistId = row["PlaylistName"]?.let {
+                plistId = playlistName.let {
                     Database.insert( Playlist( plistId, it, row["PlaylistBrowseId"] ) )
-                }!!
+                }
         },
-        afterTransaction = { index, song ->
+        afterTransaction = { index, song, album, artists ->
             if (song.id.isBlank()) return@init
 
             Database.insert(song)
@@ -194,14 +233,62 @@ fun HomeLibrary(
                     songId = song.id,
                     playlistId = plistId,
                     position = index
-                )
+                ).default()
             )
+
+            if(album.id !=""){
+                Database.insert(
+                    album,
+                    SongAlbumMap(
+                        songId = song.id,
+                        albumId = album.id,
+                        position = null
+                    )
+                )
+            }
+            if(artists.isNotEmpty()){
+                Database.insert(
+                    artists,
+                    artists.map{ artist->
+                        SongArtistMap(
+                            songId = song.id,
+                            artistId = artist.id
+                        )
+                    }
+                )
+            }
         }
     )
-    val sync = playlistSync()
+    val sync = autoSyncToolbutton(R.string.autosync)
+
+    val doAutoSync by rememberPreference(autosyncKey, false)
+    var justSynced by rememberSaveable { mutableStateOf(!doAutoSync) }
+
+    var refreshing by remember { mutableStateOf(false) }
+    val refreshScope = rememberCoroutineScope()
+
+    fun refresh() {
+        if (refreshing) return
+        refreshScope.launch(Dispatchers.IO) {
+            refreshing = true
+            justSynced = false
+            delay(500)
+            refreshing = false
+        }
+    }
+
+    // START: Import YTM private playlists
+    LaunchedEffect(justSynced, doAutoSync) {
+        if ((!justSynced) && importYTMPrivatePlaylists())
+            justSynced = true
+    }
+
+    // START: Import Piped playlists
+    if (isPipedEnabled)
+        ImportPipedPlaylists()
 
     LaunchedEffect( sort.sortBy, sort.sortOrder ) {
-        Database.playlistPreviews( sort.sortBy, sort.sortOrder ).collect { items = it }
+        Database.playlistPreviews(sort.sortBy, sort.sortOrder).collect { items = it }
     }
     LaunchedEffect( items, search.input ) {
         val scrollIndex = lazyGridState.firstVisibleItemIndex
@@ -219,7 +306,8 @@ fun HomeLibrary(
     val showMonthlyPlaylists by rememberPreference(showMonthlyPlaylistsKey, true)
     val showPipedPlaylists by rememberPreference(showPipedPlaylistsKey, true)
 
-    var buttonsList = listOf(PlaylistsType.Playlist to stringResource(R.string.playlists))
+    val buttonsList = mutableListOf(PlaylistsType.Playlist to stringResource(R.string.playlists))
+    buttonsList += PlaylistsType.YTPlaylist to stringResource(R.string.yt_playlists)
     if (showPipedPlaylists) buttonsList +=
         PlaylistsType.PipedPlaylist to stringResource(R.string.piped_playlists)
     if (showPinnedPlaylists) buttonsList +=
@@ -228,10 +316,6 @@ fun HomeLibrary(
         PlaylistsType.MonthlyPlaylist to stringResource(R.string.monthly_playlists)
     // END - Additional playlists
 
-    // START - Piped
-    if (isPipedEnabled)
-        ImportPipedPlaylists()
-    // END - Piped
 
     // START - New playlist
     newPlaylistDialog.Render()
@@ -243,97 +327,108 @@ fun HomeLibrary(
         CheckMonthlyPlaylist()
     // END - Monthly playlist
 
-    Box(
-        modifier = Modifier
-            .background(colorPalette().background0)
-            //.fillMaxSize()
-            .fillMaxHeight()
-            .fillMaxWidth(
-                if( NavigationBarPosition.Right.isCurrent() )
-                    Dimensions.contentWidthRightBar
-                else
-                    1f
-            )
+    PullToRefreshBox(
+        refreshing = refreshing,
+        onRefresh = { refresh() }
     ) {
-        Column( Modifier.fillMaxSize() ) {
-            // Sticky tab's title
-            TabHeader( R.string.playlists ) {
-                HeaderInfo( items.size.toString(), R.drawable.playlist )
-            }
-
-            // Sticky tab's tool bar
-            TabToolBar.Buttons( sort, sync, search, shuffle, newPlaylistDialog, importPlaylistDialog, itemSize )
-
-            // Sticky search bar
-            search.SearchBar( this )
-
-            LazyVerticalGrid(
-                state = lazyGridState,
-                columns = GridCells.Adaptive( itemSize.size.dp ),
-                modifier = Modifier
-                    .background(colorPalette().background0)
-            ) {
-                item(
-                    key = "separator",
-                    contentType = 0,
-                    span = { GridItemSpan(maxLineSpan) }) {
-                    ButtonsRow(
-                        chips = buttonsList,
-                        currentValue = playlistType,
-                        onValueUpdate = { playlistType = it },
-                        modifier = Modifier.padding(start = 12.dp, end = 12.dp)
-                    )
+        Box(
+            modifier = Modifier
+                .background(colorPalette().background0)
+                //.fillMaxSize()
+                .fillMaxHeight()
+                .fillMaxWidth(
+                    if (NavigationBarPosition.Right.isCurrent())
+                        Dimensions.contentWidthRightBar
+                    else
+                        1f
+                )
+        ) {
+            Column( Modifier.fillMaxSize() ) {
+                // Sticky tab's title
+                TabHeader( R.string.playlists ) {
+                    HeaderInfo( items.size.toString(), R.drawable.playlist )
                 }
 
-                val listPrefix =
-                    when( playlistType ) {
-                        PlaylistsType.Playlist -> ""    // Matches everything
-                        PlaylistsType.PinnedPlaylist -> PINNED_PREFIX
-                        PlaylistsType.MonthlyPlaylist -> MONTHLY_PREFIX
-                        PlaylistsType.PipedPlaylist -> PIPED_PREFIX
-                    }
-                val condition: (PlaylistPreview) -> Boolean = {
-                    it.playlist.name.startsWith( listPrefix, true )
-                }
-                items(
-                    items = itemsOnDisplay.filter( condition ),
-                    key = { it.playlist.id }
-                ) { preview ->
-                    PlaylistItem(
-                        playlist = preview,
-                        thumbnailSizeDp = itemSize.size.dp,
-                        thumbnailSizePx = itemSize.size.px,
-                        alternative = true,
-                        modifier = Modifier.fillMaxSize()
-                                           .animateItem( fadeInSpec = null, fadeOutSpec = null )
-                                           .clickable(onClick = {
-                                               search.onItemSelected()
-                                               onPlaylistClick( preview.playlist )
-                                           }),
-                        disableScrollingText = disableScrollingText
-                    )
-                }
+                // Sticky tab's tool bar
+                TabToolBar.Buttons( sort, sync, search, shuffle, newPlaylistDialog, importPlaylistDialog, itemSize )
 
-                item(
-                    key = "footer",
-                    contentType = 0,
-                    span = { GridItemSpan(maxLineSpan) }
+                // Sticky search bar
+                search.SearchBar( this )
+
+                LazyVerticalGrid(
+                    state = lazyGridState,
+                    columns = GridCells.Adaptive( itemSize.size.dp ),
+                    modifier = Modifier
+                        .background(colorPalette().background0)
                 ) {
-                    Spacer(modifier = Modifier.height(Dimensions.bottomSpacer))
+                    item(
+                        key = "separator",
+                        contentType = 0,
+                        span = { GridItemSpan(maxLineSpan) }) {
+                        ButtonsRow(
+                            chips = buttonsList,
+                            currentValue = playlistType,
+                            onValueUpdate = { playlistType = it },
+                            modifier = Modifier.padding(start = 12.dp, end = 12.dp)
+                        )
+                    }
+
+                    val listPrefix =
+                        when( playlistType ) {
+                            PlaylistsType.Playlist -> ""    // Matches everything
+                            PlaylistsType.PinnedPlaylist -> PINNED_PREFIX
+                            PlaylistsType.MonthlyPlaylist -> MONTHLY_PREFIX
+                            PlaylistsType.PipedPlaylist -> PIPED_PREFIX
+                            PlaylistsType.YTPlaylist -> YTP_PREFIX
+                        }
+                    val condition: (PlaylistPreview) -> Boolean = {
+                        if (playlistType == PlaylistsType.YTPlaylist){
+                            it.playlist.isYoutubePlaylist
+                        } else it.playlist.name.startsWith( listPrefix, true )
+                    }
+                    items(
+                        items = itemsOnDisplay.filter( condition ),
+                        key = { it.playlist.id }
+                    ) { preview ->
+                        PlaylistItem(
+                            playlist = preview,
+                            thumbnailSizeDp = itemSize.size.dp,
+                            thumbnailSizePx = itemSize.size.px,
+                            alternative = true,
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .animateItem(fadeInSpec = null, fadeOutSpec = null)
+                                .clickable(onClick = {
+                                    search.onItemSelected()
+                                    onPlaylistClick(preview.playlist)
+                                }),
+                            disableScrollingText = disableScrollingText,
+                            isYoutubePlaylist = preview.playlist.isYoutubePlaylist,
+                            isEditable = preview.playlist.isEditable
+                        )
+                    }
+
+                    item(
+                        key = "footer",
+                        contentType = 0,
+                        span = { GridItemSpan(maxLineSpan) }
+                    ) {
+                        Spacer(modifier = Modifier.height(Dimensions.bottomSpacer))
+                    }
+
                 }
-
             }
+
+            FloatingActionsContainerWithScrollToTop(lazyGridState = lazyGridState)
+
+            val showFloatingIcon by rememberPreference(showFloatingIconKey, false)
+            if (UiType.ViMusic.isCurrent() && showFloatingIcon)
+                MultiFloatingActionsContainer(
+                    iconId = R.drawable.search,
+                    onClick = onSearchClick,
+                    onClickSettings = onSettingsClick,
+                    onClickSearch = onSearchClick
+                )
         }
-
-        FloatingActionsContainerWithScrollToTop(lazyGridState = lazyGridState)
-
-        val showFloatingIcon by rememberPreference(showFloatingIconKey, false)
-        if (UiType.ViMusic.isCurrent() && showFloatingIcon)
-            MultiFloatingActionsContainer(
-                iconId = R.drawable.search,
-                onClick = onSearchClick,
-                onClickSettings = onSettingsClick,
-                onClickSearch = onSearchClick
-            )
     }
 }

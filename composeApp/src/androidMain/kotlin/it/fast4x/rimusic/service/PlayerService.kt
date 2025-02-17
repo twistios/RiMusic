@@ -179,7 +179,7 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
-import me.knighthat.appContext
+import it.fast4x.rimusic.appContext
 import timber.log.Timber
 import java.io.IOException
 import java.io.ObjectInputStream
@@ -414,7 +414,7 @@ class PlayerService : InvincibleService(),
         val exoPlayerCustomCache = preferences.getInt(exoPlayerCustomCacheKey, 32) * 1000 * 1000L
 
         val cacheEvictor = when (val size =
-            preferences.getEnum(exoPlayerDiskCacheMaxSizeKey, ExoPlayerDiskCacheMaxSize.`32MB`)) {
+            preferences.getEnum(exoPlayerDiskCacheMaxSizeKey, ExoPlayerDiskCacheMaxSize.`2GB`)) {
             ExoPlayerDiskCacheMaxSize.Unlimited -> NoOpCacheEvictor()
             ExoPlayerDiskCacheMaxSize.Custom -> LeastRecentlyUsedCacheEvictor(exoPlayerCustomCache)
             else -> LeastRecentlyUsedCacheEvictor(size.bytes)
@@ -430,7 +430,7 @@ class PlayerService : InvincibleService(),
         var cacheDirName = "rimusic_cache"
 
         val cacheSize =
-            preferences.getEnum(exoPlayerDiskCacheMaxSizeKey, ExoPlayerDiskCacheMaxSize.`32MB`)
+            preferences.getEnum(exoPlayerDiskCacheMaxSizeKey, ExoPlayerDiskCacheMaxSize.`2GB`)
 
         if (cacheSize == ExoPlayerDiskCacheMaxSize.Disabled) cacheDirName = "rimusic_no_cache"
 
@@ -746,7 +746,11 @@ class PlayerService : InvincibleService(),
             player.stop()
             player.release()
 
-            unregisterReceiver(notificationActionReceiver)
+            try{
+                unregisterReceiver(notificationActionReceiver)
+            } catch (e: Exception){
+                Timber.e("PlayerService onDestroy unregisterReceiver notificationActionReceiver ${e.stackTraceToString()}")
+            }
 
             mediaSession.isActive = false
             mediaSession.release()
@@ -1875,7 +1879,8 @@ class PlayerService : InvincibleService(),
                 endpoint?.playlistSetVideoId,
                 endpoint?.params,
                 false,
-                applicationContext
+                applicationContext,
+                coroutineScope = coroutineScope
             ).let {
                 var mediaItems = listOf<MediaItem>()
                 runBlocking {
@@ -1894,7 +1899,8 @@ class PlayerService : InvincibleService(),
                 endpoint?.playlistSetVideoId,
                 endpoint?.params,
                 false,
-                applicationContext
+                applicationContext,
+                coroutineScope = coroutineScope
             ).let {
                 var songs = listOf<Song>()
                 runBlocking {
@@ -1915,7 +1921,8 @@ class PlayerService : InvincibleService(),
                 endpoint?.playlistSetVideoId,
                 endpoint?.params,
                 false,
-                applicationContext
+                applicationContext,
+                coroutineScope = coroutineScope
             ).let {
                 isLoadingRadio = true
                 coroutineScope.launch(Dispatchers.Main) {
@@ -1954,7 +1961,8 @@ class PlayerService : InvincibleService(),
                 endpoint?.playlistSetVideoId,
                 endpoint?.params,
                 isDiscoverEnabled,
-                applicationContext
+                applicationContext,
+                coroutineScope = coroutineScope
             ).let {
                 isLoadingRadio = true
                 radioJob = coroutineScope.launch(Dispatchers.Main) {

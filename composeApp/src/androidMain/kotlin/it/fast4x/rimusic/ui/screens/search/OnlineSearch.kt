@@ -92,8 +92,8 @@ import it.fast4x.rimusic.utils.thumbnailRoundnessKey
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
-import me.knighthat.colorPalette
-import me.knighthat.typography
+import it.fast4x.rimusic.colorPalette
+import it.fast4x.rimusic.typography
 
 @UnstableApi
 @ExperimentalFoundationApi

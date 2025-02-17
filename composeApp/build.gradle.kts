@@ -72,6 +72,9 @@ kotlin {
             implementation(libs.navigation)
             implementation(libs.media3.session)
             implementation(libs.kotlin.coroutines.guava)
+            implementation(libs.newpipe.extractor)
+            implementation(libs.nanojson)
+            implementation(libs.androidx.webkit)
         }
         commonMain.dependencies {
             implementation(compose.runtime)
@@ -123,8 +126,8 @@ android {
         applicationId = "it.fast4x.rimusic"
         minSdk = 21
         targetSdk = 35
-        versionCode = 72
-        versionName = "0.6.62.2"
+        versionCode = 83
+        versionName = "0.6.71"
     }
 
     splits {
@@ -309,6 +312,8 @@ dependencies {
     implementation(libs.glance.widgets)
     implementation(libs.kizzy.rpc)
     implementation(libs.gson)
+    implementation (libs.hypnoticcanvas)
+    implementation (libs.hypnoticcanvas.shaders)
 
     implementation(libs.room)
     ksp(libs.room.compiler)
@@ -322,5 +327,7 @@ dependencies {
     implementation(projects.piped)
 
 
-    coreLibraryDesugaring(libs.desugaring)
+//    coreLibraryDesugaring(libs.desugaring)
+    coreLibraryDesugaring(libs.desugaring.nio)
+
 }

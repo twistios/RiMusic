@@ -53,6 +53,7 @@ import it.fast4x.rimusic.Database
 import it.fast4x.rimusic.LocalPlayerAwareWindowInsets
 import it.fast4x.rimusic.LocalPlayerServiceBinder
 import it.fast4x.rimusic.R
+import it.fast4x.rimusic.cleanPrefix
 import it.fast4x.rimusic.enums.MaxStatisticsItems
 import it.fast4x.rimusic.enums.NavRoutes
 import it.fast4x.rimusic.enums.NavigationBarPosition
@@ -101,8 +102,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
-import me.knighthat.colorPalette
-import me.knighthat.typography
+import it.fast4x.rimusic.colorPalette
+import it.fast4x.rimusic.typography
 import timber.log.Timber
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.days
@@ -184,9 +185,7 @@ fun StatisticsPage(
 
     var totalPlayTimes = 0L
     allSongs.forEach {
-        totalPlayTimes += it.durationText?.let { it1 ->
-            durationTextToMillis(it1)
-        }?.toLong() ?: 0
+        totalPlayTimes += it.totalPlayTimeMs
     }
 
     if (showStatsListeningTime) {
@@ -343,7 +342,7 @@ fun StatisticsPage(
                             onDownloadClick = {
                                 binder?.cache?.removeResource(songs.get(it).asMediaItem.mediaId)
                                 CoroutineScope(Dispatchers.IO).launch {
-                                    Database.resetContentLength( songs.get(it).asMediaItem.mediaId )
+                                    Database.deleteFormat( songs.get(it).asMediaItem.mediaId )
                                 }
                                 manageDownload(
                                     context = context,
@@ -514,7 +513,7 @@ fun StatisticsPage(
                                     val playlistId: String = playlists[it].playlist.id.toString()
                                     if ( playlistId.isEmpty() ) return@clickable    // Fail-safe??
 
-                                    val pBrowseId: String = playlists[it].playlist.browseId ?: ""
+                                    val pBrowseId: String = cleanPrefix(playlists[it].playlist.browseId ?: "")
                                     val route: String =
                                         if ( pBrowseId.isNotEmpty() )
                                             "${NavRoutes.playlist.name}/$pBrowseId"

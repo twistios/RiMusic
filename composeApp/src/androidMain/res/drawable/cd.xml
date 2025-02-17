@@ -4,28 +4,14 @@
     android:height="320dp"
     android:viewportWidth="320"
     android:viewportHeight="320">
-  <path
-      android:pathData="m292.93,300.91a12.86,134.1 90,1 0,-268.19 0,12.86 134.1,90 1,0 268.19,0z"
-      android:fillType="evenOdd">
-    <aapt:attr name="android:fillColor">
-      <gradient 
-          android:centerX="158.83"
-          android:centerY="300.91"
-          android:gradientRadius="134.1"
-          android:type="radial">
-        <item android:offset="0" android:color="#5E000000"/>
-        <item android:offset="0.5" android:color="#1C000000"/>
-        <item android:offset="1" android:color="#00ADADAD"/>
-      </gradient>
-    </aapt:attr>
-  </path>
+
   <path
       android:pathData="m162.87,15.28c-78.43,0 -142.1,63.64 -142.1,142.07s63.68,142.1 142.1,142.1 142.07,-63.68 142.07,-142.1 -63.64,-142.07 -142.07,-142.07zM162.87,112.86c24.56,0 44.49,19.93 44.49,44.49s-19.93,44.49 -44.49,44.49 -44.49,-19.93 -44.49,-44.49 19.93,-44.49 44.49,-44.49z"
       android:strokeAlpha="0.58491"
       android:strokeWidth="1.39"
       android:fillType="evenOdd">
     <aapt:attr name="android:fillColor">
-      <gradient 
+      <gradient
           android:startX="159.6"
           android:startY="17.47"
           android:endX="259.38"
@@ -38,7 +24,7 @@
       </gradient>
     </aapt:attr>
     <aapt:attr name="android:strokeColor">
-      <gradient 
+      <gradient
           android:startX="257.88"
           android:startY="208.95"
           android:endX="201.77"
@@ -54,7 +40,7 @@
       android:pathData="m161.75,28.26c-76.85,0 -138.12,52.22 -138.12,129.07s62.4,139.25 139.25,139.25 139.21,-62.4 139.21,-139.25 -63.49,-129.07 -140.34,-129.07zM162.88,113.74c24.06,0 43.59,19.53 43.59,43.59s-19.53,43.59 -43.59,43.59 -43.59,-19.53 -43.59,-43.59 19.53,-43.59 43.59,-43.59z"
       android:fillType="evenOdd">
     <aapt:attr name="android:fillColor">
-      <gradient 
+      <gradient
           android:startX="159.62"
           android:startY="426.55"
           android:endX="215.75"

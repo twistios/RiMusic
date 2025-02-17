@@ -13,7 +13,24 @@ data class MusicShelfRenderer(
     data class Content(
         val musicResponsiveListItemRenderer: MusicResponsiveListItemRenderer?,
         val musicMultiRowListItemRenderer: MusicMultiRowListItemRenderer?,
+        val continuationItemRenderer: ContinuationItemRenderer?,
     ) {
+        @Serializable
+        data class ContinuationItemRenderer (
+            val trigger: String? = null,
+            val continuationEndpoint: ContinuationEndpoint? = null
+        )
+        @Serializable
+        data class ContinuationEndpoint (
+            val clickTrackingParams: String? = null,
+            val continuationCommand: ContinuationCommand? = null
+        )
+        @Serializable
+        data class ContinuationCommand (
+            val token: String? = null,
+            val request: String? = null
+        )
+
         @Serializable
         data class MusicMultiRowListItemRenderer(
             val description: Description?,
@@ -74,3 +91,6 @@ data class MusicShelfRenderer(
                 ?.firstOrNull()
     }
 }
+
+fun List<Continuation>.getContinuation() =
+    firstOrNull()?.nextContinuationData?.continuation

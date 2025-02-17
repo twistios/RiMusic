@@ -11,6 +11,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -54,10 +55,10 @@ import it.fast4x.rimusic.ui.components.themed.ValueSelectorDialog
 import it.fast4x.rimusic.utils.color
 import it.fast4x.rimusic.utils.secondary
 import it.fast4x.rimusic.utils.semiBold
-import me.knighthat.Skeleton
-import me.knighthat.colorPalette
-import me.knighthat.component.IDialog
-import me.knighthat.typography
+import it.fast4x.rimusic.ui.components.Skeleton
+import it.fast4x.rimusic.colorPalette
+import it.fast4x.rimusic.ui.components.themed.IDialog
+import it.fast4x.rimusic.typography
 
 @ExperimentalMaterialApi
 @ExperimentalTextApi
@@ -83,23 +84,29 @@ fun SettingsScreen(
                 onTabChanged,
                 miniPlayer,
                 navBarContent = { item ->
-                    item(0, stringResource(R.string.ui_tab), R.drawable.ui)
-                    item(1, stringResource(R.string.player_appearance), R.drawable.color_palette)
-                    item(2, stringResource(R.string.quick_picks), R.drawable.sparkles)
-                    item(3, stringResource(R.string.tab_data), R.drawable.server)
-                    item(4, stringResource(R.string.tab_miscellaneous), R.drawable.equalizer)
-                    item(5, stringResource(R.string.about), R.drawable.information)
+                    item(0, stringResource(R.string.tab_general), R.drawable.app_icon)
+                    item(1, stringResource(R.string.ui_tab), R.drawable.ui)
+                    item(2, stringResource(R.string.player_appearance), R.drawable.color_palette)
+                    item(3, if (!isYouTubeLoggedIn()) stringResource(R.string.quick_picks)
+                    else stringResource(R.string.home), if (!isYouTubeLoggedIn()) R.drawable.sparkles
+                    else R.drawable.ytmusic)
+                    item(4, stringResource(R.string.tab_data), R.drawable.server)
+                    item(5, stringResource(R.string.tab_accounts), R.drawable.person)
+                    item(6, stringResource(R.string.tab_miscellaneous), R.drawable.equalizer)
+                    item(7, stringResource(R.string.about), R.drawable.information)
 
                 }
             ) { currentTabIndex ->
                 saveableStateHolder.SaveableStateProvider(currentTabIndex) {
                     when (currentTabIndex) {
-                        0 -> UiSettings(navController = navController)
-                        1 -> AppearanceSettings(navController = navController)
-                        2 -> QuickPicsSettings()
-                        3 -> DataSettings()
-                        4 -> OtherSettings()
-                        5 -> About()
+                        0 -> GeneralSettings(navController = navController)
+                        1 -> UiSettings(navController = navController)
+                        2 -> AppearanceSettings(navController = navController)
+                        3 -> QuickPicsSettings()
+                        4 -> DataSettings()
+                        5 -> AccountsSettings()
+                        6 -> OtherSettings()
+                        7 -> About()
 
                     }
                 }
@@ -152,6 +159,7 @@ inline fun StringListValueSelectorSettingsEntry(
 inline fun <reified T : Enum<T>> EnumValueSelectorSettingsEntry(
     title: String,
     titleSecondary: String? = null,
+    text: String? = null,
     selectedValue: T,
     noinline onValueSelected: (T) -> Unit,
     modifier: Modifier = Modifier,
@@ -162,6 +170,7 @@ inline fun <reified T : Enum<T>> EnumValueSelectorSettingsEntry(
     ValueSelectorSettingsEntry(
         title = title,
         titleSecondary = titleSecondary,
+        text = text,
         selectedValue = selectedValue,
         values = enumValues<T>().toList(),
         onValueSelected = onValueSelected,
@@ -176,6 +185,7 @@ inline fun <reified T : Enum<T>> EnumValueSelectorSettingsEntry(
 fun <T> ValueSelectorSettingsEntry(
     title: String,
     titleSecondary: String? = null,
+    text: String? = null,
     selectedValue: T,
     values: List<T>,
     onValueSelected: (T) -> Unit,
@@ -208,6 +218,15 @@ fun <T> ValueSelectorSettingsEntry(
         onClick = { isShowingDialog = true },
         trailingContent = trailingContent
     )
+
+    text?.let {
+        BasicText(
+            text = it,
+            style = typography().xs.semiBold.copy(color = colorPalette().textSecondary),
+            modifier = Modifier
+                .padding(start = 12.dp)
+        )
+    }
 }
 
 @Composable
@@ -245,8 +264,9 @@ fun SettingsEntry(
         modifier = modifier
             .clickable(enabled = isEnabled, onClick = onClick)
             .alpha(if (isEnabled) 1f else 0.5f)
-            .padding(start = 16.dp)
-            .padding(all = 16.dp)
+            //.padding(start = 16.dp)
+            //.padding(all = 16.dp)
+            .padding(all = 12.dp)
             .fillMaxWidth()
     ) {
         Column(
@@ -290,7 +310,7 @@ fun SettingsTopDescription(
         text = text,
         style = typography().xs.secondary,
         modifier = modifier
-            .padding(start = 16.dp)
+            .padding(start = 12.dp)
             .padding(horizontal = 16.dp, vertical = 8.dp)
     )
 }
@@ -306,8 +326,8 @@ fun SettingsDescription(
         style = if (important) typography().xxs.semiBold.color(colorPalette().red)
         else typography().xxs.secondary,
         modifier = modifier
-            .padding(start = 16.dp)
-            .padding(horizontal = 16.dp)
+            .padding(start = 12.dp)
+            //.padding(horizontal = 12.dp)
             .padding(bottom = 8.dp)
     )
 }
@@ -321,8 +341,8 @@ fun ImportantSettingsDescription(
         text = text,
         style = typography().xxs.semiBold.color(colorPalette().red),
         modifier = modifier
-            .padding(start = 16.dp)
-            .padding(horizontal = 16.dp, vertical = 8.dp)
+            .padding(start = 12.dp)
+            .padding(vertical = 8.dp)
     )
 }
 
@@ -335,8 +355,8 @@ fun SettingsEntryGroupText(
         text = title.uppercase(),
         style = typography().xs.semiBold.copy(colorPalette().accent),
         modifier = modifier
-            .padding(start = 16.dp)
-            .padding(horizontal = 16.dp)
+            .padding(start = 12.dp)
+            //.padding(horizontal = 12.dp)
     )
 }
 
@@ -526,4 +546,28 @@ fun SliderSettingsEntry(
             .padding(vertical = 16.dp)
             .fillMaxWidth()
     )
+}
+
+@Composable
+fun SettingsGroup(
+    title: String? = null,
+    modifier: Modifier = Modifier,
+    description: String? = null,
+    important: Boolean = false,
+    content: @Composable ColumnScope.() -> Unit
+) = Column(modifier = modifier) {
+    if (title != null) {
+        SettingsEntryGroupText(title = title)
+    }
+
+    description?.let { description ->
+        SettingsDescription(
+            text = description,
+            important = important
+        )
+    }
+
+    content()
+
+    SettingsGroupSpacer()
 }

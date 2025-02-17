@@ -10,6 +10,8 @@ import androidx.compose.ui.unit.dp
 import it.fast4x.rimusic.R
 import it.fast4x.rimusic.ui.components.themed.TitleMiniSection
 import it.fast4x.rimusic.ui.components.themed.TitleSection
+import it.fast4x.rimusic.ui.screens.settings.isYouTubeLoggedIn
+import it.fast4x.rimusic.ytAccountName
 import java.text.SimpleDateFormat
 import java.util.Calendar
 
@@ -39,6 +41,9 @@ fun WelcomeMessage(){
         else -> {
             stringResource(R.string.good_night)
         }
+    }.let {
+        if (isYouTubeLoggedIn()) "$it, ${ytAccountName()}"
+        else it
     }
 
     TitleMiniSection(

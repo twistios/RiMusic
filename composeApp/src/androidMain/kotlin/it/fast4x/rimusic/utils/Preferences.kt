@@ -11,6 +11,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.core.content.edit
 import com.google.gson.Gson
 import it.fast4x.innertube.Innertube
+import it.fast4x.innertube.requests.HomePage
 import it.fast4x.rimusic.models.Song
 import kotlinx.serialization.InternalSerializationApi
 import kotlinx.serialization.encodeToString
@@ -34,6 +35,7 @@ const val otherLanguageAppKey = "otherLanguageApp"
 const val indexNavigationTabKey = "indexNavigationTab"
 const val effectRotationKey = "effectRotation"
 const val playerThumbnailSizeKey = "playerThumbnailSize"
+const val playerThumbnailSizeLKey = "playerThumbnailSizeL"
 const val playerTimelineSizeKey = "playerTimelineSize"
 const val colorPaletteNameKey = "colorPaletteName"
 const val colorPaletteModeKey = "colorPaletteMode"
@@ -114,6 +116,7 @@ const val showButtonPlayerSleepTimerKey = "showButtonPlayerSleepTimer"
 const val keepPlayerMinimizedKey = "keepPlayerMinimized"
 const val isSwipeToActionEnabledKey = "isSwipeToActionEnabled"
 const val showButtonPlayerMenuKey = "showButtonPlayerMenu"
+const val showButtonPlayerStartRadioKey = "showButtonPlayerStartRadio"
 const val showButtonPlayerSystemEqualizerKey = "showButtonPlayerSystemEqualizer"
 const val showButtonPlayerDiscoverKey = "showButtonPlayerDiscover"
 const val showButtonPlayerVideoKey = "showButtonPlayerVideo"
@@ -176,6 +179,7 @@ const val showMonthlyPlaylistInQuickPicksKey = "showMonthlyPlaylistInQuickPicks"
 const val showMonthlyPlaylistInLibraryKey = "showMonthlyPlaylistInLibrary"
 const val enableQuickPicksPageKey = "enableQuickPicksPage"
 const val playerBackgroundColorsKey = "playerBackgroundColors"
+const val animatedGradientKey = "animatedGradient"
 const val playerControlsTypeKey = "playerControlsType"
 const val playerInfoTypeKey = "playerInfoType"
 const val showTopActionsBarKey = "showTopActionsBar"
@@ -187,6 +191,7 @@ const val playlistTypeKey = "playlistType"
 const val iconLikeTypeKey = "iconLikeType"
 const val playerSwapControlsWithTimelineKey = "playerSwapControlsWithTimeline"
 const val playerEnableLyricsPopupMessageKey = "playerEnableLyricsPopupMessage"
+const val historyTypeKey = "historyType"
 /**** CUSTOM THEME **** */
 const val customThemeLight_Background0Key = "customThemeLight_Background0"
 const val customThemeLight_Background1Key = "customThemeLight_Background1"
@@ -250,9 +255,11 @@ const val noblurKey = "noblur"
 const val fadingedgeKey = "fadingedge"
 const val thumbnailOffsetKey = "thumbnailOffset"
 const val thumbnailFadeKey = "thumbnailFade"
+const val thumbnailFadeExKey = "thumbnailFadeEx"
 const val carouselKey = "carousel"
 const val carouselSizeKey = "carouselSize"
 const val thumbnailSpacingKey = "thumbnailSpacing"
+const val thumbnailSpacingLKey = "thumbnailSpacingL"
 const val autosyncKey = "autosync"
 const val queueTypeKey = "queueType"
 
@@ -289,6 +296,9 @@ const val coverThumbnailAnimationKey = "coverThumbnailAnimation"
 
 const val restartActivityKey = "restartActivity"
 const val enableYouTubeLoginKey = "enableYoutubeLogin"
+const val enableYouTubeSyncKey = "enableYoutubeSync"
+const val useYtLoginOnlyForBrowseKey = "useYtLoginOnlyForBrowse"
+
 
 const val autoLoadSongsInQueueKey = "autoLoadSongsInQueue"
 const val showSecondLineKey = "showSecondLine"
@@ -299,6 +309,7 @@ const val quickPicsTrendingSongKey = "quickPicsTrendingSong"
 const val quickPicsRelatedPageKey = "quickPicsRelatedPage"
 const val quickPicsChartsPageKey = "quickPicsChartsPage"
 const val quickPicsDiscoverPageKey = "quickPicsDiscoverPage"
+const val quickPicsHomePageKey = "quickPicsHomePage"
 const val loadedDataKey = "loadedData"
 
 const val enablePictureInPictureKey = "enablePicturInPicture"
@@ -312,7 +323,45 @@ const val jumpPreviousKey = "jumpPrevious"
 const val artistTypeKey = "artistType"
 const val albumTypeKey = "albumType"
 
+const val enableWallpaperKey = "enableWallpaper"
+const val wallpaperTypeKey = "wallpaperType"
 
+const val notificationTypeKey = "notificationType"
+const val topPaddingKey = "topPadding"
+
+const val autoDownloadSongKey = "autoDownloadSong"
+const val autoDownloadSongWhenLikedKey = "autoDownloadSongWhenLiked"
+const val autoDownloadSongWhenAlbumBookmarkedKey = "autoDownloadSongWhenAlbumBookmarked"
+
+const val queueSwipeLeftActionKey = "queueSwipeLeftAction"
+const val queueSwipeRightActionKey = "queueSwipeRightAction"
+const val playlistSwipeLeftActionKey = "playlistSwipeLeftAction"
+const val playlistSwipeRightActionKey = "playlistSwipeRightAction"
+const val albumSwipeLeftActionKey = "albumSwipeLeftAction"
+const val albumSwipeRightActionKey = "albumSwipeRightAction"
+const val customColorKey = "customColor"
+const val lyricsSizeAnimateKey = "lyricsSizeAnimate"
+const val lyricsSizeKey = "lyricsSize"
+const val lyricsSizeLKey = "lyricsSizeL"
+const val ytAccountNameKey = "ytAccountName"
+const val ytAccountEmailKey = "ytAccountEmail"
+const val albumCoverRotationKey = "albumCoverRotation"
+const val isConnectionMeteredEnabledKey = "isConnectionMeteredEnabled"
+const val landscapeControlsKey = "landscapeControls"
+const val swipeAnimationsNoThumbnailKey = "swipeAnimationsNoThumbnail"
+const val playlistSongsTypeFilterKey = "playlistSongsTypeFilter"
+
+const val ytVisitorDataKey = "ytVisitorData"
+const val ytCookieKey = "ytCookie"
+const val ytAccountChannelHandleKey = "ytAccountChannelHandle"
+const val ytAccountThumbnailKey = "ytAccountThumbnail"
+const val ytDataSyncIdKey = "ytDataSyncId"
+const val filterByKey = "filterBy"
+
+const val bassboostEnabledKey = "bassboostEnabled"
+const val bassboostLevelKey = "bassboostLevel"
+const val audioReverbPresetKey = "audioReverbPreset"
+const val handleAudioFocusEnabledKey = "handleAudioFocusEnabled"
 
 /*
 @PublishedApi
@@ -476,6 +525,28 @@ fun rememberPreference(key: String, defaultValue: Innertube.RelatedPage?): Mutab
 }
 
 @Composable
+fun rememberPreference(key: String, defaultValue: HomePage?): MutableState<HomePage?> {
+    val context = LocalContext.current
+    val json = Json.encodeToString(defaultValue)
+    return remember {
+        mutableStatePreferenceOf(
+            try {
+                context.preferences.getString(key, json)
+                    ?.let { Json.decodeFromString<HomePage>(it) }
+            } catch (e: Exception) {
+                Timber.e("RememberPreference HomePage Error: ${ e.stackTraceToString() }")
+                null
+            }
+        ) {
+            context.preferences.edit { putString(
+                key,
+                Json.encodeToString(it)
+            ) }
+        }
+    }
+}
+
+@Composable
 fun rememberPreference(key: String, defaultValue: Boolean): MutableState<Boolean> {
     val context = LocalContext.current
     return remember {
@@ -536,6 +607,15 @@ inline fun <reified T : Enum<T>> rememberPreference(key: String, defaultValue: T
         }
     }
 }
+
+fun clearPreference(context: Context, key: String): Unit {
+    try {
+        context.preferences.edit { remove(key) }
+    } catch (e: Exception) {
+        Timber.e("ClearPreference Error: ${e.stackTraceToString()}")
+    }
+}
+
 
 inline fun <T> mutableStatePreferenceOf(
     value: T,

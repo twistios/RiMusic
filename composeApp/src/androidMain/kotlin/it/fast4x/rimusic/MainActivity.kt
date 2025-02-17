@@ -1,5 +1,6 @@
 package it.fast4x.rimusic
 
+import android.annotation.SuppressLint
 import android.app.Activity
 import android.app.ActivityManager
 import android.content.ComponentName
@@ -57,6 +58,7 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -107,6 +109,7 @@ import it.fast4x.innertube.utils.ProxyPreferenceItem
 import it.fast4x.innertube.utils.ProxyPreferences
 import it.fast4x.innertube.utils.YoutubePreferenceItem
 import it.fast4x.innertube.utils.YoutubePreferences
+import it.fast4x.rimusic.enums.AnimatedGradient
 import it.fast4x.rimusic.enums.AudioQualityFormat
 import it.fast4x.rimusic.enums.CheckUpdateState
 import it.fast4x.rimusic.enums.ColorPaletteMode
@@ -120,6 +123,7 @@ import it.fast4x.rimusic.enums.PipModule
 import it.fast4x.rimusic.enums.PlayerBackgroundColors
 import it.fast4x.rimusic.enums.PopupType
 import it.fast4x.rimusic.enums.ThumbnailRoundness
+import it.fast4x.rimusic.extensions.connectivity.InternetConnectivityObserver
 import it.fast4x.rimusic.extensions.pip.PipEventContainer
 import it.fast4x.rimusic.extensions.pip.PipModuleContainer
 import it.fast4x.rimusic.extensions.pip.PipModuleCover
@@ -146,6 +150,7 @@ import it.fast4x.rimusic.utils.InitDownloader
 import it.fast4x.rimusic.utils.LocalMonetCompat
 import it.fast4x.rimusic.utils.OkHttpRequest
 import it.fast4x.rimusic.utils.UiTypeKey
+import it.fast4x.rimusic.utils.animatedGradientKey
 import it.fast4x.rimusic.utils.applyFontPaddingKey
 import it.fast4x.rimusic.utils.asMediaItem
 import it.fast4x.rimusic.utils.audioQualityFormatKey
@@ -154,6 +159,7 @@ import it.fast4x.rimusic.utils.checkUpdateStateKey
 import it.fast4x.rimusic.utils.closeWithBackButtonKey
 import it.fast4x.rimusic.utils.colorPaletteModeKey
 import it.fast4x.rimusic.utils.colorPaletteNameKey
+import it.fast4x.rimusic.utils.customColorKey
 import it.fast4x.rimusic.utils.customThemeDark_Background0Key
 import it.fast4x.rimusic.utils.customThemeDark_Background1Key
 import it.fast4x.rimusic.utils.customThemeDark_Background2Key
@@ -218,10 +224,12 @@ import it.fast4x.rimusic.utils.showButtonPlayerVideoKey
 import it.fast4x.rimusic.utils.showSearchTabKey
 import it.fast4x.rimusic.utils.showTotalTimeQueueKey
 import it.fast4x.rimusic.utils.textCopyToClipboard
+import it.fast4x.rimusic.utils.thumbnail
 import it.fast4x.rimusic.utils.thumbnailRoundnessKey
 import it.fast4x.rimusic.utils.transitionEffectKey
 import it.fast4x.rimusic.utils.useSystemFontKey
 import it.fast4x.rimusic.utils.ytCookieKey
+import it.fast4x.rimusic.utils.ytDataSyncIdKey
 import it.fast4x.rimusic.utils.ytVisitorDataKey
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -230,10 +238,6 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
-import me.knighthat.colorPalette
-import me.knighthat.invidious.Invidious
-import me.knighthat.piped.Piped
-import me.knighthat.thumbnailShape
 import okhttp3.Call
 import okhttp3.Callback
 import okhttp3.OkHttpClient
@@ -253,7 +257,7 @@ class MainActivity :
     MonetColorsChangedListener
 //,PersistMapOwner
 {
-    var downloadUtil = MyDownloadHelper
+    var downloadHelper = MyDownloadHelper
 
     var client = OkHttpClient()
     var request = OkHttpRequest(client)
@@ -281,7 +285,6 @@ class MainActivity :
     private var currentAcceleration = 0f
     private var lastAcceleration = 0f
     private var shakeCounter = 0
-    private var appRunningInBackground: Boolean = false
 
     private var _monet: MonetCompat? by mutableStateOf(null)
     private val monet get() = _monet ?: throw MonetActivityAccessException()
@@ -318,12 +321,6 @@ class MainActivity :
 
         WindowCompat.setDecorFitsSystemWindows(window, false)
 
-//        var splashScreenStays = true
-//        val delayTime = 800L
-//
-//        installSplashScreen().setKeepOnScreenCondition { splashScreenStays }
-//        Handler(Looper.getMainLooper()).postDelayed({ splashScreenStays = false }, delayTime)
-
         MonetCompat.setup(this)
         _monet = MonetCompat.getInstance()
         monet.setDefaultPalette()
@@ -350,15 +347,6 @@ class MainActivity :
 
         checkIfAppIsRunningInBackground()
 
-        // Fetch Piped & Invidious instances
-        lifecycleScope.launch(Dispatchers.IO) {
-            try {
-                Piped.fetchInstances()
-                Invidious.fetchInstances()
-            } catch (e: Exception) {
-                Timber.e(e, "MainActivity Error fetching Piped & Invidious instances")
-            }
-        }
     }
 
     private fun checkIfAppIsRunningInBackground() {
@@ -411,6 +399,7 @@ class MainActivity :
         content()
     }
 
+    @SuppressLint("UnusedBoxWithConstraintsScope")
     @OptIn(
         ExperimentalTextApi::class,
         ExperimentalFoundationApi::class, ExperimentalAnimationApi::class,
@@ -487,6 +476,11 @@ class MainActivity :
                 }
             }
 
+            //TODO: Check internet connection
+//            val internetConnectivityObserver = InternetConnectivityObserver(this)
+//            val internetConnected by internetConnectivityObserver.networkStatus.collectAsState(false)
+//            if (internetConnected) downloadHelper.resumeDownloads(this)
+
             if (preferences.getEnum(
                     checkUpdateStateKey,
                     CheckUpdateState.Ask
@@ -522,6 +516,9 @@ class MainActivity :
             val navController = rememberNavController()
             var showPlayer by rememberSaveable { mutableStateOf(false) }
             var switchToAudioPlayer by rememberSaveable { mutableStateOf(false) }
+            var animatedGradient by rememberPreference(animatedGradientKey, AnimatedGradient.Linear)
+            var customColor by rememberPreference(customColorKey, Color.Green.hashCode())
+            val lightTheme = colorPaletteMode == ColorPaletteMode.Light || (colorPaletteMode == ColorPaletteMode.System && (!isSystemInDarkTheme()))
 
 
             LocalePreferences.preference =
@@ -531,33 +528,34 @@ class MainActivity :
                     gl = ""
                     //gl = "US" // US IMPORTANT
                 )
-
-            if (preferences.getBoolean(enableYouTubeLoginKey, false)
-                && encryptedPreferences.getString(ytCookieKey, "") != ""
-            ) {
-
-                var visitorData by rememberEncryptedPreference(
-                    key = ytVisitorDataKey,
-                    defaultValue = Innertube.DEFAULT_VISITOR_DATA
-                )
-
-                if (visitorData.isEmpty()) runBlocking {
-                    Innertube.visitorData().getOrNull()?.also {
-                        visitorData = it
-                    }
-                }
-
-                YoutubePreferences.preference =
-                    YoutubePreferenceItem(
-                        cookie = encryptedPreferences.getString(ytCookieKey, ""),
-                        visitordata = visitorData
+                //TODO Manage login
+            //if (preferences.getBoolean(enableYouTubeLoginKey, false)) {
+                    var visitorData by rememberPreference(
+                        key = ytVisitorDataKey,
+                        defaultValue = Innertube.DEFAULT_VISITOR_DATA
                     )
-            }
+
+                    if (visitorData.isEmpty()) runBlocking {
+                        Innertube.visitorData().getOrNull()?.also {
+                            visitorData = it
+                        }
+                    }
+
+                    YoutubePreferences.preference =
+                        YoutubePreferenceItem(
+                            cookie = preferences.getString(ytCookieKey, ""),
+                            visitordata = visitorData
+                                .takeIf { it != "null" }
+                                ?: Innertube.DEFAULT_VISITOR_DATA,
+                            dataSyncId = preferences.getString(ytDataSyncIdKey, "")
+
+                        )
+            //}
 
             preferences.getEnum(audioQualityFormatKey, AudioQualityFormat.Auto)
 
             var appearance by rememberSaveable(
-                isSystemInDarkTheme,
+                !lightTheme,
                 stateSaver = Appearance.Companion
             ) {
                 with(preferences) {
@@ -570,14 +568,20 @@ class MainActivity :
                     val applyFontPadding = getBoolean(applyFontPaddingKey, false)
 
                     var colorPalette =
-                        colorPaletteOf(colorPaletteName, colorPaletteMode, isSystemInDarkTheme)
+                        colorPaletteOf(colorPaletteName, colorPaletteMode, !lightTheme)
 
                     val fontType = getEnum(fontTypeKey, FontType.Rubik)
 
                     if (colorPaletteName == ColorPaletteName.MaterialYou) {
                         colorPalette = dynamicColorPaletteOf(
                             Color(monet.getAccentColor(this@MainActivity)),
-                            colorPaletteMode == ColorPaletteMode.Dark || (colorPaletteMode == ColorPaletteMode.System && isSystemInDarkTheme)
+                            !lightTheme
+                        )
+                    }
+                    if (colorPaletteName == ColorPaletteName.CustomColor) {
+                        colorPalette = dynamicColorPaletteOf(
+                            Color(customColor),
+                            !lightTheme
                         )
                     }
 
@@ -611,7 +615,7 @@ class MainActivity :
                 val isCoverColor =
                     playerBackgroundColors == PlayerBackgroundColors.CoverColorGradient ||
                             playerBackgroundColors == PlayerBackgroundColors.CoverColor ||
-                            playerBackgroundColors == PlayerBackgroundColors.FluidCoverColorGradient
+                            animatedGradient == AnimatedGradient.FluidCoverColorGradient
 
                 if (!isDynamicPalette) return
 
@@ -661,7 +665,7 @@ class MainActivity :
             }
 
 
-            DisposableEffect(binder, isSystemInDarkTheme) {
+            DisposableEffect(binder, !lightTheme) {
                 /*
             var bitmapListenerJob: Job? = null
 
@@ -782,19 +786,18 @@ class MainActivity :
                                 var colorPalette = colorPaletteOf(
                                     colorPaletteName,
                                     colorPaletteMode,
-                                    isSystemInDarkTheme
+                                    !lightTheme
                                 )
 
                                 if (colorPaletteName == ColorPaletteName.Dynamic) {
                                     val artworkUri =
-                                        (binder?.player?.currentMediaItem?.mediaMetadata?.artworkUri
+                                        (binder?.player?.currentMediaItem?.mediaMetadata?.artworkUri.thumbnail(1200)
                                             ?: "").toString()
                                     artworkUri.let {
                                         if (it.isNotEmpty())
                                             setDynamicPalette(it)
                                         else {
-//                                                val isPicthBlack =
-//                                                    colorPaletteMode == ColorPaletteMode.PitchBlack
+
                                             setSystemBarAppearance(colorPalette.isDark)
                                             appearance = appearance.copy(
                                                 colorPalette = if (!isPicthBlack) colorPalette else colorPalette.copy(
@@ -820,7 +823,7 @@ class MainActivity :
                                     if (colorPaletteName == ColorPaletteName.MaterialYou) {
                                         colorPalette = dynamicColorPaletteOf(
                                             Color(monet.getAccentColor(this@MainActivity)),
-                                            colorPaletteMode == ColorPaletteMode.Dark || (colorPaletteMode == ColorPaletteMode.System && isSystemInDarkTheme)
+                                            !lightTheme
                                         )
                                     }
 
@@ -831,10 +834,15 @@ class MainActivity :
                                             isSystemInDarkTheme
                                         )
                                     }
+                                    if (colorPaletteName == ColorPaletteName.CustomColor) {
+                                        colorPalette = dynamicColorPaletteOf(
+                                            Color(customColor),
+                                            !lightTheme
+                                        )
+                                    }
 
                                     setSystemBarAppearance(colorPalette.isDark)
-//                                        val isPicthBlack =
-//                                            colorPaletteMode == ColorPaletteMode.PitchBlack
+
                                     appearance = appearance.copy(
                                         colorPalette = if (!isPicthBlack) colorPalette else colorPalette.copy(
                                             background0 = Color.Black,
@@ -885,7 +893,7 @@ class MainActivity :
                         getEnum(colorPaletteNameKey, ColorPaletteName.Dynamic)
                     if (colorPaletteName == ColorPaletteName.Dynamic) {
                         setDynamicPalette(
-                            (binder?.player?.currentMediaItem?.mediaMetadata?.artworkUri
+                            (binder?.player?.currentMediaItem?.mediaMetadata?.artworkUri.thumbnail(1200)
                                 ?: "").toString()
                         )
                     }
@@ -936,8 +944,6 @@ class MainActivity :
             }
 
 
-//                val colorPaletteMode =
-//                    preferences.getEnum(colorPaletteModeKey, ColorPaletteMode.Dark)
             if (colorPaletteMode == ColorPaletteMode.PitchBlack)
                 appearance = appearance.copy(
                     colorPalette = appearance.colorPalette.applyPitchBlack,
@@ -1002,19 +1008,6 @@ class MainActivity :
                     intent.action = null
                 }
 
-
-                /*
-            isInPip(
-                onChange = {
-                    println("MainActivity isInPip change $it")
-                    //if (!it || vm.binder?.player?.shouldBePlaying != true) return@isInPip
-                    //showPlayer = true
-                    pipState.value = it
-                }
-            )
-            */
-
-
                 CrossfadeContainer(state = pipState.value) { isCurrentInPip ->
                     println("MainActivity pipState ${pipState.value} CrossfadeContainer isCurrentInPip $isCurrentInPip ")
                     val pipModule by rememberPreference(pipModuleKey, PipModule.Cover)
@@ -1047,9 +1040,10 @@ class MainActivity :
                             LocalPlayerServiceBinder provides binder,
                             LocalPlayerAwareWindowInsets provides playerAwareWindowInsets,
                             LocalLayoutDirection provides LayoutDirection.Ltr,
-                            LocalDownloader provides downloadUtil,
+                            LocalDownloadHelper provides downloadHelper,
                             LocalPlayerSheetState provides playerState,
-                            LocalMonetCompat provides monet
+                            LocalMonetCompat provides monet,
+                            //LocalInternetConnected provides internetConnected
                         ) {
 
                             AppNavigation(
@@ -1065,7 +1059,6 @@ class MainActivity :
                             )
 
                             checkIfAppIsRunningInBackground()
-                            if (appRunningInBackground) showPlayer = false
 
 
                             val thumbnailRoundness by rememberPreference(
@@ -1149,14 +1142,6 @@ class MainActivity :
                                 youtubePlayer()
                             }
 
-                            /*
-                BottomSheetMenu(
-                    state = LocalMenuState.current,
-                    modifier = Modifier
-                        .align(Alignment.BottomCenter)
-                )
-                 */
-
                             val menuState = LocalMenuState.current
                             CustomModalBottomSheet(
                                 showSheet = menuState.isDisplayed,
@@ -1206,44 +1191,7 @@ class MainActivity :
                                 }
                             }
 
-                            setDynamicPalette(mediaItem?.mediaMetadata?.artworkUri.toString())
-                            /**** NEW CODE ******/
-                            /*
-                        if (mediaItem != null) {
-                            coroutineScope.launch(Dispatchers.Main) {
-                                val result = imageLoader.execute(
-                                    ImageRequest.Builder(this@MainActivity)
-                                        .data(mediaItem.mediaMetadata.artworkUri)
-                                        .allowHardware(false)
-                                        .build()
-                                )
-                                val bitmap = (result.drawable as? BitmapDrawable)?.bitmap
-                                if (bitmap != null) {
-                                    val palette = Palette
-                                        .from(bitmap)
-                                        .maximumColorCount(8)
-                                        //.addFilter(if (isDark || isPitchBlack) ({ _, hsl -> hsl[0] !in 36f..100f }) else null)
-                                        .generate()
-                                    println("Mainactivity onmediaItemTRansition palette dominantSwatch: ${palette.dominantSwatch}")
-                                    val isDark =
-                                        colorPaletteMode == ColorPaletteMode.Dark || (colorPaletteMode == ColorPaletteMode.System && isSystemInDarkTheme)
-                                    val isPicthBlack = colorPaletteMode == ColorPaletteMode.PitchBlack
-                                    dynamicColorPaletteOf(bitmap, isDark, isPicthBlack)?.let {
-                                        withContext(Dispatchers.Main) {
-                                            setSystemBarAppearance(it.isDark)
-                                        }
-                                        appearance = appearance.copy(
-                                            colorPalette = it,
-                                            typography = appearance.typography.copy(it.text)
-                                        )
-                                        println("Mainactivity onmediaItemTRansition appearance inside: ${appearance.colorPalette}")
-                                    }
-                                }
-                            }
-                            println("Mainactivity onmediaItemTRansition appearance outside: ${appearance.colorPalette}")
-                        }
-                         */
-                            /*********/
+                            setDynamicPalette(mediaItem?.mediaMetadata?.artworkUri.thumbnail(1200).toString())
                         }
 
 
@@ -1368,7 +1316,7 @@ class MainActivity :
 
     override fun onResume() {
         super.onResume()
-        kotlin.runCatching {
+        runCatching {
             sensorManager?.registerListener(
                 sensorListener, sensorManager!!.getDefaultSensor(
                     Sensor.TYPE_ACCELEROMETER
@@ -1384,7 +1332,6 @@ class MainActivity :
         super.onPause()
         runCatching {
             sensorListener.let { sensorManager?.unregisterListener(it) }
-            //sensorManager!!.unregisterListener(sensorListener)
         }.onFailure {
             Timber.e("MainActivity.onPause unregisterListener sensorListener ${it.stackTraceToString()}")
         }
@@ -1397,9 +1344,6 @@ class MainActivity :
         intentUriData = intent.data ?: intent.getStringExtra(Intent.EXTRA_TEXT)?.toUri()
 
     }
-
-    //@Deprecated("Deprecated in Java", ReplaceWith("persistMap"))
-    //override fun onRetainCustomNonConfigurationInstance() = persistMap
 
     override fun onStop() {
         runCatching {
@@ -1470,15 +1414,17 @@ class MainActivity :
 
 }
 
+var appRunningInBackground: Boolean = false
+
 val LocalPlayerServiceBinder = staticCompositionLocalOf<PlayerServiceModern.Binder?> { null }
 
 val LocalPlayerAwareWindowInsets = staticCompositionLocalOf<WindowInsets> { TODO() }
 
-val LocalDownloader = staticCompositionLocalOf<MyDownloadHelper> { error("No Downloader provided") }
+val LocalDownloadHelper = staticCompositionLocalOf<MyDownloadHelper> { error("No Downloader provided") }
 
 @OptIn(ExperimentalMaterial3Api::class)
 val LocalPlayerSheetState =
     staticCompositionLocalOf<SheetState> { error("No player sheet state provided") }
 
-
+//val LocalInternetConnected = staticCompositionLocalOf<Boolean> { error("No Network Status provided") }
 

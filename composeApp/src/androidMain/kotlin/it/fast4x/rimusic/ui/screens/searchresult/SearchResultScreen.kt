@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -26,7 +27,6 @@ import androidx.compose.ui.unit.dp
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.offline.Download
 import androidx.navigation.NavController
-import it.fast4x.compose.persist.PersistMapCleanup
 import it.fast4x.compose.persist.persist
 import it.fast4x.innertube.Innertube
 import it.fast4x.innertube.models.bodies.BrowseBody
@@ -36,17 +36,20 @@ import it.fast4x.innertube.requests.albumPage
 import it.fast4x.innertube.requests.searchPage
 import it.fast4x.innertube.utils.from
 import it.fast4x.rimusic.Database
-import it.fast4x.rimusic.EXPLICIT_PREFIX
 import it.fast4x.rimusic.LocalPlayerServiceBinder
 import it.fast4x.rimusic.R
 import it.fast4x.rimusic.enums.NavRoutes
 import it.fast4x.rimusic.models.Album
+import it.fast4x.rimusic.models.Artist
+import it.fast4x.rimusic.models.Playlist
 import it.fast4x.rimusic.models.SongAlbumMap
 import it.fast4x.rimusic.ui.components.LocalMenuState
+import it.fast4x.rimusic.ui.components.Skeleton
 import it.fast4x.rimusic.ui.components.SwipeableAlbumItem
 import it.fast4x.rimusic.ui.components.SwipeablePlaylistItem
 import it.fast4x.rimusic.ui.components.themed.NonQueuedMediaItemMenu
 import it.fast4x.rimusic.ui.components.themed.NowPlayingSongIndicator
+import it.fast4x.rimusic.ui.components.themed.SmartMessage
 import it.fast4x.rimusic.ui.components.themed.Title
 import it.fast4x.rimusic.ui.items.AlbumItem
 import it.fast4x.rimusic.ui.items.AlbumItemPlaceholder
@@ -62,7 +65,6 @@ import it.fast4x.rimusic.ui.styling.Dimensions
 import it.fast4x.rimusic.ui.styling.px
 import it.fast4x.rimusic.utils.addNext
 import it.fast4x.rimusic.utils.asMediaItem
-import it.fast4x.rimusic.utils.asSong
 import it.fast4x.rimusic.utils.disableScrollingTextKey
 import it.fast4x.rimusic.utils.enqueue
 import it.fast4x.rimusic.utils.forcePlay
@@ -79,9 +81,9 @@ import it.fast4x.rimusic.utils.showButtonPlayerVideoKey
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import me.knighthat.Skeleton
 
 @ExperimentalMaterialApi
 @ExperimentalTextApi
@@ -94,7 +96,8 @@ import me.knighthat.Skeleton
 fun SearchResultScreen(
     navController: NavController,
     miniPlayer: @Composable () -> Unit = {},
-    query: String, onSearchAgain: () -> Unit
+    query: String,
+    onSearchAgain: () -> Unit
 ) {
     val context = LocalContext.current
     val binder = LocalPlayerServiceBinder.current
@@ -112,7 +115,7 @@ fun SearchResultScreen(
 
     val disableScrollingText by rememberPreference(disableScrollingTextKey, false)
 
-    PersistMapCleanup(tagPrefix = "searchResults/$query/")
+    //PersistMapCleanup(tagPrefix = "searchResults/$query/")
 
             val headerContent: @Composable (textButton: (@Composable () -> Unit)?) -> Unit = {
                 Title(
@@ -200,25 +203,41 @@ fun SearchResultScreen(
                                 headerContent = headerContent,
                                 itemContent = { song ->
                                     //Log.d("mediaItem",song.toString())
-                                    if (parentalControlEnabled && song.asSong.title.startsWith(EXPLICIT_PREFIX))
+                                    if (parentalControlEnabled && song.explicit)
                                         return@ItemsPage
+
+                                    downloadState = getDownloadState(song.asMediaItem.mediaId)
+                                    val isDownloaded =
+                                        isDownloadedSong(song.asMediaItem.mediaId)
 
                                     SwipeablePlaylistItem(
                                         mediaItem = song.asMediaItem,
-                                        onSwipeToRight = {
+                                        onPlayNext = {
                                             localBinder?.player?.addNext(song.asMediaItem)
+                                        },
+                                        onDownload = {
+                                            localBinder?.cache?.removeResource(song.asMediaItem.mediaId)
+                                            CoroutineScope(Dispatchers.IO).launch {
+                                                Database.resetContentLength( song.asMediaItem.mediaId )
+                                            }
+
+                                            manageDownload(
+                                                context = context,
+                                                mediaItem = song.asMediaItem,
+                                                downloadState = isDownloaded
+                                            )
+                                        },
+                                        onEnqueue = {
+                                            localBinder?.player?.enqueue(song.asMediaItem)
                                         }
                                     ) {
-                                        downloadState = getDownloadState(song.asMediaItem.mediaId)
-                                        val isDownloaded =
-                                            isDownloadedSong(song.asMediaItem.mediaId)
                                         var forceRecompose by remember { mutableStateOf(false) }
                                         SongItem(
                                             song = song,
                                             onDownloadClick = {
                                                 localBinder?.cache?.removeResource(song.asMediaItem.mediaId)
                                                 CoroutineScope(Dispatchers.IO).launch {
-                                                    Database.resetContentLength( song.asMediaItem.mediaId )
+                                                    Database.deleteFormat( song.asMediaItem.mediaId )
                                                 }
 
                                                 manageDownload(
@@ -230,7 +249,7 @@ fun SearchResultScreen(
                                             thumbnailContent = {
                                                 NowPlayingSongIndicator(song.asMediaItem.mediaId, binder?.player)
                                             },
-                                            downloadState = downloadState,
+                                            downloadState = getDownloadState(song.asMediaItem.mediaId),
                                             thumbnailSizePx = thumbnailSizePx,
                                             thumbnailSizeDp = thumbnailSizeDp,
                                             modifier = Modifier
@@ -254,6 +273,7 @@ fun SearchResultScreen(
                                                     onClick = {
                                                         localBinder?.stopRadio()
                                                         localBinder?.player?.forcePlay(song.asMediaItem)
+                                                        forceRecompose = true
                                                         localBinder?.setupRadio(song.info?.endpoint)
                                                     }
                                                 ),
@@ -297,7 +317,57 @@ fun SearchResultScreen(
                                     var albumPage by persist<Innertube.PlaylistOrAlbumPage?>("album/${album.key}/albumPage")
                                     SwipeableAlbumItem(
                                         albumItem = album,
-                                        onSwipeToLeft = {
+                                        onPlayNext = {
+                                            CoroutineScope(Dispatchers.IO).launch {
+                                                Database
+                                                    .album(album.key)
+                                                    .combine(snapshotFlow { currentTabIndex }) { album, tabIndex -> album to tabIndex }
+                                                    .collect {
+                                                        if (albumPage == null)
+                                                            withContext(Dispatchers.IO) {
+                                                                Innertube.albumPage(
+                                                                    BrowseBody(
+                                                                        browseId = album.key
+                                                                    )
+                                                                )
+                                                                    ?.onSuccess { currentAlbumPage ->
+                                                                        albumPage =
+                                                                            currentAlbumPage
+
+                                                                        println("mediaItem success home album songsPage ${currentAlbumPage.songsPage} description ${currentAlbumPage.description} year ${currentAlbumPage.year}")
+
+                                                                        albumPage
+                                                                            ?.songsPage
+                                                                            ?.items
+                                                                            ?.map(
+                                                                                Innertube.SongItem::asMediaItem
+                                                                            )
+                                                                            ?.let { it1 ->
+                                                                                withContext(Dispatchers.Main) {
+                                                                                    binder?.player?.addNext(
+                                                                                        it1,
+                                                                                        context
+                                                                                    )
+                                                                                }
+                                                                            }
+                                                                        println("mediaItem success add in queue album songsPage ${albumPage
+                                                                            ?.songsPage
+                                                                            ?.items?.size}")
+
+                                                                    }
+                                                                    ?.onFailure {
+                                                                        println("mediaItem error searchResultScreen album ${it.stackTraceToString()}")
+                                                                    }
+
+                                                            }
+
+                                                        //}
+                                                    }
+
+                                            }
+
+                                        },
+                                        onEnqueue = {
                                             CoroutineScope(Dispatchers.IO).launch {
                                                 Database
                                                     .album(album.key)
@@ -347,7 +417,7 @@ fun SearchResultScreen(
                                             }
 
                                         },
-                                        onSwipeToRight = {
+                                        onBookmark = {
                                             CoroutineScope(Dispatchers.IO).launch {
                                                 Database
                                                     .album(album.key)
@@ -412,11 +482,18 @@ fun SearchResultScreen(
                                             }
                                         }
                                     ) {
+                                        var albumById by remember { mutableStateOf<Album?>(null) }
+                                        LaunchedEffect(album) {
+                                            CoroutineScope(Dispatchers.IO).launch {
+                                                albumById = Database.album(album.key).firstOrNull()
+                                            }
+                                        }
                                         AlbumItem(
                                             yearCentered = false,
                                             album = album,
                                             thumbnailSizePx = thumbnailSizePx,
                                             thumbnailSizeDp = thumbnailSizeDp,
+                                            isYoutubeAlbum = albumById?.isYoutubeAlbum == true,
                                             modifier = Modifier
                                                 .combinedClickable(
                                                     onClick = {
@@ -460,15 +537,23 @@ fun SearchResultScreen(
                                 emptyItemsText = emptyItemsText,
                                 headerContent = headerContent,
                                 itemContent = { artist ->
+                                    var artistById by remember { mutableStateOf<Artist?>(null) }
+                                    LaunchedEffect(artist) {
+                                        CoroutineScope(Dispatchers.IO).launch {
+                                            artistById = Database.artist(artist.key).firstOrNull()
+                                        }
+                                    }
                                     ArtistItem(
                                         artist = artist,
                                         thumbnailSizePx = thumbnailSizePx,
                                         thumbnailSizeDp = thumbnailSizeDp,
+                                        isYoutubeArtist = artistById?.isYoutubeArtist == true,
                                         modifier = Modifier
                                             .clickable(onClick = {
                                                 navController.navigate("${NavRoutes.artist.name}/${artist.key}")
                                             }),
-                                        disableScrollingText = disableScrollingText
+                                        disableScrollingText = disableScrollingText,
+                                        smallThumbnail = true
                                     )
                                 },
                                 itemPlaceholderContent = {
@@ -506,8 +591,20 @@ fun SearchResultScreen(
                                 itemContent = { video ->
                                     SwipeablePlaylistItem(
                                         mediaItem = video.asMediaItem,
-                                        onSwipeToRight = {
+                                        onPlayNext = {
                                             localBinder?.player?.addNext(video.asMediaItem)
+                                        },
+                                        onDownload = {
+                                            val message = context.resources.getString(R.string.downloading_videos_not_supported)
+
+                                            SmartMessage(
+                                                message,
+                                                durationLong = false,
+                                                context = context
+                                            )
+                                        },
+                                        onEnqueue = {
+                                            localBinder?.player?.enqueue(video.asMediaItem)
                                         }
                                     ) {
                                         VideoItem(
@@ -585,11 +682,18 @@ fun SearchResultScreen(
                                 emptyItemsText = emptyItemsText,
                                 headerContent = headerContent,
                                 itemContent = { playlist ->
+                                    var playlistById by remember { mutableStateOf<Playlist?>(null) }
+                                    LaunchedEffect(playlist) {
+                                        CoroutineScope(Dispatchers.IO).launch {
+                                            playlistById = Database.playlist(playlist.key.substringAfter("VL")).firstOrNull()
+                                        }
+                                    }
                                     PlaylistItem(
                                         playlist = playlist,
                                         thumbnailSizePx = thumbnailSizePx,
                                         thumbnailSizeDp = thumbnailSizeDp,
                                         showSongsCount = false,
+                                        isYoutubePlaylist = playlistById?.isYoutubePlaylist == true,
                                         modifier = Modifier
                                             .clickable(onClick = {
                                                 //playlistRoute(playlist.key)

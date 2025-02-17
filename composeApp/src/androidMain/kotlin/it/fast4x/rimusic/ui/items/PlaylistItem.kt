@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
@@ -23,6 +24,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -42,10 +44,10 @@ import it.fast4x.rimusic.ui.styling.onOverlay
 import it.fast4x.rimusic.ui.styling.overlay
 import it.fast4x.rimusic.ui.styling.shimmer
 import it.fast4x.rimusic.MONTHLY_PREFIX
+import it.fast4x.rimusic.cleanPrefix
 import it.fast4x.rimusic.utils.checkFileExists
 import it.fast4x.rimusic.utils.color
 import it.fast4x.rimusic.utils.conditional
-import it.fast4x.rimusic.utils.getTitleMonthlyPlaylist
 import it.fast4x.rimusic.utils.medium
 import it.fast4x.rimusic.utils.secondary
 import it.fast4x.rimusic.utils.semiBold
@@ -53,9 +55,9 @@ import it.fast4x.rimusic.utils.thumbnail
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
-import me.knighthat.colorPalette
-import me.knighthat.thumbnailShape
-import me.knighthat.typography
+import it.fast4x.rimusic.colorPalette
+import it.fast4x.rimusic.thumbnailShape
+import it.fast4x.rimusic.typography
 import timber.log.Timber
 
 @Composable
@@ -69,7 +71,9 @@ fun PlaylistItem(
     alternative: Boolean = false,
     showName: Boolean = true,
     iconSize: Dp = 34.dp,
-    disableScrollingText: Boolean
+    disableScrollingText: Boolean,
+    isYoutubePlaylist : Boolean = false,
+    isEditable : Boolean = false
 ) {
     PlaylistItem(
         thumbnailContent = {
@@ -89,7 +93,9 @@ fun PlaylistItem(
         modifier = modifier,
         alternative = alternative,
         showName = showName,
-        disableScrollingText = disableScrollingText
+        disableScrollingText = disableScrollingText,
+        isYoutubePlaylist = isYoutubePlaylist,
+        isEditable = isEditable
     )
 }
 
@@ -101,7 +107,9 @@ fun PlaylistItem(
     modifier: Modifier = Modifier,
     alternative: Boolean = false,
     showName: Boolean = true,
-    disableScrollingText: Boolean
+    disableScrollingText: Boolean,
+    isYoutubePlaylist: Boolean,
+    isEditable: Boolean
 ) {
     val context = LocalContext.current
 
@@ -125,6 +133,7 @@ fun PlaylistItem(
     }.collectAsState(initial = emptyList(), context = Dispatchers.IO)
 
     PlaylistItem(
+        browseId = playlist.playlist.browseId,
         thumbnailContent = {
             if (playlistThumbnailUrl.value != "") {
                 AsyncImage(
@@ -185,7 +194,9 @@ fun PlaylistItem(
         modifier = modifier,
         alternative = alternative,
         showName = showName,
-        disableScrollingText = disableScrollingText
+        disableScrollingText = disableScrollingText,
+        isYoutubePlaylist = isYoutubePlaylist,
+        isEditable = isEditable
     )
 }
 
@@ -197,7 +208,9 @@ fun PlaylistItem(
     modifier: Modifier = Modifier,
     alternative: Boolean = false,
     showSongsCount: Boolean = true,
-    disableScrollingText: Boolean
+    disableScrollingText: Boolean,
+    isYoutubePlaylist : Boolean = false,
+    isEditable : Boolean = false
 ) {
     PlaylistItem(
         thumbnailUrl = playlist.thumbnail?.url,
@@ -209,7 +222,9 @@ fun PlaylistItem(
         thumbnailSizeDp = thumbnailSizeDp,
         modifier = modifier,
         alternative = alternative,
-        disableScrollingText = disableScrollingText
+        disableScrollingText = disableScrollingText,
+        isYoutubePlaylist = isYoutubePlaylist,
+        isEditable = isEditable
     )
 }
 
@@ -224,7 +239,9 @@ fun PlaylistItem(
     modifier: Modifier = Modifier,
     alternative: Boolean = false,
     showSongsCount: Boolean = true,
-    disableScrollingText: Boolean
+    disableScrollingText: Boolean,
+    isYoutubePlaylist : Boolean = false,
+    isEditable : Boolean = false
 ) {
     PlaylistItem(
         thumbnailContent = {
@@ -241,15 +258,16 @@ fun PlaylistItem(
         thumbnailSizeDp = thumbnailSizeDp,
         modifier = modifier,
         alternative = alternative,
-        disableScrollingText = disableScrollingText
+        disableScrollingText = disableScrollingText,
+        isYoutubePlaylist = isYoutubePlaylist,
+        isEditable = isEditable
     )
 }
 
 @Composable
 fun PlaylistItem(
-    thumbnailContent: @Composable BoxScope.(
-        //modifier: Modifier
-            ) -> Unit,
+    browseId: String? = null,
+    thumbnailContent: @Composable BoxScope.() -> Unit,
     songCount: Int?,
     name: String?,
     channelName: String?,
@@ -258,7 +276,9 @@ fun PlaylistItem(
     alternative: Boolean = false,
     showName: Boolean = true,
     showSongsCount: Boolean = true,
-    disableScrollingText: Boolean
+    disableScrollingText: Boolean,
+    isYoutubePlaylist : Boolean = false,
+    isEditable : Boolean = false
 ) {
     ItemContainer(
         alternative = alternative,
@@ -313,8 +333,34 @@ fun PlaylistItem(
                         contentScale = ContentScale.Fit
                     )
                 }
+
+            }
+            if ((browseId?.isNotEmpty() == true && name?.startsWith(PIPED_PREFIX) == false) || isYoutubePlaylist) {
+                Image(
+                    painter = painterResource(R.drawable.ytmusic),
+                    colorFilter = ColorFilter.tint(if (isYoutubePlaylist) Color.Red.copy(0.75f).compositeOver(Color.White) else colorPalette().text),
+                    modifier = Modifier
+                        .size(40.dp)
+                        .padding(all = 5.dp),
+                    contentDescription = "Background Image",
+                    contentScale = ContentScale.Fit
+                )
             }
 
+            if (isYoutubePlaylist && !isEditable){
+                Image(
+                    painter = painterResource(R.drawable.locked),
+                    colorFilter = ColorFilter.tint(Color.Red),
+                    modifier = Modifier
+                        .padding(all = 5.dp)
+                        .background(colorPalette().text, CircleShape)
+                        .padding(all = 5.dp)
+                        .size(18.dp)
+                        .align(Alignment.BottomStart),
+                    contentDescription = "Background Image",
+                    contentScale = ContentScale.Fit
+                )
+            }
 
             if (showSongsCount)
                 songCount?.let {
@@ -343,12 +389,7 @@ fun PlaylistItem(
                 if (name != null) {
                     BasicText(
                         //text = name.substringAfter(PINNED_PREFIX) ?: "",
-                        text = if (name.startsWith(PINNED_PREFIX,0,true))
-                            name.substringAfter(PINNED_PREFIX) else
-                            if (name.startsWith(MONTHLY_PREFIX,0,true))
-                                getTitleMonthlyPlaylist(name.substringAfter(MONTHLY_PREFIX)) else
-                            if (name.startsWith(PIPED_PREFIX,0,true))
-                            name.substringAfter(PIPED_PREFIX) else name,
+                        text = cleanPrefix(name),
                         style = typography().xs.semiBold,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,

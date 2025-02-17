@@ -92,7 +92,7 @@ import it.fast4x.rimusic.enums.SortOrder
 import it.fast4x.rimusic.enums.ThumbnailRoundness
 import it.fast4x.rimusic.models.Song
 import it.fast4x.rimusic.models.SongPlaylistMap
-import it.fast4x.rimusic.service.isLocal
+import it.fast4x.rimusic.service.modern.isLocal
 import it.fast4x.rimusic.ui.components.LocalMenuState
 import it.fast4x.rimusic.ui.components.themed.ConfirmationDialog
 import it.fast4x.rimusic.ui.components.themed.FloatingActionsContainerWithScrollToTop
@@ -146,9 +146,10 @@ import it.fast4x.rimusic.utils.thumbnailRoundnessKey
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import me.knighthat.colorPalette
-import me.knighthat.thumbnailShape
-import me.knighthat.typography
+import it.fast4x.rimusic.colorPalette
+import it.fast4x.rimusic.service.modern.isLocal
+import it.fast4x.rimusic.thumbnailShape
+import it.fast4x.rimusic.typography
 import java.text.SimpleDateFormat
 import java.util.Date
 
@@ -302,6 +303,7 @@ fun BuiltInPlaylistSongs(
                     SongSortBy.DatePlayed -> {}
                     SongSortBy.DateLiked -> songs = songs.sortedBy { it.likedAt }
                     SongSortBy.DateAdded -> {}
+                    SongSortBy.RelativePlayTime -> songs = songs.sortedBy { it.relativePlayTime() }
                 }
             }
             SortOrder.Descending -> {
@@ -313,6 +315,7 @@ fun BuiltInPlaylistSongs(
                     SongSortBy.DatePlayed -> {}
                     SongSortBy.DateLiked -> songs = songs.sortedByDescending { it.likedAt }
                     SongSortBy.DateAdded -> {}
+                    SongSortBy.RelativePlayTime -> songs = songs.sortedByDescending { it.relativePlayTime() }
                 }
             }
         }
@@ -730,7 +733,7 @@ fun BuiltInPlaylistSongs(
                                     songs.forEach {
                                         binder?.cache?.removeResource(it.asMediaItem.mediaId)
                                         CoroutineScope(Dispatchers.IO).launch {
-                                            Database.resetContentLength( it.asMediaItem.mediaId )
+                                            Database.deleteFormat( it.asMediaItem.mediaId )
                                         }
                                         manageDownload(
                                             context = context,
@@ -770,7 +773,7 @@ fun BuiltInPlaylistSongs(
                                         songs.forEach {
                                             binder?.cache?.removeResource(it.asMediaItem.mediaId)
                                             CoroutineScope(Dispatchers.IO).launch {
-                                                Database.resetContentLength( it.asMediaItem.mediaId )
+                                                Database.deleteFormat( it.asMediaItem.mediaId )
                                             }
                                             manageDownload(
                                                 context = context,
@@ -948,7 +951,7 @@ fun BuiltInPlaylistSongs(
                                                             songId = song.asMediaItem.mediaId,
                                                             playlistId = playlistPreview.playlist.id,
                                                             position = position + index
-                                                        )
+                                                        ).default()
                                                     )
                                                 }
                                                 //Log.d("mediaItemPos", "added position ${position + index}")
@@ -963,7 +966,7 @@ fun BuiltInPlaylistSongs(
                                                             songId = song.mediaId,
                                                             playlistId = playlistPreview.playlist.id,
                                                             position = position + index
-                                                        )
+                                                        ).default()
                                                     )
                                                 }
                                                 //Log.d("mediaItemPos", "add position $position")
@@ -1013,6 +1016,8 @@ fun BuiltInPlaylistSongs(
                                 SongSortBy.Title, SongSortBy.AlbumName -> stringResource(R.string.sort_title)
                                 SongSortBy.DatePlayed -> stringResource(R.string.sort_date_played)
                                 SongSortBy.PlayTime -> stringResource(R.string.sort_listening_time)
+                                SongSortBy.RelativePlayTime ->
+                                    stringResource(R.string.sort_relative_listening_time)
                                 SongSortBy.DateAdded -> stringResource(R.string.sort_date_added)
                                 SongSortBy.DateLiked -> stringResource(R.string.sort_date_liked)
                                 SongSortBy.Artist -> stringResource(R.string.sort_artist)
@@ -1032,6 +1037,7 @@ fun BuiltInPlaylistSongs(
                                             onDatePlayed = { sortBy = SongSortBy.DatePlayed },
                                             onDateAdded = { sortBy = SongSortBy.DateAdded },
                                             onPlayTime = { sortBy = SongSortBy.PlayTime },
+                                            onRelativePlayTime = {sortBy = SongSortBy.RelativePlayTime},
                                             onDateLiked = { sortBy = SongSortBy.DateLiked },
                                             onArtist = { sortBy = SongSortBy.Artist },
                                             onDuration = { sortBy = SongSortBy.Duration }
@@ -1226,7 +1232,7 @@ fun BuiltInPlaylistSongs(
                             onDownloadClick = {
                                 binder?.cache?.removeResource(song.asMediaItem.mediaId)
                                 CoroutineScope(Dispatchers.IO).launch {
-                                    Database.resetContentLength( song.asMediaItem.mediaId )
+                                    Database.deleteFormat( song.asMediaItem.mediaId )
                                 }
 
                                 if (!isLocal)

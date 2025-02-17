@@ -61,7 +61,7 @@ import it.fast4x.rimusic.utils.showFloatingIconKey
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import me.knighthat.colorPalette
+import it.fast4x.rimusic.colorPalette
 
 @OptIn(ExperimentalMaterial3Api::class)
 @ExperimentalTextApi
@@ -181,7 +181,7 @@ fun ArtistLocalSongs(
                                             songs?.forEach {
                                                 binder?.cache?.removeResource(it.asMediaItem.mediaId)
                                                 CoroutineScope(Dispatchers.IO).launch {
-                                                    Database.resetContentLength( it.asMediaItem.mediaId )
+                                                    Database.deleteFormat( it.asMediaItem.mediaId )
                                                 }
                                                 manageDownload(
                                                     context = context,
@@ -219,7 +219,7 @@ fun ArtistLocalSongs(
                                             songs?.forEach {
                                                 binder?.cache?.removeResource(it.asMediaItem.mediaId)
                                                 CoroutineScope(Dispatchers.IO).launch {
-                                                    Database.resetContentLength( it.asMediaItem.mediaId )
+                                                    Database.deleteFormat( it.asMediaItem.mediaId )
                                                 }
                                                 manageDownload(
                                                     context = context,
@@ -287,7 +287,7 @@ fun ArtistLocalSongs(
                             onDownloadClick = {
                                 binder?.cache?.removeResource(song.asMediaItem.mediaId)
                                 CoroutineScope(Dispatchers.IO).launch {
-                                    Database.resetContentLength( song.asMediaItem.mediaId )
+                                    Database.deleteFormat( song.asMediaItem.mediaId )
                                 }
 
                                 manageDownload(

@@ -4,6 +4,8 @@ import androidx.annotation.OptIn
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -12,8 +14,12 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicText
+import androidx.compose.material.LinearProgressIndicator
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -47,8 +53,8 @@ import it.fast4x.rimusic.ui.components.SeekBarWaved
 import it.fast4x.rimusic.ui.styling.collapsedPlayerProgressBar
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import me.knighthat.colorPalette
-import me.knighthat.typography
+import it.fast4x.rimusic.colorPalette
+import it.fast4x.rimusic.typography
 
 @OptIn(UnstableApi::class)
 @Composable
@@ -94,6 +100,12 @@ fun GetSeekBar(
             .padding(horizontal = 10.dp)
             .fillMaxWidth()
     ) {
+
+        if (duration == C.TIME_UNSET)
+            LinearProgressIndicator(
+                modifier = Modifier.fillMaxWidth(),
+                color = colorPalette().collapsedPlayerProgressBar
+            )
 
         if (playerTimelineType != PlayerTimelineType.Default
             && playerTimelineType != PlayerTimelineType.Wavy
@@ -228,7 +240,7 @@ fun GetSeekBar(
 
         if (playerTimelineType == PlayerTimelineType.FakeAudioBar)
             SeekBarAudioWaves(
-                progressPercentage = ProgressPercentage(position.toFloat() / duration.toFloat()),
+                progressPercentage = ProgressPercentage((position.toFloat() / duration.toFloat()).coerceIn(0f,1f)),
                 playedColor = colorPalette().accent,
                 notPlayedColor = if (transparentbar) Color.Transparent else colorPalette().textSecondary,
                 waveInteraction = {
@@ -290,6 +302,12 @@ fun GetSeekBar(
                 style = typography().xxs.semiBold,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
+                modifier = Modifier
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = ripple(false),
+                        onClick = {binder.player.seekTo(position - 5000)}
+                    )
             )
             BasicText(
                 text = formatAsDuration(scrubbingPosition ?: position),
@@ -350,32 +368,6 @@ fun GetSeekBar(
                             .padding(horizontal = 5.dp)
                     )
 
-
-
-                /*
-                Row(
-                    horizontalArrangement = Arrangement.Center,
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier
-                ) {
-                    Image(
-                        painter = painterResource(R.drawable.time),
-                        colorFilter = ColorFilter.tint(colorPalette().accent),
-                        modifier = Modifier
-                            .size(20.dp)
-                            .padding(horizontal = 5.dp),
-                        contentDescription = "Background Image",
-                        contentScale = ContentScale.Fit
-                    )
-                    BasicText(
-                        text = " ${formatAsTime(totalPlayTimes)}",
-                        style = typography().xxs.semiBold,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                    )
-                }
-                 */
-
             } else {
                /* Image(
                     painter = painterResource(R.drawable.pause),
@@ -403,6 +395,12 @@ fun GetSeekBar(
                     style = typography().xxs.semiBold,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier
+                        .clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = ripple(false),
+                            onClick = {binder.player.seekTo(position + 5000)}
+                        )
                 )
                 BasicText(
                     text = formatAsDuration(duration),

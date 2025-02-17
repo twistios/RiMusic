@@ -66,6 +66,7 @@ import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import it.fast4x.compose.persist.persist
 import it.fast4x.innertube.Innertube
+import it.fast4x.innertube.YtMusic
 import it.fast4x.innertube.models.NavigationEndpoint
 import it.fast4x.innertube.models.bodies.BrowseBody
 import it.fast4x.innertube.requests.podcastPage
@@ -125,8 +126,10 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import me.knighthat.colorPalette
-import me.knighthat.typography
+import it.fast4x.rimusic.colorPalette
+import it.fast4x.rimusic.typography
+import it.fast4x.rimusic.ui.screens.settings.isYouTubeSyncEnabled
+import it.fast4x.rimusic.utils.addToYtPlaylist
 import timber.log.Timber
 
 
@@ -224,7 +227,7 @@ fun Podcast(
                                 songId = mediaItem.mediaId,
                                 playlistId = playlistId,
                                 position = index
-                            )
+                            ).default()
                         }?.let( ::insertSongPlaylistMaps )
                 }
                 SmartMessage(context.resources.getString(R.string.done), PopupType.Success, context = context)
@@ -403,7 +406,7 @@ fun Podcast(
                                                 podcastPage?.listEpisode?.forEach {
                                                     binder?.cache?.removeResource(it.asMediaItem.mediaId)
                                                     CoroutineScope(Dispatchers.IO).launch {
-                                                        Database.resetContentLength( it.asMediaItem.mediaId )
+                                                        Database.deleteFormat( it.asMediaItem.mediaId )
                                                     }
                                                     manageDownload(
                                                         context = context,
@@ -431,7 +434,7 @@ fun Podcast(
                                                 podcastPage?.listEpisode?.forEach {
                                                     binder?.cache?.removeResource(it.asMediaItem.mediaId)
                                                     CoroutineScope(Dispatchers.IO).launch {
-                                                        Database.resetContentLength( it.asMediaItem.mediaId )
+                                                        Database.deleteFormat( it.asMediaItem.mediaId )
                                                     }
                                                     manageDownload(
                                                         context = context,
@@ -543,20 +546,32 @@ fun Podcast(
                                                             playlistPreview.songCount.minus(1) ?: 0
                                                         if (position > 0) position++ else position = 0
 
-                                                        podcastPage?.listEpisode?.forEachIndexed { index, song ->
-                                                            runCatching {
-                                                                Database.insert(song.asMediaItem)
-                                                                Database.insert(
-                                                                    SongPlaylistMap(
-                                                                        songId = song.asMediaItem.mediaId,
-                                                                        playlistId = playlistPreview.playlist.id,
-                                                                        position = position + index
+                                                        if (!isYouTubeSyncEnabled() || !playlistPreview.playlist.isYoutubePlaylist) {
+                                                            podcastPage?.listEpisode?.forEachIndexed { index, song ->
+                                                                runCatching {
+                                                                    Database.insert(song.asMediaItem)
+                                                                    Database.insert(
+                                                                        SongPlaylistMap(
+                                                                            songId = song.asMediaItem.mediaId,
+                                                                            playlistId = playlistPreview.playlist.id,
+                                                                            position = position + index
+                                                                        ).default()
                                                                     )
-                                                                )
-                                                            }.onFailure {
-                                                                Timber.e("Failed onAddToPlaylist in PlaylistSongListModern  ${it.stackTraceToString()}")
+                                                                }.onFailure {
+                                                                    Timber.e("Failed onAddToPlaylist in PlaylistSongListModern  ${it.stackTraceToString()}")
+                                                                }
+                                                            }
+                                                        } else {
+                                                            CoroutineScope(Dispatchers.IO).launch {
+                                                                playlistPreview.playlist.browseId?.let { id ->
+                                                                    addToYtPlaylist(playlistPreview.playlist.id,
+                                                                        position,
+                                                                        id,
+                                                                        podcastPage?.listEpisode?.map { it.asMediaItem } ?: emptyList())
+                                                                }
                                                             }
                                                         }
+
                                                         CoroutineScope(Dispatchers.Main).launch {
                                                             SmartMessage(context.resources.getString(R.string.done), type = PopupType.Success, context = context)
                                                         }
@@ -703,23 +718,39 @@ fun Podcast(
                         } else true
                     } ?: emptyList())
                 { index, song ->
+                    val isLocal by remember { derivedStateOf { song.asMediaItem.isLocal } }
+                    downloadState = getDownloadState(song.asMediaItem.mediaId)
+                    val isDownloaded = if (!isLocal) isDownloadedSong(song.asMediaItem.mediaId) else true
 
                     SwipeablePlaylistItem(
                         mediaItem = song.asMediaItem,
-                        onSwipeToRight = {
+                        onPlayNext = {
                             binder?.player?.addNext(song.asMediaItem)
+                        },
+                        onDownload = {
+                            binder?.cache?.removeResource(song.asMediaItem.mediaId)
+                            CoroutineScope(Dispatchers.IO).launch {
+                                Database.resetContentLength( song.asMediaItem.mediaId )
+                            }
+
+                            if (!isLocal)
+                                manageDownload(
+                                    context = context,
+                                    mediaItem = song.asMediaItem,
+                                    downloadState = isDownloaded
+                                )
+                        },
+                        onEnqueue = {
+                            binder?.player?.enqueue(song.asMediaItem)
                         }
                     ) {
-                        val isLocal by remember { derivedStateOf { song.asMediaItem.isLocal } }
-                        downloadState = getDownloadState(song.asMediaItem.mediaId)
-                        val isDownloaded = if (!isLocal) isDownloadedSong(song.asMediaItem.mediaId) else true
                         var forceRecompose by remember { mutableStateOf(false) }
                         SongItem(
                             song = song.asMediaItem,
                             onDownloadClick = {
                                 binder?.cache?.removeResource(song.asMediaItem.mediaId)
                                 CoroutineScope(Dispatchers.IO).launch {
-                                    Database.resetContentLength( song.asMediaItem.mediaId )
+                                    Database.deleteFormat( song.asMediaItem.mediaId )
                                 }
 
                                 if (!isLocal)

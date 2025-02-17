@@ -1,20 +1,21 @@
 package it.fast4x.rimusic.utils
 
-//import it.fast4x.rimusic.BuildConfig
+
 import android.annotation.SuppressLint
 import android.content.ContentUris
 import android.content.Context
 import android.content.pm.PackageManager
 import android.net.ConnectivityManager
+import android.net.NetworkCapabilities
 import android.net.Uri
 import android.os.Build
 import android.provider.MediaStore
 import android.text.format.DateUtils
+import androidx.annotation.OptIn
 import androidx.annotation.RequiresApi
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -23,38 +24,67 @@ import androidx.core.os.bundleOf
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
 import androidx.media3.common.util.UnstableApi
+import com.zionhuang.innertube.pages.LibraryPage
 import io.ktor.client.HttpClient
+import io.ktor.client.plugins.ClientRequestException
 import io.ktor.client.plugins.UserAgent
+import io.ktor.http.HttpStatusCode
 import it.fast4x.innertube.Innertube
+import it.fast4x.innertube.YtMusic
+import it.fast4x.innertube.YtMusic.addToPlaylist
+import it.fast4x.innertube.YtMusic.likeVideoOrSong
+import it.fast4x.innertube.YtMusic.removelikeVideoOrSong
 import it.fast4x.innertube.models.bodies.ContinuationBody
+import it.fast4x.innertube.models.bodies.SearchBody
 import it.fast4x.innertube.requests.playlistPage
+import it.fast4x.innertube.requests.searchPage
 import it.fast4x.innertube.utils.ProxyPreferences
+import it.fast4x.innertube.utils.from
+import it.fast4x.innertube.utils.getProxy
+import it.fast4x.kugou.KuGou
+import it.fast4x.lrclib.LrcLib
 import it.fast4x.rimusic.Database
+import it.fast4x.rimusic.Database.Companion.getLikedAt
+import it.fast4x.rimusic.EXPLICIT_PREFIX
+import it.fast4x.rimusic.R
+import it.fast4x.rimusic.appContext
 import it.fast4x.rimusic.cleanPrefix
+import it.fast4x.rimusic.context
+import it.fast4x.rimusic.enums.PopupType
 import it.fast4x.rimusic.models.Album
+import it.fast4x.rimusic.models.Artist
+import it.fast4x.rimusic.models.Info
+import it.fast4x.rimusic.models.Lyrics
+import it.fast4x.rimusic.models.Playlist
 import it.fast4x.rimusic.models.Song
+import it.fast4x.rimusic.models.SongAlbumMap
+import it.fast4x.rimusic.models.SongArtistMap
 import it.fast4x.rimusic.models.SongEntity
+import it.fast4x.rimusic.models.SongPlaylistMap
 import it.fast4x.rimusic.service.LOCAL_KEY_PREFIX
+import it.fast4x.rimusic.service.MyDownloadHelper
 import it.fast4x.rimusic.service.isLocal
 import it.fast4x.rimusic.ui.components.themed.NewVersionDialog
+import it.fast4x.rimusic.ui.components.themed.SmartMessage
+import it.fast4x.rimusic.ui.screens.settings.isYouTubeSyncEnabled
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
-import okhttp3.Call
-import okhttp3.Callback
-import okhttp3.OkHttpClient
-import okhttp3.Response
-import org.json.JSONException
+import kotlinx.coroutines.withContext
 import java.io.File
-import java.net.InetSocketAddress
-import java.net.Proxy
 import java.text.SimpleDateFormat
 import java.time.Duration
 import java.util.Calendar
 import java.util.Date
 import java.util.GregorianCalendar
+import kotlin.math.absoluteValue
+import kotlin.random.Random
+import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.minutes
 
+const val EXPLICIT_BUNDLE_TAG = "is_explicit"
 
 fun getDateTimeAsFormattedString(dateAsLongInMs: Long): String? {
     try {
@@ -90,7 +120,8 @@ fun songToggleLike( song: Song ) {
     }
 }
 
-fun mediaItemToggleLike( mediaItem: MediaItem ) {
+@OptIn(UnstableApi::class)
+fun mediaItemToggleLike( mediaItem: MediaItem) {
     Database.asyncTransaction {
         if (songExist(mediaItem.mediaId) == 0)
             insert(mediaItem, Song::toggleLike)
@@ -105,6 +136,10 @@ fun mediaItemToggleLike( mediaItem: MediaItem ) {
                 null
             )
         //}
+        MyDownloadHelper.autoDownloadWhenLiked(
+            context(),
+            mediaItem
+        )
     }
 }
 
@@ -132,7 +167,7 @@ val Innertube.AlbumItem.asAlbum: Album
         title = info?.name,
         thumbnailUrl = thumbnail?.url,
         year = year,
-        authorsText = authors?.joinToString("") { it.name ?: "" },
+        authorsText = authors?.joinToString(", ") { it.name ?: "" },
         //shareUrl =
     )
 
@@ -170,7 +205,7 @@ val Innertube.SongItem.asMediaItem: MediaItem
         .setMediaMetadata(
             MediaMetadata.Builder()
                 .setTitle(info?.name)
-                .setArtist(authors?.joinToString("") { it.name ?: "" })
+                .setArtist(authors?.filter {it.name?.matches(Regex("\\s*([,&])\\s*")) == false }?.joinToString(", ") { it.name ?: "" })
                 .setAlbumTitle(album?.name)
                 .setArtworkUri(thumbnail?.url?.toUri())
                 .setExtras(
@@ -180,6 +215,8 @@ val Innertube.SongItem.asMediaItem: MediaItem
                         "artistNames" to authors?.filter { it.endpoint != null }
                             ?.mapNotNull { it.name },
                         "artistIds" to authors?.mapNotNull { it.endpoint?.browseId },
+                        EXPLICIT_BUNDLE_TAG to explicit,
+                        "setVideoId" to setVideoId,
                     )
                 )
                 .build()
@@ -191,7 +228,7 @@ val Innertube.SongItem.asSong: Song
     get() = Song (
         id = key,
         title = info?.name ?: "",
-        artistsText = authors?.joinToString("") { it.name ?: "" },
+        artistsText = authors?.joinToString(", ") { it.name ?: "" },
         durationText = durationText,
         thumbnailUrl = thumbnail?.url
     )
@@ -205,7 +242,7 @@ val Innertube.VideoItem.asMediaItem: MediaItem
         .setMediaMetadata(
             MediaMetadata.Builder()
                 .setTitle(info?.name)
-                .setArtist(authors?.joinToString("") { it.name ?: "" })
+                .setArtist(authors?.joinToString(", ") { it.name ?: "" })
                 .setArtworkUri(thumbnail?.url?.toUri())
                 .setExtras(
                     bundleOf(
@@ -235,7 +272,8 @@ val Song.asMediaItem: MediaItem
                 .setArtworkUri(thumbnailUrl?.toUri())
                 .setExtras(
                     bundleOf(
-                        "durationText" to durationText
+                        "durationText" to durationText,
+                        EXPLICIT_BUNDLE_TAG to title.startsWith( EXPLICIT_PREFIX, true )
                     )
                 )
                 .build()
@@ -261,7 +299,8 @@ val SongEntity.asMediaItem: MediaItem
                 .setArtworkUri(song.thumbnailUrl?.toUri())
                 .setExtras(
                     bundleOf(
-                        "durationText" to song.durationText
+                        "durationText" to song.durationText,
+                        EXPLICIT_BUNDLE_TAG to song.title.startsWith( EXPLICIT_PREFIX, true )
                     )
                 )
                 .build()
@@ -310,6 +349,14 @@ val MediaItem.cleaned: MediaItem
 val MediaItem.isVideo: Boolean
     get() = mediaMetadata.extras?.getBoolean("isVideo") == true
 
+val MediaItem.isExplicit: Boolean
+    get() {
+        val isTitleContain = mediaMetadata.title?.startsWith( EXPLICIT_PREFIX, true )
+        val isBundleContain = mediaMetadata.extras?.getBoolean( EXPLICIT_BUNDLE_TAG )
+
+        return isTitleContain == true || isBundleContain == true
+    }
+
 fun String.resize(
     width: Int? = null,
     height: Int? = null,
@@ -346,9 +393,16 @@ fun Uri?.thumbnail(size: Int): Uri? {
 fun formatAsDuration(millis: Long) = DateUtils.formatElapsedTime(millis / 1000).removePrefix("0")
 fun durationToMillis(duration: String): Long {
     val parts = duration.split(":")
-    val hours = parts[0].toLong()
-    val minutes = parts[1].toLong()
-    return hours * 3600000 + minutes * 60000
+    if (parts.size == 3){
+        val hours = parts[0].toLong()
+        val minutes = parts[1].toLong()
+        val seconds = parts[2].toLong()
+        return hours * 3600000 + minutes * 60000 + seconds * 1000
+    } else {
+        val minutes = parts[0].toLong()
+        val seconds = parts[1].toLong()
+        return minutes * 60000 + seconds * 1000
+    }
 }
 
 fun durationTextToMillis(duration: String): Long {
@@ -362,8 +416,8 @@ fun durationTextToMillis(duration: String): Long {
 
 fun formatAsTime(millis: Long): String {
     //if (millis == 0L) return ""
-    val timePart1 = Duration.ofMillis(millis / 60).toMinutes().minutes
-    val timePart2 = Duration.ofMillis(millis / 60).seconds % 60
+    val timePart1 = Duration.ofMillis(millis).toMinutes().minutes
+    val timePart2 = Duration.ofMillis(millis).seconds % 60
 
     return "${timePart1} ${timePart2}s"
 }
@@ -409,6 +463,8 @@ suspend fun Result<Innertube.ItemsPage<Innertube.SongItem>?>.completed(
     var continuationsList = arrayOf<String>()
     //continuationsList += continuation.orEmpty()
 
+    println("mediaItem playlist completed() continuation? $continuation")
+
     while (continuation != null && depth++ < maxDepth) {
         val newSongs = Innertube
             .playlistPage(
@@ -436,11 +492,36 @@ suspend fun Result<Innertube.PlaylistOrAlbumPage>.completed(
 ): Result<Innertube.PlaylistOrAlbumPage> = runCatching {
     val page = getOrThrow()
     val songsPage = runCatching {
-        page.songsPage!!
+        page.songsPage
+    }.onFailure {
+        println("Innertube songsPage PlaylistOrAlbumPage>.completed ${it.stackTraceToString()}")
     }
     val itemsPage = songsPage.completed(maxDepth).getOrThrow()
     page.copy(songsPage = itemsPage)
-}.also { it.exceptionOrNull()?.printStackTrace() }
+}.onFailure {
+    println("Innertube PlaylistOrAlbumPage>.completed ${it.stackTraceToString()}")
+}
+
+//@JvmName("completedPlaylist")
+suspend fun Result<LibraryPage?>.completed(): Result<LibraryPage> = runCatching {
+    val page = getOrThrow()
+    val items = page?.items?.toMutableList()
+    var continuation = page?.continuation
+    while (continuation != null) {
+        val continuationPage = Innertube.libraryContinuation(continuation).getOrNull()
+        if (continuationPage != null)
+            if (items != null) {
+                items += continuationPage.items
+            }
+
+        continuation = continuationPage?.continuation
+    }
+    LibraryPage(
+        items = items ?: emptyList(),
+        continuation = page?.continuation
+    )
+}
+
 
 @Composable
 fun CheckAvailableNewVersion(
@@ -478,62 +559,34 @@ fun CheckAvailableNewVersion(
     }
 }
 
-@Composable
-fun isAvailableUpdate(): String {
-    var newVersion = ""
-    val file = File(LocalContext.current.filesDir, "RiMusicUpdatedVersion.ver")
-    if (file.exists()) {
-        newVersion = file.readText().substring(0, file.readText().length - 1)
-        //Log.d("updatedVersion","${file.readText().length.toString()} ${file.readText().substring(0,file.readText().length-1)}")
-        //Log.d("updatedVersion","${file.readText().length} ${newVersion.length}")
-    } else newVersion = ""
-
-    return if (newVersion == getVersionName() || newVersion == "") "" else newVersion
-    //return if (newVersion == BuildConfig.VERSION_NAME || newVersion == "") "" else newVersion
-}
-
-@Composable
-fun checkInternetConnection(): Boolean {
-    val client = OkHttpClient()
-    val request = OkHttpRequest(client)
-    val coroutineScope = CoroutineScope(Dispatchers.Main)
-    val url = "https://raw.githubusercontent.com/fast4x/RiMusic/master/updatedVersion/updatedVersionCode.ver"
-
-    var check by remember {
-        mutableStateOf("")
-    }
-
-    request.GET(url, object : Callback {
-        override fun onResponse(call: Call, response: Response) {
-            val responseData = response.body?.string()
-            coroutineScope.launch {
-                try {
-                    responseData.let { check = it.toString() }
-                    //Log.d("CheckInternet",check.substring(0,5))
-                } catch (e: JSONException) {
-                    e.printStackTrace()
-                }
+fun isNetworkConnected(context: Context): Boolean {
+    val cm = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+    if (isAtLeastAndroid6) {
+        val networkInfo = cm.getNetworkCapabilities(cm.activeNetwork)
+        return networkInfo?.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET) == true &&
+                networkInfo.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED) == true
+    } else {
+        return try {
+            if (cm.activeNetworkInfo == null) {
+                false
+            } else {
+                cm.activeNetworkInfo?.isConnected!!
             }
+        } catch (e: Exception) {
+            false
         }
-
-        override fun onFailure(call: Call, e: java.io.IOException) {
-            //Log.d("CheckInternet","Check failure")
-        }
-    })
-
-    //Log.d("CheckInternetRet",check)
-    return check.isNotEmpty()
+    }
 }
-
 
 fun isNetworkAvailable(context: Context): Boolean {
     val cm = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
         ?: return false
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-        val networkInfo = cm.activeNetwork
+        val networkInfo = cm.getNetworkCapabilities(cm.activeNetwork)
         // if no network is available networkInfo will be null
-        // otherwise check if we are connected
-        return networkInfo != null
+        // otherwise check if we are connected to internet
+        //return networkInfo != null
+        return networkInfo?.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET) ?: false
     } else {
         return try {
             if (cm.activeNetworkInfo == null) {
@@ -554,10 +607,10 @@ fun isNetworkAvailableComposable(): Boolean {
     val cm = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
         ?: return false
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-        val networkInfo = cm.activeNetwork
+        val networkInfo = cm.getNetworkCapabilities(cm.activeNetwork)
         // if no network is available networkInfo will be null
         // otherwise check if we are connected
-        return networkInfo != null
+        return networkInfo?.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET) ?: false
     } else {
         return try {
             if (cm.activeNetworkInfo == null) {
@@ -577,7 +630,7 @@ fun getHttpClient() = HttpClient() {
     }
     engine {
         ProxyPreferences.preference?.let{
-            proxy = Proxy(it.proxyMode, InetSocketAddress(it.proxyHost, it.proxyPort))
+            proxy = getProxy(it)
         }
 
     }
@@ -655,3 +708,491 @@ fun Modifier.conditional(condition : Boolean, modifier : Modifier.() -> Modifier
         this
     }
 }
+
+@OptIn(UnstableApi::class)
+suspend fun getAlbumVersionFromVideo(song: Song,playlistId : Long, position : Int, playlist : Playlist?){
+    val isExtPlaylist = (song.thumbnailUrl == "") && (song.durationText != "0:00")
+    var songNotFound: Song
+    var random4Digit  = Random.nextInt(1000, 10000)
+    fun filteredText(text : String): String{
+        val filteredText = text
+            .lowercase()
+            .replace("(", " ")
+            .replace(")", " ")
+            .replace("-", " ")
+            .replace("lyrics", "")
+            .replace("vevo", "")
+            .replace(" hd", "")
+            .replace("official video", "")
+            .filter {it.isLetterOrDigit() || it.isWhitespace() || it == '\'' || it == ',' }
+            .replace(Regex("\\s+"), " ")
+        return filteredText
+    }
+
+    val searchQuery = Innertube.searchPage(
+        body = SearchBody(
+            query = filteredText("${cleanPrefix(song.title)} ${song.artistsText}"),
+            params = Innertube.SearchFilter.Song.value
+        ),
+        fromMusicShelfRendererContent = Innertube.SongItem.Companion::from
+    )
+
+    val searchResults = searchQuery?.getOrNull()?.items
+
+    val sourceSongWords = filteredText(cleanPrefix(song.title))
+        .split(" ").filter { it.isNotEmpty() }
+    val lofi = sourceSongWords.contains("lofi")
+    val rock = sourceSongWords.contains("rock")
+    val reprise = sourceSongWords.contains("reprise")
+    val unplugged = sourceSongWords.contains("unplugged")
+    val instrumental = sourceSongWords.contains("instrumental")
+    val remix = sourceSongWords.contains("remix")
+    val acapella = sourceSongWords.contains("acapella")
+    val acoustic = sourceSongWords.contains("acoustic")
+    val live = sourceSongWords.contains("live")
+    val concert = sourceSongWords.contains("concert")
+    val tour = sourceSongWords.contains("tour")
+    val redux = sourceSongWords.contains("redux")
+
+    fun shuffle(word: String): String {
+        val chars = word.toCharArray()
+        for (i in chars.indices) {
+            val randomIndex = Random.nextInt(chars.size)
+            chars[i] = chars[randomIndex]
+        }
+        return String(chars)
+    }
+
+    fun findSongIndex() : Int {
+        for (i in 0..4) {
+            val requiredSong = searchResults?.getOrNull(i)
+            val requiredSongWords = filteredText(cleanPrefix(requiredSong?.title ?: ""))
+                .split(" ").filter { it.isNotEmpty() }
+
+            val songMatched = (requiredSong != null)
+                    && (requiredSongWords.any { it in sourceSongWords })
+                    && (if (lofi) (requiredSongWords.any { it == "lofi" }) else requiredSongWords.all { it != "lofi" })
+                    && (if (rock) (requiredSongWords.any { it == "rock" }) else requiredSongWords.all { it != "rock" })
+                    && (if (reprise) (requiredSongWords.any { it == "reprise" }) else requiredSongWords.all { it != "reprise" })
+                    && (if (unplugged) (requiredSongWords.any { it == "unplugged" }) else requiredSongWords.all { it != "unplugged" })
+                    && (if (instrumental) (requiredSongWords.any { it == "instrumental" }) else requiredSongWords.all { it != "instrumental" })
+                    && (if (remix) (requiredSongWords.any { it == "remix" }) else requiredSongWords.all { it != "remix" })
+                    && (if (acapella) (requiredSongWords.any { it == "acapella" }) else requiredSongWords.all { it != "acapella" })
+                    && (if (acoustic) (requiredSongWords.any { it == "acoustic" }) else requiredSongWords.all { it != "acoustic" })
+                    && (if (live) (requiredSongWords.any { it == "live" }) else requiredSongWords.all { it != "live" })
+                    && (if (concert) (requiredSongWords.any { it == "concert" }) else requiredSongWords.all { it != "concert" })
+                    && (if (tour) (requiredSongWords.any { it == "tour" }) else requiredSongWords.all { it != "tour" })
+                    && (if (redux) (requiredSongWords.any { it == "redux" }) else requiredSongWords.all { it != "redux" })
+                    && (if (song.asMediaItem.isExplicit) {requiredSong.asMediaItem.isExplicit} else {true})
+                    && (if (isExtPlaylist) {(durationTextToMillis(requiredSong.durationText ?: "") - durationTextToMillis(song.durationText ?: "")).absoluteValue <= 2000}
+            else {true})
+
+            if (songMatched) return i
+        }
+        return -1
+    }
+
+    val matchedSong = searchResults?.getOrNull(findSongIndex())
+    val artistsNames = matchedSong?.authors?.filter { it.endpoint != null }?.map { it.name }
+    val artistNameString = matchedSong?.asMediaItem?.mediaMetadata?.artist?.toString() ?: ""
+    val artistsIds = matchedSong?.authors?.filter { it.endpoint != null }?.map { it.endpoint?.browseId }
+
+    Database.asyncTransaction {
+        if (findSongIndex() != -1) {
+            if (isYouTubeSyncEnabled() && playlist?.isYoutubePlaylist == true && playlist.isEditable){
+                Database.asyncTransaction {
+                    CoroutineScope(Dispatchers.IO).launch {
+                        if (removeYTSongFromPlaylist(
+                                song.id,
+                                playlist.browseId ?: "",
+                                playlist.id
+                            )
+                        )
+                            deleteSongFromPlaylist(song.id, playlist.id)
+
+                    }
+                }
+
+            } else {
+                deleteSongFromPlaylist(song.id, playlist?.id ?: 0L)
+            }
+            if (matchedSong != null) {
+                if (songExist(matchedSong.asSong.id) == 0) {
+                    Database.insert(matchedSong.asMediaItem)
+                }
+                insert(
+                    SongPlaylistMap(
+                        songId = matchedSong.asMediaItem.mediaId,
+                        playlistId = playlistId,
+                        position = position
+                    ).default()
+                )
+                insert(
+                    Album(id = matchedSong.album?.endpoint?.browseId ?: "", title = matchedSong.asMediaItem.mediaMetadata.albumTitle?.toString()),
+                    SongAlbumMap(songId = matchedSong.asMediaItem.mediaId, albumId = matchedSong.album?.endpoint?.browseId ?: "", position = null)
+                )
+                CoroutineScope(Dispatchers.IO).launch {
+                    val album = Database.album(matchedSong.album?.endpoint?.browseId ?: "").firstOrNull()
+                    album?.copy(thumbnailUrl = matchedSong.thumbnail?.url)?.let { update(it) }
+
+                    if (isYouTubeSyncEnabled() && playlist?.isYoutubePlaylist == true && playlist.isEditable){
+                        YtMusic.addToPlaylist(playlist.browseId ?: "", matchedSong.asMediaItem.mediaId)
+                    }
+                }
+                if ((artistsNames != null) && (artistsIds != null)) {
+                    artistsNames.let { artistNames ->
+                        artistsIds.let { artistIds ->
+                            if (artistNames.size == artistIds.size) {
+                                insert(
+                                    artistNames.mapIndexed { index, artistName ->
+                                        Artist(id = (artistIds[index]) ?: "", name = artistName)
+                                    },
+                                    artistIds.map { artistId ->
+                                        SongArtistMap(songId = matchedSong.asMediaItem.mediaId, artistId = (artistId) ?: "")
+                                    }
+                                )
+                            }
+                        }
+                    }
+                }
+                Database.updateSongArtist(matchedSong.asMediaItem.mediaId, artistNameString)
+                if (song.thumbnailUrl == "") Database.delete(song)
+            }
+        } else if (song.id == ((cleanPrefix(song.title)+song.artistsText).filter {it.isLetterOrDigit()})){
+            songNotFound = song.copy(id = shuffle(song.artistsText+random4Digit+cleanPrefix(song.title)+"56Music").filter{it.isLetterOrDigit()})
+            Database.delete(song)
+            Database.insert(songNotFound)
+            Database.insert(
+                SongPlaylistMap(
+                    songId = songNotFound.id,
+                    playlistId = playlistId,
+                    position = position
+                ).default()
+            )
+        }
+    }
+}
+
+suspend fun updateLocalPlaylist(song: Song){
+    val searchQuery = Innertube.searchPage(
+        body = SearchBody(
+            query = "${cleanPrefix(song.title)} ${song.artistsText}",
+            params = Innertube.SearchFilter.Song.value
+        ),
+        fromMusicShelfRendererContent = Innertube.SongItem.Companion::from
+    )
+
+    val searchResults = searchQuery?.getOrNull()?.items
+
+    fun findSongIndex() : Int {
+        for (i in 0..9) {
+            val requiredSong = searchResults?.getOrNull(i)
+            val songMatched = (requiredSong?.asMediaItem?.mediaId) == (song.asMediaItem.mediaId)
+            if (songMatched) return i
+        }
+        return -1
+    }
+
+    val matchedSong = searchResults?.getOrNull(findSongIndex())
+    val artistsNames = matchedSong?.authors?.filter { it.endpoint != null }?.map { it.name }
+    val artistNameString = matchedSong?.asMediaItem?.mediaMetadata?.artist?.toString() ?: ""
+    val artistsIds = matchedSong?.authors?.filter { it.endpoint != null }?.map { it.endpoint?.browseId }
+
+    Database.asyncTransaction {
+        if (findSongIndex() != -1) {
+            if (matchedSong != null) {
+                insert(
+                    Album(id = matchedSong.album?.endpoint?.browseId ?: "", title = matchedSong.asMediaItem.mediaMetadata.albumTitle?.toString()),
+                    SongAlbumMap(songId = matchedSong.asMediaItem.mediaId, albumId = matchedSong.album?.endpoint?.browseId ?: "", position = null)
+                )
+                CoroutineScope(Dispatchers.IO).launch {
+                    val album = Database.album(matchedSong.album?.endpoint?.browseId ?: "").firstOrNull()
+                    album?.copy(thumbnailUrl = matchedSong.thumbnail?.url)?.let { update(it) }
+                }
+
+                if ((artistsNames != null) && (artistsIds != null)) {
+                    artistsNames.let { artistNames ->
+                        artistsIds.let { artistIds ->
+                            if (artistNames.size == artistIds.size) {
+                                insert(
+                                    artistNames.mapIndexed { index, artistName ->
+                                        Artist(id = (artistIds[index]) ?: "", name = artistName)
+                                    },
+                                    artistIds.map { artistId ->
+                                        SongArtistMap(songId = song.id, artistId = (artistId) ?: "")
+                                    }
+                                )
+                            }
+                        }
+                    }
+                }
+                Database.updateSongArtist(matchedSong.asMediaItem.mediaId, artistNameString)
+            }
+        }
+    }
+}
+
+fun DownloadSyncedLyrics(it : SongEntity, coroutineScope : CoroutineScope){
+    var lyrics by mutableStateOf<Lyrics?>(null)
+    coroutineScope.launch {
+        withContext(Dispatchers.IO) {
+            Database.lyrics(it.asMediaItem.mediaId)
+                .collect { currentLyrics ->
+                    if (currentLyrics?.synced == null) {
+                        lyrics = null
+                        runCatching {
+                            LrcLib.lyrics(
+                                artist = it.song.artistsText
+                                    ?: "",
+                                title = cleanPrefix(it.song.title),
+                                duration = durationTextToMillis(
+                                    it.song.durationText
+                                        ?: ""
+                                ).milliseconds,
+                                album = it.albumTitle
+                            )?.onSuccess { lyrics ->
+                                Database.upsert(
+                                    Lyrics(
+                                        songId = it.asMediaItem.mediaId,
+                                        fixed = currentLyrics?.fixed,
+                                        synced = lyrics?.text.orEmpty()
+                                    )
+                                )
+                            }?.onFailure { lyrics ->
+                                runCatching {
+                                    KuGou.lyrics(
+                                        artist = it.song.artistsText
+                                            ?: "",
+                                        title = cleanPrefix(
+                                            it.song.title
+                                        ),
+                                        duration = durationTextToMillis(
+                                            it.song.durationText
+                                                ?: ""
+                                        ) / 1000
+                                    )?.onSuccess { lyrics ->
+                                        Database.upsert(
+                                            Lyrics(
+                                                songId = it.asMediaItem.mediaId,
+                                                fixed = currentLyrics?.fixed,
+                                                synced = lyrics?.value.orEmpty()
+                                            )
+                                        )
+                                    }?.onFailure {}
+                                }.onFailure {}
+                            }
+                        }.onFailure {}
+                    }
+                }
+        }
+    }
+}
+
+suspend fun addToYtPlaylist(localPlaylistId: Long, position: Int, ytplaylistId: String, mediaItems: List<MediaItem>){
+    val mediaItemsChunks = mediaItems.chunked(50)
+    mediaItemsChunks.forEachIndexed { index, items ->
+        if (mediaItems.size <= 50) {}
+        else if (index == 0) {
+            SmartMessage(
+                "${mediaItems.size} "+appContext().resources.getString(R.string.songs_adding_in_yt),
+                context = appContext(),
+                durationLong = true
+            )
+        } else {
+            delay(2000)
+        }
+        addToPlaylist(ytplaylistId, items.map { it.mediaId })
+            .onSuccess {
+                items.forEachIndexed { index, item ->
+                    Database.asyncTransaction {
+                        if (songExist(item.mediaId) == 0){
+                            Database.insert(item)
+                        }
+                        Database.insert(
+                            SongPlaylistMap(
+                                songId = item.mediaId,
+                                playlistId = localPlaylistId,
+                                position = position + index
+                            ).default()
+                        )
+                    }
+                }
+                if (items.size == 50) {
+                    SmartMessage(
+                        "${mediaItems.size - (index + 1) * 50} Songs Remaining",
+                        context = appContext(),
+                        durationLong = false
+                    )
+                }
+            }
+            .onFailure {
+                println("YtMusic addToPlaylist (list of size ${items.size}) error: ${it.stackTraceToString()}")
+                if(it is ClientRequestException && it.response.status == HttpStatusCode.BadRequest) {
+                    SmartMessage(
+                        appContext().resources.getString(R.string.adding_yt_to_pl_failed),
+                        context = appContext(),
+                        durationLong = false
+                    )
+                    items.forEach { item ->
+                        delay(500)
+                        addToPlaylist(ytplaylistId, item.mediaId)
+                            .onFailure {
+                            println("YtMusic addToPlaylist (list insert backup) error: ${it.stackTraceToString()}")
+                                SmartMessage(
+                                    appContext().resources.getString(R.string.songs_add_yt_failed)+"${item.mediaMetadata.title} - ${item.mediaMetadata.artist}",
+                                    type = PopupType.Error,
+                                    context = appContext(),
+                                    durationLong = false
+                                )
+                            }.onSuccess {
+                                Database.asyncTransaction {
+                                    if (songExist(item.mediaId) == 0){
+                                       Database.insert(item)
+                                   }
+                                   insert(
+                                      SongPlaylistMap(
+                                        songId = item.mediaId,
+                                        playlistId = localPlaylistId,
+                                        position = position
+                                      ).default()
+                                  )
+                                }
+                                SmartMessage(
+                                    "${items.size - (index + 1)} Songs Remaining",
+                                    context = appContext(),
+                                    durationLong = false
+                                )
+                            }
+                    }
+                }
+            }
+    }
+    SmartMessage(
+        "${mediaItems.size} "+ appContext().resources.getString(R.string.songs_added_in_yt),
+        context = appContext(),
+        durationLong = true
+    )
+}
+
+suspend fun addSongToYtPlaylist(localPlaylistId: Long, position: Int, ytplaylistId: String, mediaItem: MediaItem){
+    if (isYouTubeSyncEnabled()) {
+        addToPlaylist(ytplaylistId,mediaItem.mediaId)
+            .onSuccess {
+                Database.asyncTransaction {
+                    if (songExist(mediaItem.mediaId) == 0) {
+                        Database.insert(mediaItem)
+                    }
+                    insert(
+                        SongPlaylistMap(
+                            songId = mediaItem.mediaId,
+                            playlistId = localPlaylistId,
+                            position = position
+                        ).default()
+                    )
+                }
+                SmartMessage(
+                    appContext().resources.getString(R.string.songs_add_yt_success),
+                    context = appContext(),
+                    durationLong = true
+                )
+            }
+            .onFailure {
+                SmartMessage(
+                    appContext().resources.getString(R.string.songs_add_yt_failed),
+                    context = appContext(),
+                    durationLong = true
+                )
+            }
+
+    }
+}
+
+
+@OptIn(UnstableApi::class)
+suspend fun addToYtLikedSong(mediaItem: MediaItem){
+    if (isYouTubeSyncEnabled()) {
+        if (getLikedAt(mediaItem.mediaId) in listOf(-1L, null)) {
+            likeVideoOrSong(mediaItem.mediaId)
+                .onSuccess {
+                    Database.asyncTransaction {
+                        if (songExist(mediaItem.mediaId) == 0) {
+                            Database.insert(mediaItem)
+                        }
+                        like(mediaItem.mediaId, System.currentTimeMillis())
+                        MyDownloadHelper.autoDownloadWhenLiked(
+                            context(),
+                            mediaItem
+                        )
+                    }
+                    SmartMessage(
+                        appContext().resources.getString(R.string.songs_liked_yt),
+                        context = appContext(),
+                        durationLong = false
+                    )
+                }
+                .onFailure {
+                    SmartMessage(
+                        appContext().resources.getString(R.string.songs_liked_yt_failed),
+                        context = appContext(),
+                        durationLong = false
+                    )
+                }
+        } else {
+            removelikeVideoOrSong(mediaItem.mediaId)
+                .onSuccess {
+                    Database.asyncTransaction {
+                        like(mediaItem.mediaId, null)
+                        MyDownloadHelper.autoDownloadWhenLiked(
+                            context(),
+                            mediaItem
+                        )
+                    }
+                    SmartMessage(
+                        appContext().resources.getString(R.string.song_unliked_yt),
+                        context = appContext(),
+                        durationLong = false
+                    )
+                }
+                .onFailure {
+                    SmartMessage(
+                        appContext().resources.getString(R.string.songs_unliked_yt_failed),
+                        context = appContext(),
+                        durationLong = false
+                    )
+                }
+        }
+    }
+}
+
+@OptIn(UnstableApi::class)
+suspend fun addToYtLikedSongs(mediaItems: List<MediaItem>){
+    if (isYouTubeSyncEnabled()) {
+        mediaItems.forEachIndexed { index, item ->
+            delay(1000)
+            likeVideoOrSong(item.mediaId).onSuccess {
+                Database.asyncTransaction {
+                    if (songExist(item.mediaId) == 0) {
+                        Database.insert(item)
+                    }
+                    like(item.mediaId, System.currentTimeMillis())
+                    MyDownloadHelper.autoDownloadWhenLiked(
+                        context(),
+                        item
+                    )
+                }
+                SmartMessage(
+                    "${index + 1}/${mediaItems.size} " + appContext().resources.getString(R.string.songs_liked_yt),
+                    context = appContext(),
+                    durationLong = false
+                )
+            }.onFailure {
+                SmartMessage(
+                    "${index + 1}/${mediaItems.size} " + appContext().resources.getString(R.string.songs_liked_yt_failed),
+                    context = appContext(),
+                    durationLong = false
+                )
+            }
+        }
+    }
+}
+

@@ -51,6 +51,7 @@ import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.offline.Download
 import androidx.navigation.NavController
 import it.fast4x.compose.persist.persistList
+import it.fast4x.innertube.YtMusic
 import it.fast4x.innertube.models.NavigationEndpoint
 import it.fast4x.rimusic.Database
 import it.fast4x.rimusic.LocalPlayerServiceBinder
@@ -59,6 +60,8 @@ import it.fast4x.rimusic.MONTHLY_PREFIX
 import it.fast4x.rimusic.PINNED_PREFIX
 import it.fast4x.rimusic.PIPED_PREFIX
 import it.fast4x.rimusic.R
+import it.fast4x.rimusic.appContext
+import it.fast4x.rimusic.cleanPrefix
 import it.fast4x.rimusic.enums.NavRoutes
 import it.fast4x.rimusic.enums.PlaylistSortBy
 import it.fast4x.rimusic.enums.SortOrder
@@ -72,7 +75,6 @@ import it.fast4x.rimusic.ui.styling.Dimensions
 import it.fast4x.rimusic.ui.styling.favoritesIcon
 import it.fast4x.rimusic.ui.styling.px
 import it.fast4x.rimusic.utils.addNext
-import it.fast4x.rimusic.utils.asMediaItem
 import it.fast4x.rimusic.utils.enqueue
 import it.fast4x.rimusic.utils.forcePlay
 import it.fast4x.rimusic.utils.formatAsDuration
@@ -91,8 +93,15 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import me.knighthat.colorPalette
-import me.knighthat.typography
+import it.fast4x.rimusic.colorPalette
+import it.fast4x.rimusic.context
+import it.fast4x.rimusic.enums.PopupType
+import it.fast4x.rimusic.service.MyDownloadHelper
+import it.fast4x.rimusic.typography
+import it.fast4x.rimusic.ui.screens.settings.isYouTubeSyncEnabled
+import it.fast4x.rimusic.utils.addSongToYtPlaylist
+import it.fast4x.rimusic.utils.addToYtLikedSong
+import it.fast4x.rimusic.utils.isNetworkConnected
 
 @OptIn(UnstableApi::class)
 @Composable
@@ -155,6 +164,7 @@ fun BaseMediaItemGridMenu(
     onClosePlayer: (() -> Unit)? = null,
     onGoToPlaylist: ((Long) -> Unit)? = null,
     onAddToPreferites: (() -> Unit)? = null,
+    onMatchingSong: (() -> Unit)? = null,
     disableScrollingText: Boolean
 ) {
     //val context = LocalContext.current
@@ -170,16 +180,23 @@ fun BaseMediaItemGridMenu(
         onEnqueue = onEnqueue,
         onDownload = onDownload,
         onAddToPreferites = onAddToPreferites,
+        onMatchingSong =  onMatchingSong,
         onAddToPlaylist = { playlist, position ->
-            Database.asyncTransaction {
-                insert(mediaItem)
-                insert(
-                    SongPlaylistMap(
-                        songId = mediaItem.mediaId,
-                        playlistId = insert(playlist).takeIf { it != -1L } ?: playlist.id,
-                        position = position
+            if (!isYouTubeSyncEnabled() || !playlist.isYoutubePlaylist){
+                Database.asyncTransaction {
+                    insert(mediaItem)
+                    insert(
+                        SongPlaylistMap(
+                            songId = mediaItem.mediaId,
+                            playlistId = insert(playlist).takeIf { it != -1L } ?: playlist.id,
+                            position = position
+                        ).default()
                     )
-                )
+                }
+            } else {
+                CoroutineScope(Dispatchers.IO).launch {
+                    addSongToYtPlaylist(playlist.id, position, playlist.browseId ?: "", mediaItem)
+                }
             }
         },
         onHideFromDatabase = onHideFromDatabase,
@@ -237,16 +254,23 @@ fun MiniMediaItemGridMenu(
         mediaItem = mediaItem,
         onDismiss = onDismiss,
         onAddToPlaylist = { playlist, position ->
-            Database.asyncTransaction {
-                insert(mediaItem)
-                insert(
-                    SongPlaylistMap(
-                        songId = mediaItem.mediaId,
-                        playlistId = insert(playlist).takeIf { it != -1L } ?: playlist.id,
-                        position = position
+            if (!isYouTubeSyncEnabled() || !playlist.isYoutubePlaylist){
+                Database.asyncTransaction {
+                    insert(mediaItem)
+                    insert(
+                        SongPlaylistMap(
+                            songId = mediaItem.mediaId,
+                            playlistId = insert(playlist).takeIf { it != -1L } ?: playlist.id,
+                            position = position
+                        ).default()
                     )
-                )
+                }
+            } else {
+                CoroutineScope(Dispatchers.IO).launch {
+                    addSongToYtPlaylist(playlist.id, position, playlist.browseId ?: "", mediaItem)
+                }
             }
+
             onDismiss()
         },
         onGoToPlaylist = {
@@ -280,6 +304,7 @@ fun MediaItemGridMenu (
     onRemoveFromQueue: (() -> Unit)? = null,
     onRemoveFromPlaylist: (() -> Unit)? = null,
     onAddToPreferites: (() -> Unit)?,
+    onMatchingSong: (() -> Unit)? = null,
     onAddToPlaylist: ((Playlist, Int) -> Unit)? = null,
     onGoToAlbum: ((String) -> Unit)? = null,
     onGoToArtist: ((String) -> Unit)? = null,
@@ -404,7 +429,7 @@ fun MediaItemGridMenu (
                 onDownloadClick = {
                     binder?.cache?.removeResource(mediaItem.mediaId)
                     CoroutineScope(Dispatchers.IO).launch {
-                        Database.resetContentLength( mediaItem.mediaId )
+                        Database.deleteFormat( mediaItem.mediaId )
                     }
                     if (!isLocal)
                         manageDownload(
@@ -426,8 +451,16 @@ fun MediaItemGridMenu (
                     icon = if (likedAt == null) R.drawable.heart_outline else R.drawable.heart,
                     color = colorPalette().favoritesIcon,
                     onClick = {
-                        mediaItemToggleLike(mediaItem)
-                        updateData = !updateData
+                        if (!isNetworkConnected(appContext()) && isYouTubeSyncEnabled()) {
+                            SmartMessage(appContext().resources.getString(R.string.no_connection), context = appContext(), type = PopupType.Error)
+                        } else if (!isYouTubeSyncEnabled()){
+                            mediaItemToggleLike(mediaItem)
+                            updateData = !updateData
+                        } else {
+                            CoroutineScope(Dispatchers.IO).launch {
+                                addToYtLikedSong(mediaItem)
+                            }
+                        }
                     },
                     modifier = Modifier
                         .padding(all = 4.dp)
@@ -939,6 +972,15 @@ fun MediaItemGridMenu (
                         colorIcon = colorPalette.text,
                         colorText = colorPalette.text,
                         onClick = onAddToPreferites
+                    )
+
+                if (onMatchingSong != null)
+                    GridMenuItem(
+                        icon = R.drawable.random,
+                        title = R.string.match_song_grid,
+                        colorIcon = colorPalette.text,
+                        colorText = colorPalette.text,
+                        onClick = onMatchingSong
                     )
 
                 onAddToPlaylist?.let { onAddToPlaylist ->
