@@ -72,6 +72,9 @@ kotlin {
             implementation(libs.navigation)
             implementation(libs.media3.session)
             implementation(libs.kotlin.coroutines.guava)
+            implementation(libs.newpipe.extractor)
+            implementation(libs.nanojson)
+            implementation(libs.androidx.webkit)
         }
         commonMain.dependencies {
             implementation(compose.runtime)
@@ -81,7 +84,7 @@ kotlin {
             implementation(compose.components.resources)
             implementation(compose.components.uiToolingPreview)
 
-            implementation(projects.innertube)
+            implementation(projects.environment)
             implementation(projects.piped)
             implementation(projects.invidious)
 
@@ -123,8 +126,8 @@ android {
         applicationId = "it.fast4x.rimusic"
         minSdk = 21
         targetSdk = 35
-        versionCode = 82
-        versionName = "0.6.70"
+        versionCode = 86
+        versionName = "0.6.73"
     }
 
     splits {
@@ -159,14 +162,14 @@ android {
             .map { it as com.android.build.gradle.internal.api.BaseVariantOutputImpl }
             .forEach { output ->
                 //val outputFileName = "app-${variant.baseName}-${variant.versionName}-${variant.versionCode}.apk"
-                val outputFileName = "twri_app-${variant.baseName}.apk"
+                val outputFileName = "twrimusic-${variant.baseName}.apk"
                 output.outputFileName = outputFileName
             }
     }
 
     flavorDimensions += "version"
     productFlavors {
-        create("foss") {
+        create("full") {
             dimension = "version"
         }
     }
@@ -319,7 +322,7 @@ dependencies {
     implementation(libs.hilt)
     ksp(libs.hilt.compiler)
 
-    implementation(projects.innertube)
+    implementation(projects.environment)
     implementation(projects.kugou)
     implementation(projects.lrclib)
     implementation(projects.piped)

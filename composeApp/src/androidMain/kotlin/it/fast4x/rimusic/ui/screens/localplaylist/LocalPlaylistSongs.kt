@@ -45,6 +45,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -86,11 +87,11 @@ import it.fast4x.compose.persist.persistList
 import it.fast4x.compose.reordering.draggedItem
 import it.fast4x.compose.reordering.rememberReorderingState
 import it.fast4x.compose.reordering.reorder
-import it.fast4x.innertube.Innertube
-import it.fast4x.innertube.YtMusic
-import it.fast4x.innertube.models.bodies.NextBody
-import it.fast4x.innertube.requests.relatedSongs
-import it.fast4x.innertube.utils.completed
+import it.fast4x.environment.Environment
+import it.fast4x.environment.EnvironmentExt
+import it.fast4x.environment.models.bodies.NextBody
+import it.fast4x.environment.requests.relatedSongs
+import it.fast4x.environment.utils.completed
 import it.fast4x.rimusic.Database
 import it.fast4x.rimusic.Database.Companion.songAlbumInfo
 import it.fast4x.rimusic.Database.Companion.songArtistInfo
@@ -177,6 +178,8 @@ import it.fast4x.rimusic.cleanPrefix
 import it.fast4x.rimusic.MONTHLY_PREFIX
 import it.fast4x.rimusic.PINNED_PREFIX
 import it.fast4x.rimusic.PIPED_PREFIX
+import it.fast4x.rimusic.YTP_PREFIX
+import it.fast4x.rimusic.appContext
 import it.fast4x.rimusic.enums.PlaylistSongsTypeFilter
 import it.fast4x.rimusic.ui.components.themed.NowPlayingSongIndicator
 import it.fast4x.rimusic.ui.screens.settings.isYouTubeSyncEnabled
@@ -193,14 +196,16 @@ import it.fast4x.rimusic.service.MyDownloadHelper
 import it.fast4x.rimusic.ui.components.themed.FilterMenu
 import it.fast4x.rimusic.ui.components.themed.InProgressDialog
 import it.fast4x.rimusic.ui.components.themed.SongMatchingDialog
+import it.fast4x.rimusic.utils.addToYtLikedSongs
+import it.fast4x.rimusic.utils.addToYtPlaylist
 import it.fast4x.rimusic.utils.asSong
+import it.fast4x.rimusic.utils.formatAsDuration
 import it.fast4x.rimusic.utils.getAlbumVersionFromVideo
 import it.fast4x.rimusic.utils.isExplicit
 import it.fast4x.rimusic.utils.isNetworkConnected
 import it.fast4x.rimusic.utils.mediaItemToggleLike
 import it.fast4x.rimusic.utils.playlistSongsTypeFilterKey
 import it.fast4x.rimusic.utils.removeYTSongFromPlaylist
-import it.fast4x.rimusic.utils.thumbnail
 import it.fast4x.rimusic.utils.updateLocalPlaylist
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -323,7 +328,7 @@ fun LocalPlaylistSongs(
         RecommendationsNumber.`5`
     )
     var isRecommendationEnabled by rememberPreference(isRecommendationEnabledKey, false)
-    var relatedSongsRecommendationResult by persist<Result<Innertube.RelatedSongs?>?>(tag = "home/relatedSongsResult")
+    var relatedSongsRecommendationResult by persist<Result<Environment.RelatedSongs?>?>(tag = "home/relatedSongsResult")
     var songBaseRecommendation by persist<SongEntity?>("home/songBaseRecommendation")
     var positionsRecommendationList = arrayListOf<Int>()
     var songMatchingDialogEnable by remember { mutableStateOf(false) }
@@ -345,7 +350,7 @@ fun LocalPlaylistSongs(
                     val song = songs.firstOrNull()
                     if (relatedSongsRecommendationResult == null || songBaseRecommendation?.song?.id != song?.song?.id) {
                         relatedSongsRecommendationResult =
-                            Innertube.relatedSongs(NextBody(videoId = (song?.song?.id ?: "HZnNt9nnEhw")))
+                            Environment.relatedSongs(NextBody(videoId = (song?.song?.id ?: "HZnNt9nnEhw")))
                     }
                     songBaseRecommendation = song
                 }
@@ -445,10 +450,10 @@ fun LocalPlaylistSongs(
                 CoroutineScope(Dispatchers.IO).launch {
                     if (isYouTubeSyncEnabled() && playlistPreview?.playlist?.isYoutubePlaylist == true) {
                         if (playlistPreview?.playlist?.isEditable == true) {
-                            playlistPreview?.playlist?.browseId?.let {YtMusic.deletePlaylist(cleanPrefix(it))
+                            playlistPreview?.playlist?.browseId?.let {EnvironmentExt.deletePlaylist(cleanPrefix(it))
                             }
                         } else {
-                            playlistPreview?.playlist?.browseId?.let {YtMusic.removelikePlaylistOrAlbum(cleanPrefix(it))}
+                            playlistPreview?.playlist?.browseId?.let {EnvironmentExt.removelikePlaylistOrAlbum(cleanPrefix(it))}
                         }
                     }
                     Database.asyncTransaction {
@@ -507,7 +512,7 @@ fun LocalPlaylistSongs(
                     runBlocking(Dispatchers.IO) {
                         withContext(Dispatchers.IO) {
                             playlistPreview.playlist.browseId?.let {
-                                YtMusic.getPlaylist(
+                                EnvironmentExt.getPlaylist(
                                     playlistId = cleanPrefix(it)
                                 ).completed()
                             }
@@ -519,7 +524,7 @@ fun LocalPlaylistSongs(
                         Database.clearPlaylist(playlistId)
 
                         remotePlaylist.songs
-                            .map(Innertube.SongItem::asMediaItem)
+                            .map(Environment.SongItem::asMediaItem)
                             .onEach(Database::insert)
                             .mapIndexed { position, mediaItem ->
                                 SongPlaylistMap(
@@ -529,6 +534,7 @@ fun LocalPlaylistSongs(
                                     setVideoId = mediaItem.mediaMetadata.extras?.getString("setVideoId"),
                                 ).default()
                             }.let(Database::insertSongPlaylistMaps)
+                            .also { SmartMessage(context.resources.getString(R.string.done), context = context) }
                     }
                 }
             } else {
@@ -542,6 +548,24 @@ fun LocalPlaylistSongs(
                     playlistId = playlistPreview.playlist.id
 
                 )
+            }
+        }
+    }
+
+    val shouldSync = remember(playlistPreview?.playlist?.name) {
+        playlistPreview?.playlist?.name?.startsWith(YTP_PREFIX) == true
+    } || remember(playlistPreview?.playlist?.browseId) {
+        playlistPreview?.playlist?.browseId?.startsWith("RDTMAK5uy") == true
+    }
+
+    LaunchedEffect(shouldSync) {
+        if (!shouldSync || !isNetworkConnected(context)) {
+            return@LaunchedEffect
+        }
+        coroutineScope.launch {
+            sync()
+            Database.asyncTransaction {
+                updatePlaylistName(cleanPrefix(playlistPreview!!.playlist.name), playlistId)
             }
         }
     }
@@ -574,6 +598,14 @@ fun LocalPlaylistSongs(
     var showConfirmMatchAllDialog by remember {
         mutableStateOf(false)
     }
+
+    var showYoutubeLikeConfirmDialog by remember {
+        mutableStateOf(false)
+    }
+
+    var totalMinutesToLike by remember { mutableStateOf("") }
+
+    var songItemsToLike = remember { mutableStateListOf<MediaItem>() }
 
     var scrollToNowPlaying by remember {
         mutableStateOf(false)
@@ -771,7 +803,7 @@ fun LocalPlaylistSongs(
                             println("Innertube YtMusic try to rename Playlist with browseId: ${playlistPreview?.playlist?.browseId}, name: $text")
                             playlistPreview?.playlist?.browseId?.let {
                                 println("Innertube YtMusic renamePlaylist with id: $it, name: $text")
-                                YtMusic.renamePlaylist(cleanPrefix(it), text)
+                                EnvironmentExt.renamePlaylist(cleanPrefix(it), text)
                             }
                         }
                         Database.asyncTransaction {
@@ -873,6 +905,36 @@ fun LocalPlaylistSongs(
             done = songsMatched,
             text = stringResource(R.string.matching_songs),
             onDismiss = {showGetAlbumVersionDialogueExt = false}
+        )
+    }
+
+    if (showYoutubeLikeConfirmDialog) {
+        songItemsToLike.clear()
+        if (listMediaItems.isEmpty()) {
+            playlistSongs.forEachIndexed { index, song ->
+                if (song.song.likedAt in listOf(-1L,null)) {
+                    songItemsToLike.add(song.asMediaItem)
+                }
+            }
+        } else {
+            Database.asyncTransaction {
+                listMediaItems.forEachIndexed { index, song ->
+                    if (Database.getLikedAt(song.mediaId) in listOf(-1L,null)) {
+                        songItemsToLike.add(song)
+                    }
+                }
+            }
+        }
+        totalMinutesToLike = formatAsDuration(((songItemsToLike).size*1000).toLong())
+        ConfirmationDialog(
+            text = "$totalMinutesToLike "+stringResource(R.string.do_you_really_want_to_like_all),
+            onDismiss = { showYoutubeLikeConfirmDialog = false },
+            onConfirm = {
+                showYoutubeLikeConfirmDialog = false
+                CoroutineScope(Dispatchers.IO).launch {
+                    addToYtLikedSongs(songItemsToLike)
+                }
+            }
         )
     }
 
@@ -1307,7 +1369,7 @@ fun LocalPlaylistSongs(
 
 
 
-                    if ((playlistPreview?.playlist?.browseId == null) || (playlistPreview?.playlist?.isEditable == true)) {
+                    if ((playlistPreview?.playlist?.isYoutubePlaylist) == false) {
                         HeaderIconButton(
                             icon = R.drawable.random,
                             enabled = playlistSongs.any {
@@ -1493,7 +1555,7 @@ fun LocalPlaylistSongs(
                                             }
                                         },
                                         showOnSyncronize = !playlistPreview.playlist.browseId.isNullOrBlank(),
-                                        showLinkUnlink = isNetworkConnected(context) && (playlistPreview.playlist.browseId != null),
+                                        showLinkUnlink = isNetworkConnected(context) && (!playlistPreview.playlist.browseId.isNullOrBlank()),
                                         /*
                                         onSyncronize = {
                                             if (!playlistPreview.playlist.name.startsWith(
@@ -1547,16 +1609,16 @@ fun LocalPlaylistSongs(
                                             }
                                         },
                                         */
-                                        onSyncronize = {sync();SmartMessage(context.resources.getString(R.string.done), context = context) },
+                                        onSyncronize = {sync()},
                                         onLinkUnlink = {
                                             if (!isNetworkConnected(context) && playlistPreview.playlist.isYoutubePlaylist && playlistPreview.playlist.isEditable && isYouTubeSyncEnabled()){
                                                 SmartMessage(context.resources.getString(R.string.no_connection), context = context, type = PopupType.Error)
                                             } else if (playlistPreview.playlist.isYoutubePlaylist){
                                                 CoroutineScope(Dispatchers.IO).launch {
                                                     if (playlistPreview.playlist.isEditable) {
-                                                        playlistPreview.playlist.browseId.let {YtMusic.deletePlaylist(it ?: "")}
+                                                        playlistPreview.playlist.browseId.let {EnvironmentExt.deletePlaylist(it ?: "")}
                                                     } else {
-                                                        playlistPreview.playlist.browseId.let {YtMusic.removelikePlaylistOrAlbum(it ?: "")}
+                                                        playlistPreview.playlist.browseId.let {EnvironmentExt.removelikePlaylistOrAlbum(it ?: "")}
                                                     }
                                                     Database.update(
                                                         playlistPreview.playlist.copy(
@@ -1597,7 +1659,7 @@ fun LocalPlaylistSongs(
 
                                                     if ((distinctSongs.size + toPlaylistPreview.songCount) > 5000 && toPlaylistPreview.playlist.isYoutubePlaylist && isYouTubeSyncEnabled()){
                                                         SmartMessage(context.resources.getString(R.string.yt_playlist_limited), context = context, type = PopupType.Error)
-                                                    } else {
+                                                    } else if (!isYouTubeSyncEnabled() || !toPlaylistPreview.playlist.isYoutubePlaylist) {
                                                         playlistSongs.forEachIndexed { index, song ->
                                                             Database.asyncTransaction {
                                                                 Database.insert(song.asMediaItem)
@@ -1609,56 +1671,47 @@ fun LocalPlaylistSongs(
                                                                     ).default()
                                                                 )
                                                             }
-                                                            //Log.d("mediaItemPos", "added position ${position + index}")
                                                         }
-                                                        //println("pipedInfo mediaitemmenu uuid ${playlistPreview.playlist.browseId}")
-
-                                                        if (toPlaylistPreview.playlist.isYoutubePlaylist && toPlaylistPreview.playlist.isEditable && distinctSongs.isNotEmpty() && isYouTubeSyncEnabled()) {
-                                                            CoroutineScope(Dispatchers.IO).launch {
-                                                                if (playlistPreview.playlist.isYoutubePlaylist) {
-                                                                    YtMusic.addPlaylistToPlaylist(
-                                                                        cleanPrefix(toPlaylistPreview.playlist.browseId ?: ""),
-                                                                        cleanPrefix(playlistPreview.playlist.browseId ?: "")
-                                                                    )
-                                                                } else {
-                                                                    if (distinctSongs.size <= 50) {
-                                                                        cleanPrefix(toPlaylistPreview.playlist.browseId ?: "").let { id ->
-                                                                            YtMusic.addToPlaylist(id,distinctSongs.map { it.asMediaItem.mediaId })
-                                                                        }
-                                                                    } else {
-                                                                        SmartMessage("${distinctSongs.size} "+ context.resources.getString(R.string.songs_adding_in_yt), context = context)
-                                                                        val browseId = toPlaylistPreview.playlist.browseId ?: ""
-
-                                                                        val distinctSongsChunks = distinctSongs.chunked(50)
-                                                                        distinctSongsChunks.forEachIndexed { index, list ->
-                                                                            if (index != 0) {
-                                                                                delay(2000)
-                                                                                SmartMessage("${distinctSongs.size - index*50} Songs Remaining", context = context)
-                                                                            }
-                                                                            withContext(Dispatchers.IO) {
-                                                                                YtMusic.addToPlaylist(browseId, list.map { it.asMediaItem.mediaId })
-                                                                            }
+                                                    } else {
+                                                        CoroutineScope(Dispatchers.IO).launch {
+                                                            if (playlistPreview.playlist.isYoutubePlaylist) {
+                                                                EnvironmentExt.addPlaylistToPlaylist(
+                                                                    cleanPrefix(toPlaylistPreview.playlist.browseId ?: ""),
+                                                                    cleanPrefix(playlistPreview.playlist.browseId ?: "")
+                                                                ).onSuccess {
+                                                                    playlistSongs.forEachIndexed { index, song ->
+                                                                        Database.asyncTransaction {
+                                                                            Database.insert(song.asMediaItem)
+                                                                            Database.insert(
+                                                                                SongPlaylistMap(
+                                                                                    songId = song.asMediaItem.mediaId,
+                                                                                    playlistId = toPlaylistPreview.playlist.id,
+                                                                                    position = position + index
+                                                                                ).default()
+                                                                            )
                                                                         }
                                                                     }
                                                                 }
-                                                                SmartMessage("${distinctSongs.size} "+ context.resources.getString(R.string.songs_added_in_yt), context = context, durationLong = true)
+                                                            } else if (distinctSongs.isNotEmpty()) {
+                                                                addToYtPlaylist(toPlaylistPreview.playlist.id,
+                                                                    position,
+                                                                    toPlaylistPreview.playlist.browseId ?: "",
+                                                                    distinctSongs.map { it.asMediaItem })
                                                             }
-
                                                         }
-
-                                                        if (toPlaylistPreview.playlist.name.startsWith(
-                                                                PIPED_PREFIX
-                                                            ) && isPipedEnabled && pipedSession.token.isNotEmpty()
-                                                        )
-                                                            addToPipedPlaylist(
-                                                                context = context,
-                                                                coroutineScope = coroutineScope,
-                                                                pipedSession = pipedSession.toApiSession(),
-                                                                id = UUID.fromString(cleanPrefix(toPlaylistPreview.playlist.browseId ?: "")),
-                                                                videos = playlistSongs.map { it.asMediaItem.mediaId }
-                                                                    .toList()
-                                                            )
                                                     }
+                                                    if (toPlaylistPreview.playlist.name.startsWith(
+                                                            PIPED_PREFIX
+                                                        ) && isPipedEnabled && pipedSession.token.isNotEmpty()
+                                                    )
+                                                        addToPipedPlaylist(
+                                                            context = context,
+                                                            coroutineScope = coroutineScope,
+                                                            pipedSession = pipedSession.toApiSession(),
+                                                            id = UUID.fromString(cleanPrefix(toPlaylistPreview.playlist.browseId ?: "")),
+                                                            videos = playlistSongs.map { it.asMediaItem.mediaId }
+                                                                .toList()
+                                                        )
                                                 }
                                             }
                                             else {
@@ -1669,7 +1722,7 @@ fun LocalPlaylistSongs(
                                                     val distinctSongs = filteredListMediaItems.filter { item -> item !in songsInTheToPlaylist.map { it.asMediaItem } }
                                                     if ((distinctSongs.size + toPlaylistPreview.songCount) > 5000 && toPlaylistPreview.playlist.isYoutubePlaylist && isYouTubeSyncEnabled()){
                                                         SmartMessage(context.resources.getString(R.string.yt_playlist_limited), context = context, type = PopupType.Error)
-                                                    } else {
+                                                    } else if (!isYouTubeSyncEnabled() || !toPlaylistPreview.playlist.isYoutubePlaylist) {
                                                         listMediaItems.forEachIndexed { index, song ->
                                                             Database.asyncTransaction {
                                                                 Database.insert(song)
@@ -1682,56 +1735,56 @@ fun LocalPlaylistSongs(
                                                                 )
                                                             }
                                                         }
-                                                        if (toPlaylistPreview.playlist.isYoutubePlaylist && toPlaylistPreview.playlist.isEditable && distinctSongs.isNotEmpty() && isYouTubeSyncEnabled()) {
-                                                            CoroutineScope(Dispatchers.IO).launch {
-                                                                if (distinctSongs.size <= 50) {
-                                                                    cleanPrefix(toPlaylistPreview.playlist.browseId ?: "").let { id ->
-                                                                        YtMusic.addToPlaylist(id,distinctSongs.map { it.mediaId })
-                                                                    }
-                                                                    SmartMessage("${distinctSongs.size} "+context.resources.getString(R.string.songs_added_in_yt), context = context)
-                                                                } else {
-                                                                    SmartMessage("${distinctSongs.size} "+context.resources.getString(R.string.songs_adding_in_yt), context = context)
-                                                                    val browseId = toPlaylistPreview.playlist.browseId ?: ""
-
-                                                                    val distinctSongsChunks = distinctSongs.chunked(50)
-                                                                    distinctSongsChunks.forEachIndexed { index, list ->
-                                                                        if (index != 0) {
-                                                                            delay(2000)
-                                                                            SmartMessage("${distinctSongs.size - index*50} Songs Remaining", context = context)
-                                                                        }
-                                                                        withContext(Dispatchers.IO) {
-                                                                            YtMusic.addToPlaylist(browseId, list.map { it.mediaId })
-                                                                        }
-                                                                    }
-                                                                }
-                                                                SmartMessage("${distinctSongs.size} "+ context.resources.getString(R.string.songs_added_in_yt), context = context, durationLong = true)
-                                                            }
+                                                    } else if (distinctSongs.isNotEmpty()){
+                                                        CoroutineScope(Dispatchers.IO).launch {
+                                                            addToYtPlaylist(toPlaylistPreview.playlist.id,
+                                                                position,
+                                                                toPlaylistPreview.playlist.browseId ?: "",
+                                                                distinctSongs)
                                                         }
-                                                        println("pipedInfo mediaitemmenu uuid ${playlistPreview.playlist.browseId}")
-
-                                                        if (toPlaylistPreview.playlist.name.startsWith(
-                                                                PIPED_PREFIX
-                                                            ) && isPipedEnabled && pipedSession.token.isNotEmpty()
-                                                        )
-                                                            addToPipedPlaylist(
-                                                                context = context,
-                                                                coroutineScope = coroutineScope,
-                                                                pipedSession = pipedSession.toApiSession(),
-                                                                id = UUID.fromString(cleanPrefix(toPlaylistPreview.playlist.browseId ?: "")),
-                                                                videos = listMediaItems.map { it.mediaId }
-                                                                    .toList()
-                                                            )
-                                                        listMediaItems.clear()
-                                                        selectItems = false
                                                     }
+                                                    println("pipedInfo mediaitemmenu uuid ${playlistPreview.playlist.browseId}")
+
+                                                    if (toPlaylistPreview.playlist.name.startsWith(
+                                                            PIPED_PREFIX
+                                                        ) && isPipedEnabled && pipedSession.token.isNotEmpty()
+                                                    )
+                                                        addToPipedPlaylist(
+                                                            context = context,
+                                                            coroutineScope = coroutineScope,
+                                                            pipedSession = pipedSession.toApiSession(),
+                                                            id = UUID.fromString(cleanPrefix(toPlaylistPreview.playlist.browseId ?: "")),
+                                                            videos = listMediaItems.map { it.mediaId }
+                                                                .toList()
+                                                        )
+                                                    listMediaItems.clear()
+                                                    selectItems = false
                                                 }
                                             }
                                         },
                                         onAddToPreferites = {
-                                            playlistSongs.forEachIndexed { _, song ->
-                                                if(song.song.likedAt == null) {
-                                                    mediaItemToggleLike(song.asMediaItem)
+                                            if (!isNetworkConnected(appContext()) && isYouTubeSyncEnabled()) {
+                                                SmartMessage(appContext().resources.getString(R.string.no_connection), context = appContext(), type = PopupType.Error)
+                                            } else if (!isYouTubeSyncEnabled()){
+                                                if (listMediaItems.isEmpty()) {
+                                                    playlistSongs.forEachIndexed { index, song ->
+                                                        if (song.song.likedAt in listOf(-1L,null)
+                                                        ) {
+                                                            mediaItemToggleLike(song.asMediaItem)
+                                                        }
+                                                    }
+                                                } else {
+                                                    Database.asyncTransaction {
+                                                        listMediaItems.forEachIndexed { index, song ->
+                                                            if (Database.getLikedAt(song.mediaId) !in listOf(-1L,null)
+                                                            ) {
+                                                                mediaItemToggleLike(song)
+                                                            }
+                                                        }
+                                                    }
                                                 }
+                                            } else {
+                                                showYoutubeLikeConfirmDialog = true
                                             }
                                         },
                                         onRenumberPositions = {
@@ -2081,7 +2134,7 @@ fun LocalPlaylistSongs(
             }
 
             itemsIndexed(
-                items = playlistSongs ?: emptyList(),
+                items = playlistSongs.distinctBy { it.song.id },
                 key = { _, song -> song.song.id },
                 contentType = { _, song -> song },
             ) { index, song ->
@@ -2339,14 +2392,16 @@ fun LocalPlaylistSongs(
                                                 onMatchingSong = {
                                                     if (!isNetworkConnected(context) && playlistPreview?.playlist?.isYoutubePlaylist == true && (playlistPreview?.playlist?.isEditable == true) && isYouTubeSyncEnabled()){
                                                         SmartMessage(context.resources.getString(R.string.no_connection), context = context, type = PopupType.Error)
-                                                    } else if ((playlistPreview?.playlist?.browseId == null)
-                                                                || (playlistPreview?.playlist?.isEditable == true)){
+                                                    } else if ((playlistPreview?.playlist?.isYoutubePlaylist) == false){
                                                         songMatchingDialogEnable = true
                                                         matchingSongEntity = song
                                                     } else {
                                                         SmartMessage(
                                                             context.resources.getString(R.string.cannot_delete_from_online_playlists),type = PopupType.Warning, context = context)
                                                         }
+                                                },
+                                                onInfo = {
+                                                    navController.navigate("${NavRoutes.videoOrSongInfo.name}/${song.song.id}")
                                                 },
                                                 navController = navController,
                                                 playlist = playlistPreview,

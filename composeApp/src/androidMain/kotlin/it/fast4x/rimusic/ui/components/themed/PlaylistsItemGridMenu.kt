@@ -84,6 +84,8 @@ fun PlaylistsItemGridMenu(
     onEnqueue: (() -> Unit)? = null,
     onImportOnlinePlaylist: (() -> Unit)? = null,
     onAddToPreferites: (() -> Unit)? = null,
+    showonAddToPreferitesYoutube: Boolean = false,
+    onAddToPreferitesYoutube: (() -> Unit)? = null,
     onAddToPlaylist: ((PlaylistPreview) -> Unit)? = null,
     showOnSyncronize: Boolean = false,
     showLinkUnlink: Boolean = false,
@@ -502,6 +504,20 @@ fun PlaylistsItemGridMenu(
                             onAddToPreferites()
                         }
                     )
+
+                if (showonAddToPreferitesYoutube) {
+                    if (onAddToPreferitesYoutube != null)
+                        GridMenuItem(
+                            icon = R.drawable.ytmusic,
+                            title = R.string.add_rimusic_to_ytm_favorites,
+                            colorIcon = colorPalette.text,
+                            colorText = colorPalette.text,
+                            onClick = {
+                                onDismiss()
+                                onAddToPreferitesYoutube()
+                            }
+                        )
+                }
 
                 onAddToPlaylist?.let { onAddToPlaylist ->
                     GridMenuItem(

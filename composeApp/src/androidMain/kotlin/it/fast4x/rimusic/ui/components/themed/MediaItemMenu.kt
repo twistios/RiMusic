@@ -63,8 +63,7 @@ import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.offline.Download
 import androidx.navigation.NavController
 import it.fast4x.compose.persist.persistList
-import it.fast4x.innertube.YtMusic
-import it.fast4x.innertube.models.NavigationEndpoint
+import it.fast4x.environment.models.NavigationEndpoint
 import it.fast4x.rimusic.Database
 import it.fast4x.rimusic.LocalPlayerServiceBinder
 import it.fast4x.rimusic.MODIFIED_PREFIX
@@ -72,6 +71,7 @@ import it.fast4x.rimusic.MONTHLY_PREFIX
 import it.fast4x.rimusic.PINNED_PREFIX
 import it.fast4x.rimusic.PIPED_PREFIX
 import it.fast4x.rimusic.R
+import it.fast4x.rimusic.appContext
 import it.fast4x.rimusic.cleanPrefix
 import it.fast4x.rimusic.enums.MenuStyle
 import it.fast4x.rimusic.enums.NavRoutes
@@ -123,6 +123,8 @@ import it.fast4x.rimusic.enums.PopupType
 import it.fast4x.rimusic.service.MyDownloadHelper
 import it.fast4x.rimusic.typography
 import it.fast4x.rimusic.ui.screens.settings.isYouTubeSyncEnabled
+import it.fast4x.rimusic.utils.addSongToYtPlaylist
+import it.fast4x.rimusic.utils.addToYtLikedSong
 import it.fast4x.rimusic.utils.isNetworkConnected
 import it.fast4x.rimusic.utils.removeYTSongFromPlaylist
 import timber.log.Timber
@@ -140,6 +142,7 @@ fun InHistoryMediaItemMenu(
     song: Song,
     onHideFromDatabase: (() -> Unit)? = {},
     onDeleteFromDatabase: (() -> Unit)? = {},
+    onInfo: (() -> Unit)? = {},
     modifier: Modifier = Modifier,
     disableScrollingText: Boolean
 ) {
@@ -151,11 +154,24 @@ fun InHistoryMediaItemMenu(
         onHideFromDatabase = onHideFromDatabase,
         onDeleteFromDatabase = onDeleteFromDatabase,
         onAddToPreferites = {
-            Database.asyncTransaction {
-                like(song.id, System.currentTimeMillis())
+            if (!isNetworkConnected(context()) && isYouTubeSyncEnabled()){
+                SmartMessage(context().resources.getString(R.string.no_connection), context = context(), type = PopupType.Error)
+            } else if (!isYouTubeSyncEnabled()){
+                Database.asyncTransaction {
+                    like(
+                        song.asMediaItem.mediaId,
+                        System.currentTimeMillis()
+                    )
+                    MyDownloadHelper.autoDownloadWhenLiked(context(),song.asMediaItem)
+                }
             }
-            MyDownloadHelper.autoDownloadWhenLiked(context(),song.asMediaItem)
+            else {
+                CoroutineScope(Dispatchers.IO).launch {
+                    addToYtLikedSong(song.asMediaItem)
+                }
+            }
         },
+        onInfo = onInfo,
         modifier = modifier,
         disableScrollingText = disableScrollingText
     )
@@ -173,6 +189,7 @@ fun InPlaylistMediaItemMenu(
     positionInPlaylist: Int,
     song: Song,
     onMatchingSong: (() -> Unit)? = null,
+    onInfo: (() -> Unit)? = null,
     modifier: Modifier = Modifier,
     disableScrollingText: Boolean
 ) {
@@ -225,13 +242,26 @@ fun InPlaylistMediaItemMenu(
             }
         },
         onAddToPreferites = {
-            Database.asyncTransaction {
-                like(song.id, System.currentTimeMillis())
+            if (!isNetworkConnected(context()) && isYouTubeSyncEnabled()){
+                SmartMessage(context.resources.getString(R.string.no_connection), context = context, type = PopupType.Error)
+            } else if (!isYouTubeSyncEnabled()){
+                Database.asyncTransaction {
+                    like(
+                        song.asMediaItem.mediaId,
+                        System.currentTimeMillis()
+                    )
+                    MyDownloadHelper.autoDownloadWhenLiked(context(),song.asMediaItem)
+                }
             }
-            MyDownloadHelper.autoDownloadWhenLiked(context(),song.asMediaItem)
+            else {
+                CoroutineScope(Dispatchers.IO).launch {
+                    addToYtLikedSong(song.asMediaItem)
+                }
+            }
         },
         onMatchingSong = { if (onMatchingSong != null) {onMatchingSong()}
             onDismiss() },
+        onInfo = onInfo,
         modifier = modifier,
         disableScrollingText = disableScrollingText
     )
@@ -250,6 +280,7 @@ fun NonQueuedMediaItemMenuLibrary(
     onRemoveFromQuickPicks: (() -> Unit)? = null,
     onDownload: (() -> Unit)? = null,
     onMatchingSong: (() -> Unit)? = null,
+    onInfo: (() -> Unit)?,
     disableScrollingText: Boolean
 ) {
     val binder = LocalPlayerServiceBinder.current
@@ -304,13 +335,22 @@ fun NonQueuedMediaItemMenuLibrary(
             onHideFromDatabase = { isHiding = true },
             onRemoveFromQuickPicks = onRemoveFromQuickPicks,
             onAddToPreferites = {
-                Database.asyncTransaction {
-                    like(
-                        mediaItem.mediaId,
-                        System.currentTimeMillis()
-                    )
+                if (!isNetworkConnected(context()) && isYouTubeSyncEnabled()){
+                    SmartMessage(context().resources.getString(R.string.no_connection), context = context(), type = PopupType.Error)
+                } else if (!isYouTubeSyncEnabled()){
+                    Database.asyncTransaction {
+                        like(
+                            mediaItem.mediaId,
+                            System.currentTimeMillis()
+                        )
+                        MyDownloadHelper.autoDownloadWhenLiked(context(),mediaItem)
+                    }
                 }
-                MyDownloadHelper.autoDownloadWhenLiked(context,mediaItem)
+                else {
+                    CoroutineScope(Dispatchers.IO).launch {
+                        addToYtLikedSong(mediaItem)
+                    }
+                }
             },
             modifier = modifier,
             disableScrollingText = disableScrollingText
@@ -338,15 +378,25 @@ fun NonQueuedMediaItemMenuLibrary(
             onHideFromDatabase = { isHiding = true },
             onRemoveFromQuickPicks = onRemoveFromQuickPicks,
             onAddToPreferites = {
-                Database.asyncTransaction {
-                    like(
-                        mediaItem.mediaId,
-                        System.currentTimeMillis()
-                    )
+                if (!isNetworkConnected(context()) && isYouTubeSyncEnabled()){
+                    SmartMessage(context().resources.getString(R.string.no_connection), context = context(), type = PopupType.Error)
+                } else if (!isYouTubeSyncEnabled()){
+                    Database.asyncTransaction {
+                        like(
+                            mediaItem.mediaId,
+                            System.currentTimeMillis()
+                        )
+                        MyDownloadHelper.autoDownloadWhenLiked(context(),mediaItem)
+                    }
                 }
-                MyDownloadHelper.autoDownloadWhenLiked(context,mediaItem)
+                else {
+                    CoroutineScope(Dispatchers.IO).launch {
+                        addToYtLikedSong(mediaItem)
+                    }
+                }
             },
             onMatchingSong = onMatchingSong,
+            onInfo = onInfo,
             modifier = modifier,
             disableScrollingText = disableScrollingText
         )
@@ -369,6 +419,7 @@ fun NonQueuedMediaItemMenu(
     onDownload: (() -> Unit)? = null,
     onAddToPreferites: (() -> Unit)? = null,
     onMatchingSong: (() -> Unit)? = null,
+    onInfo: (() -> Unit)? = null,
     disableScrollingText: Boolean
 ) {
     val binder = LocalPlayerServiceBinder.current
@@ -405,6 +456,7 @@ fun NonQueuedMediaItemMenu(
             onRemoveFromQuickPicks = onRemoveFromQuickPicks,
             onAddToPreferites = onAddToPreferites,
             onMatchingSong =  onMatchingSong,
+            onInfo = onInfo,
             modifier = modifier,
             disableScrollingText = disableScrollingText
         )
@@ -433,6 +485,7 @@ fun NonQueuedMediaItemMenu(
             onRemoveFromQuickPicks = onRemoveFromQuickPicks,
             onAddToPreferites = onAddToPreferites,
             onMatchingSong =  onMatchingSong,
+            onInfo = onInfo,
             modifier = modifier,
             disableScrollingText = disableScrollingText
         )
@@ -448,6 +501,7 @@ fun QueuedMediaItemMenu(
     onDismiss: () -> Unit,
     onDownload: (() -> Unit)?,
     onMatchingSong: (() -> Unit)? = null,
+    onInfo: (() -> Unit)?,
     mediaItem: MediaItem,
     indexInQueue: Int?,
     modifier: Modifier = Modifier,
@@ -486,13 +540,22 @@ fun QueuedMediaItemMenu(
                 navController.navigate(route = "${NavRoutes.localPlaylist.name}/$it")
             },
             onAddToPreferites = {
-                Database.asyncTransaction {
-                    like(
-                        mediaItem.mediaId,
-                        System.currentTimeMillis()
-                    )
+                if (!isNetworkConnected(context()) && isYouTubeSyncEnabled()){
+                    SmartMessage(context.resources.getString(R.string.no_connection), context = context, type = PopupType.Error)
+                } else if (!isYouTubeSyncEnabled()){
+                    Database.asyncTransaction {
+                        like(
+                            mediaItem.mediaId,
+                            System.currentTimeMillis()
+                        )
+                        MyDownloadHelper.autoDownloadWhenLiked(context(),mediaItem)
+                    }
                 }
-                MyDownloadHelper.autoDownloadWhenLiked(context,mediaItem)
+                else {
+                    CoroutineScope(Dispatchers.IO).launch {
+                        addToYtLikedSong(mediaItem)
+                    }
+                }
             },
             disableScrollingText = disableScrollingText
         )
@@ -521,15 +584,25 @@ fun QueuedMediaItemMenu(
                 navController.navigate(route = "${NavRoutes.playlist.name}/$it")
             },
             onAddToPreferites = {
-                Database.asyncTransaction {
-                    like(
-                        mediaItem.mediaId,
-                        System.currentTimeMillis()
-                    )
+                if (!isNetworkConnected(context()) && isYouTubeSyncEnabled()){
+                    SmartMessage(context.resources.getString(R.string.no_connection), context = context, type = PopupType.Error)
+                } else if (!isYouTubeSyncEnabled()){
+                    Database.asyncTransaction {
+                        like(
+                            mediaItem.mediaId,
+                            System.currentTimeMillis()
+                        )
+                        MyDownloadHelper.autoDownloadWhenLiked(context(),mediaItem)
+                    }
                 }
-                MyDownloadHelper.autoDownloadWhenLiked(context,mediaItem)
+                else {
+                    CoroutineScope(Dispatchers.IO).launch {
+                        addToYtLikedSong(mediaItem)
+                    }
+                }
             },
             onMatchingSong = onMatchingSong,
+            onInfo = onInfo,
             disableScrollingText = disableScrollingText
         )
     }
@@ -559,6 +632,7 @@ fun BaseMediaItemMenu(
     onGoToPlaylist: ((Long) -> Unit)? = null,
     onAddToPreferites: (() -> Unit)?,
     onMatchingSong: (() -> Unit)?,
+    onInfo: (() -> Unit)?,
     disableScrollingText: Boolean
 ) {
     val context = LocalContext.current
@@ -582,22 +656,22 @@ fun BaseMediaItemMenu(
         onAddToPreferites = onAddToPreferites,
         onMatchingSong =  onMatchingSong,
         onAddToPlaylist = { playlist, position ->
-            Database.asyncTransaction {
-                insert(mediaItem)
-                insert(
-                    SongPlaylistMap(
-                        songId = mediaItem.mediaId,
-                        playlistId = insert(playlist).takeIf { it != -1L } ?: playlist.id,
-                        position = position
-                    ).default()
-                )
-            }
-
-            if(isYouTubeSyncEnabled() && playlist.isYoutubePlaylist && playlist.isEditable)
-                CoroutineScope(Dispatchers.IO).launch {
-                    playlist.browseId?.let { YtMusic.addToPlaylist(cleanPrefix(it), mediaItem.mediaId) }
+            if (!isYouTubeSyncEnabled() || !playlist.isYoutubePlaylist){
+                Database.asyncTransaction {
+                    insert(mediaItem)
+                    insert(
+                        SongPlaylistMap(
+                            songId = mediaItem.mediaId,
+                            playlistId = insert(playlist).takeIf { it != -1L } ?: playlist.id,
+                            position = position
+                        ).default()
+                    )
                 }
-
+            } else {
+                CoroutineScope(Dispatchers.IO).launch {
+                    addSongToYtPlaylist(playlist.id, position, playlist.browseId ?: "", mediaItem)
+                }
+            }
             if (playlist.name.startsWith(PIPED_PREFIX) && isPipedEnabled && pipedSession.token.isNotEmpty()) {
                 Timber.d("BaseMediaItemMenu onAddToPlaylist mediaItem ${mediaItem.mediaId}")
                 addToPipedPlaylist(
@@ -644,6 +718,7 @@ fun BaseMediaItemMenu(
         onGoToPlaylist = {
             navController.navigate(route = "${NavRoutes.localPlaylist.name}/$it")
         },
+        onInfo = onInfo,
         modifier = modifier,
         disableScrollingText = disableScrollingText
     )
@@ -659,6 +734,7 @@ fun MiniMediaItemMenu(
     mediaItem: MediaItem,
     onGoToPlaylist: ((Long) -> Unit)? = null,
     onAddToPreferites: (() -> Unit)?,
+    onInfo: (() -> Unit)?,
     modifier: Modifier = Modifier,
     disableScrollingText: Boolean
 ) {
@@ -669,22 +745,22 @@ fun MiniMediaItemMenu(
         mediaItem = mediaItem,
         onDismiss = onDismiss,
         onAddToPlaylist = { playlist, position ->
-            Database.asyncTransaction {
-                insert(mediaItem)
-                insert(
-                    SongPlaylistMap(
-                        songId = mediaItem.mediaId,
-                        playlistId = insert(playlist).takeIf { it != -1L } ?: playlist.id,
-                        position = position
-                    ).default()
-                )
-            }
-
-            if(isYouTubeSyncEnabled() && playlist.isYoutubePlaylist && playlist.isEditable)
-                CoroutineScope(Dispatchers.IO).launch {
-                    playlist.browseId?.let { YtMusic.addToPlaylist(cleanPrefix(it), mediaItem.mediaId) }
+            if (!isYouTubeSyncEnabled() || !playlist.isYoutubePlaylist){
+                Database.asyncTransaction {
+                    insert(mediaItem)
+                    insert(
+                        SongPlaylistMap(
+                            songId = mediaItem.mediaId,
+                            playlistId = insert(playlist).takeIf { it != -1L } ?: playlist.id,
+                            position = position
+                        ).default()
+                    )
                 }
-
+            } else {
+                CoroutineScope(Dispatchers.IO).launch {
+                    addSongToYtPlaylist(playlist.id, position, playlist.browseId ?: "", mediaItem)
+                }
+            }
             onDismiss()
         },
         onGoToPlaylist = {
@@ -706,6 +782,7 @@ fun MiniMediaItemMenu(
             context.startActivity(Intent.createChooser(sendIntent, null))
         },
         onAddToPreferites = onAddToPreferites,
+        onInfo = onInfo,
         modifier = modifier,
         disableScrollingText = disableScrollingText
     )
@@ -797,6 +874,7 @@ fun MediaItemMenu(
     onShare: () -> Unit,
     onGoToPlaylist: ((Long) -> Unit)? = null,
     onMatchingSong: (() -> Unit)? = null,
+    onInfo: (() -> Unit)?,
     disableScrollingText: Boolean
 ) {
     val density = LocalDensity.current
@@ -1225,12 +1303,20 @@ fun MediaItemMenu(
                             color = colorPalette().favoritesIcon,
                             //color = if (likedAt == null) colorPalette().textDisabled else colorPalette().text,
                             onClick = {
-                                Database.asyncTransaction {
-                                    if ( like( mediaItem.mediaId, setLikeState(likedAt) ) == 0 ) {
-                                        insert(mediaItem, Song::toggleLike)
+                                if (!isNetworkConnected(appContext()) && isYouTubeSyncEnabled()) {
+                                    SmartMessage(appContext().resources.getString(R.string.no_connection), context = appContext(), type = PopupType.Error)
+                                } else if (!isYouTubeSyncEnabled()){
+                                    Database.asyncTransaction {
+                                        if (like(mediaItem.mediaId, setLikeState(likedAt)) == 0) {
+                                            insert(mediaItem, Song::toggleLike)
+                                        }
+                                        MyDownloadHelper.autoDownloadWhenLiked(context(), mediaItem)
+                                    }
+                                } else {
+                                    CoroutineScope(Dispatchers.IO).launch {
+                                        addToYtLikedSong(mediaItem)
                                     }
                                 }
-                                MyDownloadHelper.autoDownloadWhenLiked(context(),mediaItem)
                             },
                             modifier = Modifier
                                 .padding(all = 4.dp)
@@ -1300,6 +1386,17 @@ fun MediaItemMenu(
                     modifier = Modifier
                         .height(8.dp)
                 )
+
+                if (!isLocal) onInfo?.let { onInfo ->
+                    MenuEntry(
+                        icon = R.drawable.information,
+                        text = stringResource(R.string.information),
+                        onClick = {
+                            onDismiss()
+                            onInfo()
+                        }
+                    )
+                }
 
                 if (!isLocal && songSaved > 0) {
                     MenuEntry(
@@ -1970,6 +2067,250 @@ fun AddToPlaylistItemMenu(
                             if (playlistIds.contains(playlistPreview.playlist.id)){
                                 onRemoveFromPlaylist(playlistPreview.playlist)
                             } else onAddToPlaylist(playlistPreview.playlist, playlistPreview.songCount)
+                        },
+                        trailingContent = {
+                            if (playlistPreview.playlist.name.startsWith(PIPED_PREFIX, 0, true))
+                                Image(
+                                    painter = painterResource(R.drawable.piped_logo),
+                                    contentDescription = null,
+                                    colorFilter = ColorFilter.tint(colorPalette().red),
+                                    modifier = Modifier
+                                        .size(18.dp)
+                                )
+
+                            IconButton(
+                                icon = R.drawable.open,
+                                color = colorPalette().text,
+                                onClick = {
+                                    if (onGoToPlaylist != null) {
+                                        onGoToPlaylist(playlistPreview.playlist.id)
+                                        onDismiss()
+                                    }
+                                    navController.navigate(route = "${NavRoutes.localPlaylist.name}/${playlistPreview.playlist.id}")
+                                },
+                                modifier = Modifier
+                                    .size(24.dp)
+                            )
+
+                        }
+                    )
+                }
+            }
+        }
+    }
+}
+
+@ExperimentalTextApi
+@SuppressLint("SuspiciousIndentation")
+@UnstableApi
+@ExperimentalAnimationApi
+@Composable
+fun AddToPlaylistArtistSongsMenu(
+    navController: NavController,
+    onDismiss: () -> Unit,
+    onAddToPlaylist: ((PlaylistPreview) -> Unit),
+    onGoToPlaylist: ((Long) -> Unit)? = null,
+) {
+    var isCreatingNewPlaylist by rememberSaveable {
+        mutableStateOf(false)
+    }
+    val context = LocalContext.current
+    val configuration = LocalConfiguration.current
+
+    val screenHeight = configuration.screenHeightDp.dp
+
+    if (isCreatingNewPlaylist) {
+        InputTextDialog(
+            onDismiss = { isCreatingNewPlaylist = false },
+            title = stringResource(R.string.enter_the_playlist_name),
+            value = "",
+            placeholder = stringResource(R.string.enter_the_playlist_name),
+            setValue = { text ->
+                onDismiss()
+                Database.asyncTransaction {
+                    val playlistId = insert(Playlist(name = text))
+                    onAddToPlaylist(
+                        PlaylistPreview(
+                            Playlist(
+                                id = playlistId,
+                                name = text
+                            ), 0
+                        )
+                    )
+                }
+            }
+        )
+    }
+    val sortBy by rememberPreference(playlistSortByKey, PlaylistSortBy.DateAdded)
+    val sortOrder by rememberPreference(playlistSortOrderKey, SortOrder.Descending)
+    val playlistPreviews by remember {
+        Database.playlistPreviews(sortBy, sortOrder)
+    }.collectAsState(initial = emptyList(), context = Dispatchers.IO)
+
+    val pinnedPlaylists = playlistPreviews.filter {
+        it.playlist.name.startsWith(PINNED_PREFIX, 0, true)
+                && if (isNetworkConnected(context)) !(it.playlist.isYoutubePlaylist && !it.playlist.isEditable) else !it.playlist.isYoutubePlaylist
+    }
+
+    val youtubePlaylists = playlistPreviews.filter { it.playlist.isEditable && it.playlist.isYoutubePlaylist && !it.playlist.name.startsWith(PINNED_PREFIX) }
+
+    val unpinnedPlaylists = playlistPreviews.filter {
+        !it.playlist.name.startsWith(PINNED_PREFIX, 0, true) &&
+                !it.playlist.name.startsWith(MONTHLY_PREFIX, 0, true) &&
+                !it.playlist.isYoutubePlaylist
+    }
+
+    Menu(
+        modifier = Modifier
+            .requiredHeight(0.75*screenHeight)
+    ) {
+        Row(
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier
+                .padding(horizontal = 16.dp, vertical = 8.dp)
+                .fillMaxWidth()
+        ) {
+            IconButton(
+                onClick = onDismiss,
+                icon = R.drawable.chevron_back,
+                color = colorPalette().textSecondary,
+                modifier = Modifier
+                    .padding(all = 4.dp)
+                    .size(20.dp)
+            )
+
+            SecondaryTextButton(
+                text = stringResource(R.string.new_playlist),
+                onClick = { isCreatingNewPlaylist = true },
+                alternative = true
+            )
+        }
+
+        if (pinnedPlaylists.isNotEmpty()) {
+            BasicText(
+                text = stringResource(R.string.pinned_playlists),
+                style = typography().m.semiBold,
+                modifier = Modifier.padding(start = 20.dp, top = 5.dp)
+            )
+
+            onAddToPlaylist.let { onAddToPlaylist ->
+                pinnedPlaylists.forEach { playlistPreview ->
+                    MenuEntry(
+                        icon = R.drawable.add_in_playlist,
+                        text = cleanPrefix(playlistPreview.playlist.name),
+                        secondaryText = "${playlistPreview.songCount} " + stringResource(R.string.songs),
+                        onClick = {
+                            onDismiss()
+                            onAddToPlaylist(
+                                PlaylistPreview(
+                                    playlistPreview.playlist,
+                                    playlistPreview.songCount
+                                )
+                            )
+                        },
+                        trailingContent = {
+                            if (playlistPreview.playlist.name.startsWith(PIPED_PREFIX, 0, true))
+                                Image(
+                                    painter = painterResource(R.drawable.piped_logo),
+                                    contentDescription = null,
+                                    colorFilter = ColorFilter.tint(colorPalette().red),
+                                    modifier = Modifier
+                                        .size(18.dp)
+                                )
+                            if (playlistPreview.playlist.isYoutubePlaylist) {
+                                Image(
+                                    painter = painterResource(R.drawable.ytmusic),
+                                    contentDescription = null,
+                                    colorFilter = ColorFilter.tint(
+                                        Color.Red.copy(0.75f).compositeOver(Color.White)
+                                    ),
+                                    modifier = Modifier
+                                        .size(18.dp)
+                                )
+                            }
+                            IconButton(
+                                icon = R.drawable.open,
+                                color = colorPalette().text,
+                                onClick = {
+                                    if (onGoToPlaylist != null) {
+                                        onGoToPlaylist(playlistPreview.playlist.id)
+                                        onDismiss()
+                                    }
+                                    navController.navigate(route = "${NavRoutes.localPlaylist.name}/${playlistPreview.playlist.id}")
+                                },
+                                modifier = Modifier
+                                    .size(24.dp)
+                            )
+                        }
+                    )
+                }
+            }
+        }
+
+        if (youtubePlaylists.isNotEmpty() && isNetworkConnected(context)) {
+            BasicText(
+                text = stringResource(R.string.ytm_playlists),
+                style = typography().m.semiBold,
+                modifier = Modifier.padding(start = 20.dp, top = 5.dp)
+            )
+
+            onAddToPlaylist.let { onAddToPlaylist ->
+                youtubePlaylists.forEach { playlistPreview ->
+                    MenuEntry(
+                        icon = R.drawable.add_in_playlist,
+                        text = cleanPrefix(playlistPreview.playlist.name),
+                        secondaryText = "${playlistPreview.songCount} " + stringResource(R.string.songs),
+                        onClick = {
+                            onDismiss()
+                            onAddToPlaylist(
+                                PlaylistPreview(
+                                    playlistPreview.playlist,
+                                    playlistPreview.songCount
+                                )
+                            )
+                        },
+                        trailingContent = {
+                            IconButton(
+                                icon = R.drawable.open,
+                                color = colorPalette().text,
+                                onClick = {
+                                    if (onGoToPlaylist != null) {
+                                        onGoToPlaylist(playlistPreview.playlist.id)
+                                        onDismiss()
+                                    }
+                                    navController.navigate(route = "${NavRoutes.localPlaylist.name}/${playlistPreview.playlist.id}")
+                                },
+                                modifier = Modifier
+                                    .size(24.dp)
+                            )
+                        }
+                    )
+                }
+            }
+        }
+
+        if (unpinnedPlaylists.isNotEmpty()) {
+            BasicText(
+                text = stringResource(R.string.playlists),
+                style = typography().m.semiBold,
+                modifier = Modifier.padding(start = 20.dp, top = 5.dp)
+            )
+
+            onAddToPlaylist.let { onAddToPlaylist ->
+                unpinnedPlaylists.forEach { playlistPreview ->
+                    MenuEntry(
+                        icon = R.drawable.add_in_playlist,
+                        text = cleanPrefix(playlistPreview.playlist.name),
+                        secondaryText = "${playlistPreview.songCount} " + stringResource(R.string.songs),
+                        onClick = {
+                            onDismiss()
+                            onAddToPlaylist(
+                                PlaylistPreview(
+                                    playlistPreview.playlist,
+                                    playlistPreview.songCount
+                                )
+                            )
                         },
                         trailingContent = {
                             if (playlistPreview.playlist.name.startsWith(PIPED_PREFIX, 0, true))

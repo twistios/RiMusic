@@ -23,7 +23,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
-import it.fast4x.innertube.Innertube
+import it.fast4x.environment.Environment
 import it.fast4x.rimusic.R
 import it.fast4x.rimusic.cleanPrefix
 import it.fast4x.rimusic.models.Artist
@@ -64,13 +64,14 @@ fun ArtistItem(
 
 @Composable
 fun ArtistItem(
-    artist: Innertube.ArtistItem,
+    artist: Environment.ArtistItem,
     thumbnailSizePx: Int,
     thumbnailSizeDp: Dp,
     modifier: Modifier = Modifier,
     alternative: Boolean = false,
     disableScrollingText: Boolean,
-    isYoutubeArtist : Boolean = false
+    isYoutubeArtist : Boolean = false,
+    smallThumbnail: Boolean = false
 ) {
     ArtistItem(
         thumbnailUrl = artist.thumbnail?.url,
@@ -81,7 +82,8 @@ fun ArtistItem(
         modifier = modifier,
         alternative = alternative,
         disableScrollingText = disableScrollingText,
-        isYoutubeArtist = isYoutubeArtist
+        isYoutubeArtist = isYoutubeArtist,
+        smallThumbnail = smallThumbnail
     )
 }
 
@@ -96,7 +98,8 @@ fun ArtistItem(
     alternative: Boolean = false,
     showName: Boolean = true,
     disableScrollingText: Boolean,
-    isYoutubeArtist : Boolean = false
+    isYoutubeArtist : Boolean = false,
+    smallThumbnail: Boolean = false
 ) {
     ItemContainer(
         alternative = alternative,
@@ -120,7 +123,7 @@ fun ArtistItem(
                         Color.Red.copy(0.75f).compositeOver(Color.White)
                     ),
                     modifier = Modifier
-                        .size(40.dp)
+                        .size(if (smallThumbnail) 30.dp else 40.dp)
                         .padding(all = 5.dp),
                     contentDescription = "Background Image",
                     contentScale = ContentScale.Fit

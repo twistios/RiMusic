@@ -6,20 +6,16 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.res.stringResource
 import androidx.media3.common.util.UnstableApi
-import it.fast4x.innertube.Innertube
-import it.fast4x.innertube.YtMusic
-import it.fast4x.innertube.utils.completed
+import it.fast4x.environment.Environment
+import it.fast4x.environment.EnvironmentExt
+import it.fast4x.environment.utils.completed
 import it.fast4x.rimusic.Database
-import it.fast4x.rimusic.Database.Companion.albumsByTitleAsc
 import it.fast4x.rimusic.Database.Companion.getAlbumsList
 import it.fast4x.rimusic.Database.Companion.getArtistsList
-import it.fast4x.rimusic.Database.Companion.preferitesArtistsByName
 import it.fast4x.rimusic.Database.Companion.update
 import it.fast4x.rimusic.R
+import it.fast4x.rimusic.YTP_PREFIX
 import it.fast4x.rimusic.appContext
-import it.fast4x.rimusic.cleanPrefix
-import it.fast4x.rimusic.enums.PlaylistSongSortBy
-import it.fast4x.rimusic.enums.SortOrder
 import it.fast4x.rimusic.isAutoSyncEnabled
 import it.fast4x.rimusic.models.Album
 import it.fast4x.rimusic.models.Artist
@@ -46,9 +42,9 @@ suspend fun importYTMPrivatePlaylists(): Boolean {
             context = appContext(),
         )
 
-        Innertube.library("FEmusic_liked_playlists").completed().onSuccess { page ->
+        Environment.library("FEmusic_liked_playlists").completed().onSuccess { page ->
 
-            val ytmPrivatePlaylists = page.items.filterIsInstance<Innertube.PlaylistItem>()
+            val ytmPrivatePlaylists = page.items.filterIsInstance<Environment.PlaylistItem>()
                 .filterNot { it.key == "VLLM" || it.key == "VLSE" }
 
             val localPlaylists = Database.ytmPrivatePlaylists().firstOrNull()
@@ -69,16 +65,18 @@ suspend fun importYTMPrivatePlaylists(): Boolean {
                     println("Remote playlist: $remotePlaylist")
                     if (localPlaylist == null && playlistIdChecked.isNotEmpty()) {
                         localPlaylist = Playlist(
-                            name = remotePlaylist.title ?: "",
+                            name = (remotePlaylist.title) ?: "",
                             browseId = playlistIdChecked,
                             isYoutubePlaylist = true,
                             isEditable = (remotePlaylist.isEditable == true)
                         )
                         Database.insert(localPlaylist.copy(browseId = playlistIdChecked))
+                    } else {
+                        Database.updatePlaylistName(YTP_PREFIX+remotePlaylist.title, localPlaylist?.id ?: 0L)
                     }
 
                     Database.playlistWithSongsByBrowseId(playlistIdChecked).firstOrNull()?.let {
-                          if (it.playlist.id != 0L)
+                          if (it.playlist.id != 0L && it.songs.isEmpty())
                             it.playlist.id.let { id ->
                                 ytmPrivatePlaylistSync(
                                     it.playlist,
@@ -105,44 +103,45 @@ fun ytmPrivatePlaylistSync(playlist: Playlist, playlistId: Long) {
             runBlocking(Dispatchers.IO) {
                 withContext(Dispatchers.IO) {
                     plist.browseId?.let {
-                        YtMusic.getPlaylist(
+                        EnvironmentExt.getPlaylist(
                             playlistId = it
                         ).completed()
                     }
                 }
             }?.getOrNull()?.let { remotePlaylist ->
+                CoroutineScope(Dispatchers.IO).launch {
+                    withContext(Dispatchers.IO) {
 
-                println("ytmPrivatePlaylistSync Remote playlist editable: ${remotePlaylist.isEditable}")
+                        println("ytmPrivatePlaylistSync Remote playlist editable: ${remotePlaylist.isEditable}")
 
-                // Update here playlist isEditable flag because library contain playlists but isEditable isn't always available
-                if (remotePlaylist.isEditable == true)
-                    Database.update(playlist.copy(isEditable = true))
+                        // Update here playlist isEditable flag because library contain playlists but isEditable isn't always available
+                        if (remotePlaylist.isEditable == true)
+                            Database.update(playlist.copy(isEditable = true))
 
-                if (remotePlaylist.songs.isNotEmpty()) {
-                    //Database.clearPlaylist(playlistId)
+                        if (remotePlaylist.songs.isNotEmpty()) {
+                            //Database.clearPlaylist(playlistId)
 
-                    remotePlaylist.songs
-                        .map(Innertube.SongItem::asMediaItem)
-                        .onEach(Database::insert)
-                        .mapIndexed { position, mediaItem ->
-                            SongPlaylistMap(
-                                songId = mediaItem.mediaId,
-                                playlistId = playlistId,
-                                position = position,
-                                setVideoId = mediaItem.mediaMetadata.extras?.getString("setVideoId"),
-                            ).default()
-                        }.let(Database::insertSongPlaylistMaps)
-                }
-                runBlocking(Dispatchers.IO) {
-                    val localPlaylistSongs = Database.songsPlaylist(playlistId,PlaylistSongSortBy.Position, SortOrder.Ascending).firstOrNull()
+                            remotePlaylist.songs
+                                .map(Environment.SongItem::asMediaItem)
+                                .onEach(Database::insert)
+                                .mapIndexed { position, mediaItem ->
+                                    SongPlaylistMap(
+                                        songId = mediaItem.mediaId,
+                                        playlistId = playlistId,
+                                        position = position,
+                                        setVideoId = mediaItem.mediaMetadata.extras?.getString("setVideoId"),
+                                    ).default()
+                                }.let(Database::insertSongPlaylistMaps)
+                        }
 
-                    localPlaylistSongs?.filter {it.asMediaItem.mediaId !in remotePlaylist.songs.map { it.asMediaItem.mediaId }}?.forEach { song ->
-                        deleteSongFromPlaylist(song.asMediaItem.mediaId,playlistId)
+                        /*localPlaylistSongs.filter { it.asMediaItem.mediaId !in remotePlaylist.songs.map { it.asMediaItem.mediaId } }
+                            .forEach { song ->
+                                deleteSongFromPlaylist(song.asMediaItem.mediaId, playlistId)
+                            }*/
                     }
                 }
             }
         }
-
     }
 }
 
@@ -156,9 +155,9 @@ suspend fun importYTMSubscribedChannels(): Boolean {
             context = appContext(),
         )
 
-        Innertube.library("FEmusic_library_corpus_artists").completed().onSuccess { page ->
+        Environment.library("FEmusic_library_corpus_artists").completed().onSuccess { page ->
 
-            val ytmArtists = page.items.filterIsInstance<Innertube.ArtistItem>()
+            val ytmArtists = page.items.filterIsInstance<Environment.ArtistItem>()
 
             println("YTM artists: $ytmArtists")
 
@@ -215,9 +214,9 @@ suspend fun importYTMLikedAlbums(): Boolean {
             context = appContext(),
         )
 
-        Innertube.library("FEmusic_liked_albums").completed().onSuccess { page ->
+        Environment.library("FEmusic_liked_albums").completed().onSuccess { page ->
 
-            val ytmAlbums = page.items.filterIsInstance<Innertube.AlbumItem>()
+            val ytmAlbums = page.items.filterIsInstance<Environment.AlbumItem>()
 
             println("YTM albums: $ytmAlbums")
 
@@ -279,7 +278,7 @@ suspend fun removeYTSongFromPlaylist(
                 val songSetVideoId = Database.getSetVideoIdFromPlaylist(songId, playlistId).firstOrNull()
                 println("removeYTSongFromPlaylist removeSongFromPlaylist songSetVideoId = $songSetVideoId")
                 if (songSetVideoId != null)
-                    YtMusic.removeFromPlaylist(playlistId = playlistBrowseId, videoId =  songId, setVideoId = songSetVideoId)
+                    EnvironmentExt.removeFromPlaylist(playlistId = playlistBrowseId, videoId =  songId, setVideoId = songSetVideoId)
             }
         }
 
@@ -303,4 +302,6 @@ fun autoSyncToolbutton(messageId: Int): MenuIcon = object : MenuIcon, DynamicCol
         isFirstColor = !isFirstColor
     }
 }
+
+
 
