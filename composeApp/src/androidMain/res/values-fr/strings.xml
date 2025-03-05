@@ -928,4 +928,16 @@ Volume BAS : titre précédent</string>
     <string name="adding_yt_to_pl_failed">Une erreur s\'est produite pour les 50 titres suivants. Ajout des titres à la playlist un par un.</string>
     <string name="songs_add_yt_success">Ajout du titre à la playlist YouTube</string>
     <string name="songs_add_yt_failed">Impossible d\'ajouter le titre à la playlist YouTube</string>
+    <string name="viewType">Changer le type de vue</string>
+    <string name="copy_translated_lyrics">Copier les paroles traduites</string>
+    <string name="description">Description</string>
+    <string name="numbers">Nombres</string>
+    <string name="subscribers">Abonnés</string>
+    <string name="views">Vues</string>
+    <string name="likes">Aime</string>
+    <string name="dislikes">N\'aime pas</string>
+    <string name="loudness_boost_level">Niveau d\'amplification du volume</string>
+    <string name="loudness_boost_level_info">Niveau sonore supplémentaire (à utiliser sans exagérer car cela peut endommager l\'appareil)</string>
+    <string name="export_crash_log">Export crash log</string>
+    <string name="export_log">Export log</string>
 </resources>

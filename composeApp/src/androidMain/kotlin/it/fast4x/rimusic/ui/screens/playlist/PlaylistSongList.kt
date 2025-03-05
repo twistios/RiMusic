@@ -39,7 +39,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -74,17 +73,13 @@ import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import it.fast4x.compose.persist.persist
 import it.fast4x.compose.persist.persistList
-import it.fast4x.innertube.Innertube
-import it.fast4x.innertube.YtMusic
-import it.fast4x.innertube.models.NavigationEndpoint
-import it.fast4x.innertube.models.bodies.BrowseBody
-import it.fast4x.innertube.requests.PlaylistPage
-import it.fast4x.innertube.requests.playlistPage
-import it.fast4x.innertube.utils.completed
+import it.fast4x.environment.Environment
+import it.fast4x.environment.EnvironmentExt
+import it.fast4x.environment.models.NavigationEndpoint
+import it.fast4x.environment.requests.PlaylistPage
+import it.fast4x.environment.utils.completed
 import it.fast4x.rimusic.Database
-import it.fast4x.rimusic.Database.Companion.insert
 import it.fast4x.rimusic.Database.Companion.like
-import it.fast4x.rimusic.EXPLICIT_PREFIX
 import it.fast4x.rimusic.LocalPlayerServiceBinder
 import it.fast4x.rimusic.R
 import it.fast4x.rimusic.appContext
@@ -120,7 +115,6 @@ import it.fast4x.rimusic.ui.styling.px
 import it.fast4x.rimusic.utils.addNext
 import it.fast4x.rimusic.utils.asMediaItem
 import it.fast4x.rimusic.utils.asSong
-import it.fast4x.rimusic.utils.completed
 import it.fast4x.rimusic.utils.disableScrollingTextKey
 import it.fast4x.rimusic.utils.durationTextToMillis
 import it.fast4x.rimusic.utils.enqueue
@@ -163,7 +157,6 @@ import kotlinx.coroutines.flow.filterNotNull
 import me.bush.translator.Language
 import me.bush.translator.Translator
 import timber.log.Timber
-import java.io.File
 
 
 @ExperimentalTextApi
@@ -182,7 +175,7 @@ fun PlaylistSongList(
     val menuState = LocalMenuState.current
 
     var playlistPage by persist<PlaylistPage?>("playlist/$browseId/playlistPage")
-    var playlistSongs by persistList<Innertube.SongItem>("playlist/$browseId/songs")
+    var playlistSongs by persistList<Environment.SongItem>("playlist/$browseId/songs")
 
     var filter: String? by rememberSaveable { mutableStateOf(null) }
     val hapticFeedback = LocalHapticFeedback.current
@@ -214,7 +207,7 @@ fun PlaylistSongList(
     }
 
     @Composable
-    fun checkLike(mediaId : String, song: Innertube. SongItem) : Boolean {
+    fun checkLike(mediaId : String, song: Environment. SongItem) : Boolean {
         LaunchedEffect(Unit, mediaId) {
             withContext(Dispatchers.IO) {
                 isLiked = like( mediaId, setLikeState(song.asSong.likedAt))
@@ -224,7 +217,7 @@ fun PlaylistSongList(
     }
 
     LaunchedEffect(Unit, browseId) {
-        YtMusic.getPlaylist(browseId).completed()
+        EnvironmentExt.getPlaylist(browseId).completed()
             .onSuccess {
                 playlistPage = it
                 playlistSongs = it.songs
@@ -259,7 +252,7 @@ fun PlaylistSongList(
             }!!
     } else playlistPage?.songs = playlistSongs
 
-    var playlistNotLikedSongs by persistList<Innertube.SongItem>("")
+    var playlistNotLikedSongs by persistList<Environment.SongItem>("")
 
     var searching by rememberSaveable { mutableStateOf(false) }
 
@@ -325,7 +318,7 @@ fun PlaylistSongList(
                     val playlistId = insert(Playlist(name = text, browseId = browseId))
 
                     playlistPage?.songs
-                                ?.map(Innertube.SongItem::asMediaItem)
+                                ?.map(Environment.SongItem::asMediaItem)
                                 ?.onEach( ::insert )
                                 ?.mapIndexed { index, mediaItem ->
                                     SongPlaylistMap(
@@ -602,7 +595,7 @@ fun PlaylistSongList(
                                         onClick = {
                                             if (playlistPage?.songs?.any { it.asMediaItem.mediaId !in dislikedSongs } == true) {
                                                 playlistPage?.songs?.filter { it.asMediaItem.mediaId !in dislikedSongs }
-                                                    ?.map(Innertube.SongItem::asMediaItem)
+                                                    ?.map(Environment.SongItem::asMediaItem)
                                                     ?.let { mediaItems ->
                                                         binder?.player?.enqueue(mediaItems, context)
                                                     }
@@ -636,7 +629,7 @@ fun PlaylistSongList(
                                                 binder?.stopRadio()
                                                 playlistPage?.songs?.filter { it.asMediaItem.mediaId !in dislikedSongs }
                                                     ?.shuffled()
-                                                    ?.map(Innertube.SongItem::asMediaItem)
+                                                    ?.map(Environment.SongItem::asMediaItem)
                                                     ?.let {
                                                         binder?.player?.forcePlayFromBeginning(
                                                             it
@@ -743,7 +736,7 @@ fun PlaylistSongList(
                                                               }
                                                         } else {
                                                             CoroutineScope(Dispatchers.IO).launch {
-                                                                YtMusic.addPlaylistToPlaylist(
+                                                                EnvironmentExt.addPlaylistToPlaylist(
                                                                     cleanPrefix(playlistPreview.playlist.browseId ?: ""),
                                                                     browseId.substringAfter("VL")
 
@@ -816,7 +809,7 @@ fun PlaylistSongList(
                                                 if (isNetworkConnected(context)) {
                                                     if (localPlaylist?.isYoutubePlaylist == true) {
                                                         CoroutineScope(Dispatchers.IO).launch {
-                                                            YtMusic.removelikePlaylistOrAlbum(
+                                                            EnvironmentExt.removelikePlaylistOrAlbum(
                                                                 browseId.substringAfter("VL")
                                                             )
                                                         }
@@ -830,7 +823,7 @@ fun PlaylistSongList(
                                                         }
                                                     } else {
                                                         CoroutineScope(Dispatchers.IO).launch {
-                                                            YtMusic.likePlaylistOrAlbum(
+                                                            EnvironmentExt.likePlaylistOrAlbum(
                                                                 browseId.substringAfter(
                                                                     "VL"
                                                                 )
@@ -847,7 +840,7 @@ fun PlaylistSongList(
                                                             )
 
                                                             playlistPage?.songs
-                                                                ?.map(Innertube.SongItem::asMediaItem)
+                                                                ?.map(Environment.SongItem::asMediaItem)
                                                                 ?.onEach(::insert)
                                                                 ?.mapIndexed { index, mediaItem ->
                                                                     SongPlaylistMap(
@@ -1166,6 +1159,9 @@ fun PlaylistSongList(
                                                     menuState.hide()
                                                     forceRecompose = true
                                                 },
+                                                onInfo = {
+                                                    navController.navigate("${NavRoutes.videoOrSongInfo.name}/${song.key}")
+                                                },
                                                 mediaItem = song.asMediaItem,
                                                 disableScrollingText = disableScrollingText
                                             )
@@ -1177,7 +1173,7 @@ fun PlaylistSongList(
                                             searching = false
                                             filter = null
                                             playlistPage?.songs?.filter { it.asMediaItem.mediaId !in dislikedSongs }
-                                                ?.map(Innertube.SongItem::asMediaItem)
+                                                ?.map(Environment.SongItem::asMediaItem)
                                                 ?.let { mediaItems ->
                                                     binder?.stopRadio()
                                                     binder?.player?.forcePlayAtIndex(
@@ -1224,7 +1220,7 @@ fun PlaylistSongList(
                 onClick = {
                     if (playlistPage?.songs?.any { it.asMediaItem.mediaId !in dislikedSongs } == true) {
                         binder?.stopRadio()
-                        playlistPage?.songs?.filter{ it.asMediaItem.mediaId !in dislikedSongs }?.shuffled()?.map(Innertube.SongItem::asMediaItem)
+                        playlistPage?.songs?.filter{ it.asMediaItem.mediaId !in dislikedSongs }?.shuffled()?.map(Environment.SongItem::asMediaItem)
                             ?.let {
                                 binder?.player?.forcePlayFromBeginning(
                                     it

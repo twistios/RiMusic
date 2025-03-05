@@ -87,11 +87,11 @@ import it.fast4x.compose.persist.persistList
 import it.fast4x.compose.reordering.draggedItem
 import it.fast4x.compose.reordering.rememberReorderingState
 import it.fast4x.compose.reordering.reorder
-import it.fast4x.innertube.Innertube
-import it.fast4x.innertube.YtMusic
-import it.fast4x.innertube.models.bodies.NextBody
-import it.fast4x.innertube.requests.relatedSongs
-import it.fast4x.innertube.utils.completed
+import it.fast4x.environment.Environment
+import it.fast4x.environment.EnvironmentExt
+import it.fast4x.environment.models.bodies.NextBody
+import it.fast4x.environment.requests.relatedSongs
+import it.fast4x.environment.utils.completed
 import it.fast4x.rimusic.Database
 import it.fast4x.rimusic.Database.Companion.songAlbumInfo
 import it.fast4x.rimusic.Database.Companion.songArtistInfo
@@ -206,7 +206,6 @@ import it.fast4x.rimusic.utils.isNetworkConnected
 import it.fast4x.rimusic.utils.mediaItemToggleLike
 import it.fast4x.rimusic.utils.playlistSongsTypeFilterKey
 import it.fast4x.rimusic.utils.removeYTSongFromPlaylist
-import it.fast4x.rimusic.utils.thumbnail
 import it.fast4x.rimusic.utils.updateLocalPlaylist
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -329,7 +328,7 @@ fun LocalPlaylistSongs(
         RecommendationsNumber.`5`
     )
     var isRecommendationEnabled by rememberPreference(isRecommendationEnabledKey, false)
-    var relatedSongsRecommendationResult by persist<Result<Innertube.RelatedSongs?>?>(tag = "home/relatedSongsResult")
+    var relatedSongsRecommendationResult by persist<Result<Environment.RelatedSongs?>?>(tag = "home/relatedSongsResult")
     var songBaseRecommendation by persist<SongEntity?>("home/songBaseRecommendation")
     var positionsRecommendationList = arrayListOf<Int>()
     var songMatchingDialogEnable by remember { mutableStateOf(false) }
@@ -351,7 +350,7 @@ fun LocalPlaylistSongs(
                     val song = songs.firstOrNull()
                     if (relatedSongsRecommendationResult == null || songBaseRecommendation?.song?.id != song?.song?.id) {
                         relatedSongsRecommendationResult =
-                            Innertube.relatedSongs(NextBody(videoId = (song?.song?.id ?: "HZnNt9nnEhw")))
+                            Environment.relatedSongs(NextBody(videoId = (song?.song?.id ?: "HZnNt9nnEhw")))
                     }
                     songBaseRecommendation = song
                 }
@@ -451,10 +450,10 @@ fun LocalPlaylistSongs(
                 CoroutineScope(Dispatchers.IO).launch {
                     if (isYouTubeSyncEnabled() && playlistPreview?.playlist?.isYoutubePlaylist == true) {
                         if (playlistPreview?.playlist?.isEditable == true) {
-                            playlistPreview?.playlist?.browseId?.let {YtMusic.deletePlaylist(cleanPrefix(it))
+                            playlistPreview?.playlist?.browseId?.let {EnvironmentExt.deletePlaylist(cleanPrefix(it))
                             }
                         } else {
-                            playlistPreview?.playlist?.browseId?.let {YtMusic.removelikePlaylistOrAlbum(cleanPrefix(it))}
+                            playlistPreview?.playlist?.browseId?.let {EnvironmentExt.removelikePlaylistOrAlbum(cleanPrefix(it))}
                         }
                     }
                     Database.asyncTransaction {
@@ -513,7 +512,7 @@ fun LocalPlaylistSongs(
                     runBlocking(Dispatchers.IO) {
                         withContext(Dispatchers.IO) {
                             playlistPreview.playlist.browseId?.let {
-                                YtMusic.getPlaylist(
+                                EnvironmentExt.getPlaylist(
                                     playlistId = cleanPrefix(it)
                                 ).completed()
                             }
@@ -525,7 +524,7 @@ fun LocalPlaylistSongs(
                         Database.clearPlaylist(playlistId)
 
                         remotePlaylist.songs
-                            .map(Innertube.SongItem::asMediaItem)
+                            .map(Environment.SongItem::asMediaItem)
                             .onEach(Database::insert)
                             .mapIndexed { position, mediaItem ->
                                 SongPlaylistMap(
@@ -804,7 +803,7 @@ fun LocalPlaylistSongs(
                             println("Innertube YtMusic try to rename Playlist with browseId: ${playlistPreview?.playlist?.browseId}, name: $text")
                             playlistPreview?.playlist?.browseId?.let {
                                 println("Innertube YtMusic renamePlaylist with id: $it, name: $text")
-                                YtMusic.renamePlaylist(cleanPrefix(it), text)
+                                EnvironmentExt.renamePlaylist(cleanPrefix(it), text)
                             }
                         }
                         Database.asyncTransaction {
@@ -1617,9 +1616,9 @@ fun LocalPlaylistSongs(
                                             } else if (playlistPreview.playlist.isYoutubePlaylist){
                                                 CoroutineScope(Dispatchers.IO).launch {
                                                     if (playlistPreview.playlist.isEditable) {
-                                                        playlistPreview.playlist.browseId.let {YtMusic.deletePlaylist(it ?: "")}
+                                                        playlistPreview.playlist.browseId.let {EnvironmentExt.deletePlaylist(it ?: "")}
                                                     } else {
-                                                        playlistPreview.playlist.browseId.let {YtMusic.removelikePlaylistOrAlbum(it ?: "")}
+                                                        playlistPreview.playlist.browseId.let {EnvironmentExt.removelikePlaylistOrAlbum(it ?: "")}
                                                     }
                                                     Database.update(
                                                         playlistPreview.playlist.copy(
@@ -1676,7 +1675,7 @@ fun LocalPlaylistSongs(
                                                     } else {
                                                         CoroutineScope(Dispatchers.IO).launch {
                                                             if (playlistPreview.playlist.isYoutubePlaylist) {
-                                                                YtMusic.addPlaylistToPlaylist(
+                                                                EnvironmentExt.addPlaylistToPlaylist(
                                                                     cleanPrefix(toPlaylistPreview.playlist.browseId ?: ""),
                                                                     cleanPrefix(playlistPreview.playlist.browseId ?: "")
                                                                 ).onSuccess {
@@ -2135,7 +2134,7 @@ fun LocalPlaylistSongs(
             }
 
             itemsIndexed(
-                items = playlistSongs ?: emptyList(),
+                items = playlistSongs.distinctBy { it.song.id },
                 key = { _, song -> song.song.id },
                 contentType = { _, song -> song },
             ) { index, song ->
@@ -2400,6 +2399,9 @@ fun LocalPlaylistSongs(
                                                         SmartMessage(
                                                             context.resources.getString(R.string.cannot_delete_from_online_playlists),type = PopupType.Warning, context = context)
                                                         }
+                                                },
+                                                onInfo = {
+                                                    navController.navigate("${NavRoutes.videoOrSongInfo.name}/${song.song.id}")
                                                 },
                                                 navController = navController,
                                                 playlist = playlistPreview,
