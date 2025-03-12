@@ -21,6 +21,7 @@ import coil.imageLoader
 import coil.request.CachePolicy
 import coil.request.ImageRequest
 import it.fast4x.rimusic.Database
+import it.fast4x.rimusic.cleanPrefix
 import it.fast4x.rimusic.enums.AudioQualityFormat
 import it.fast4x.rimusic.models.SongEntity
 import it.fast4x.rimusic.utils.DownloadSyncedLyrics
@@ -134,19 +135,7 @@ object MyDownloadHelper {
         return downloadCache
     }
 
-    @Synchronized
-    fun getDownloadSimpleCache(context: Context): Cache {
-        if (!MyDownloadHelper::downloadCache.isInitialized) {
-            val downloadContentDirectory =
-                File(getDownloadDirectory(context), DOWNLOAD_CONTENT_DIRECTORY)
-            downloadCache = SimpleCache(
-                downloadContentDirectory,
-                NoOpCacheEvictor(),
-                getDatabaseProvider(context)
-            )
-        }
-        return downloadCache
-    }
+
 
     @Synchronized
     private fun ensureDownloadManagerInitialized(context: Context) {
@@ -221,7 +210,6 @@ object MyDownloadHelper {
         return downloadDirectory
     }
 
-
     fun addDownload(context: Context, mediaItem: MediaItem) {
         if (mediaItem.isLocal) return
 
@@ -235,7 +223,7 @@ object MyDownloadHelper {
                     //?: Uri.parse("https://music.youtube.com/watch?v=${mediaItem.mediaId}")
             )
             .setCustomCacheKey(mediaItem.mediaId)
-            .setData("${mediaItem.mediaMetadata.artist.toString()} - ${mediaItem.mediaMetadata.title.toString()}".encodeToByteArray()) // Title in notification
+            .setData("${cleanPrefix(mediaItem.mediaMetadata.artist.toString())} - ${cleanPrefix(mediaItem.mediaMetadata.title.toString())}".encodeToByteArray()) // Title in notification
             .build()
 
         Database.asyncTransaction {
