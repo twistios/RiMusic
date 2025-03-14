@@ -43,3 +43,4 @@ project(":piped").projectDir = file("extensions/piped")
 include(":invidious")
 project(":invidious").projectDir = file("extensions/invidious")
 
+include(":benchmark")

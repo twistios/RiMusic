@@ -47,6 +47,10 @@ hilt = "2.53.1"
 hypnoticcanvas = "0.3.0"
 ksoup = "0.3.1"
 okhttpDnsOverHttps = "4.12.0"
+junit = "1.2.1"
+espressoCore = "3.6.1"
+uiautomator = "2.2.0"
+benchmarkMacroJunit4 = "1.2.0-beta01"
 
 [libraries]
 kotlin-coroutines = {group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-core", version.ref = "kotlin-coroutine"}
@@ -61,6 +65,7 @@ compose-shimmer = {group = "com.valentinilk.shimmer", name = "compose-shimmer", 
 compose-activity = {group = "androidx.activity", name = "activity-compose", version.ref = "compose-activity"}
 compose-animation = {group = "androidx.compose.animation", name = "animation", version.ref = "compose"}
 compose-runtime-livedata = { group = "androidx.compose.runtime", name = "runtime-livedata", version.ref = "compose"}
+compose-runtime-tracing = { group = "androidx.compose.runtime", name = "runtime-tracing", version.ref = "compose"}
 compose-coil = {group = "io.coil-kt", name = "coil-compose", version.ref = "coil"}
 room = {group = "androidx.room", name = "room-ktx", version.ref = "room"}
 room-compiler = {group = "androidx.room", name = "room-compiler", version.ref = "room"}
@@ -123,6 +128,10 @@ nanojson = { group = "com.github.TeamNewPipe", name = "nanojson", version = "1d9
 androidx-webkit = { group = "androidx.webkit", name = "webkit", version = "1.9.0" }
 
 okhttp-dnsoverhttps = { group = "com.squareup.okhttp3", name = "okhttp-dnsoverhttps", version.ref = "okhttpDnsOverHttps" }
+androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junit" }
+androidx-espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espressoCore" }
+androidx-uiautomator = { group = "androidx.test.uiautomator", name = "uiautomator", version.ref = "uiautomator" }
+androidx-benchmark-macro-junit4 = { group = "androidx.benchmark", name = "benchmark-macro-junit4", version.ref = "benchmarkMacroJunit4" }
 
 
 
@@ -138,5 +147,6 @@ kotlin-ksp = { id = "com.google.devtools.ksp", version.ref = "kotlin-ksp" }
 kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin"}
 room = { id = "androidx.room", version.ref = "room" }
 hilt = { id = "com.google.dagger.hilt.android", version.ref = "hilt" }
+android-test = { id = "com.android.test", version.ref = "agp" }
 
 

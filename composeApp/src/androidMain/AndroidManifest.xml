@@ -1,34 +1,40 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:tools="http://schemas.android.com/tools"
-    xmlns:android="http://schemas.android.com/apk/res/android"
-    tools:ignore="ExtraText"
-    android:installLocation="preferExternal">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:installLocation="preferExternal"
+    tools:ignore="ExtraText">
 
-    <uses-sdk tools:overrideLibrary="com.my.kizzyrpc"/>
+    <uses-sdk tools:overrideLibrary="com.my.kizzyrpc" />
 
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
     <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
-
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK"/>
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC"/>
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
     <uses-permission android:name="android.permission.READ_MEDIA_AUDIO" />
-    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"
+    <uses-permission
+        android:name="android.permission.READ_EXTERNAL_STORAGE"
         android:maxSdkVersion="32" />
-    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"
+    <uses-permission
+        android:name="android.permission.WRITE_EXTERNAL_STORAGE"
         android:maxSdkVersion="32" />
-    <uses-permission android:name = "android.permission.RECORD_AUDIO"/>
-    <uses-permission android:name = "android.permission.MODIFY_AUDIO_SETTINGS"/>
-    <uses-permission android:name = "android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.SET_WALLPAPER" />
 
-
-    <uses-feature    android:name="android.software.leanback" android:required="false" />
-    <uses-feature    android:name="android.hardware.touchscreen" android:required="false" />
-    <uses-feature    android:name="android.hardware.microphone" android:required="false" />
+    <uses-feature
+        android:name="android.software.leanback"
+        android:required="false" />
+    <uses-feature
+        android:name="android.hardware.touchscreen"
+        android:required="false" />
+    <uses-feature
+        android:name="android.hardware.microphone"
+        android:required="false" />
 
     <queries>
         <intent>
@@ -42,30 +48,31 @@
     <application
         android:name=".MainApplication"
         android:allowBackup="true"
+        android:appCategory="audio"
         android:banner="@mipmap/ic_banner"
         android:configChanges="colorMode|density|fontScale|keyboard|keyboardHidden|layoutDirection|locale|mcc|mnc|navigation|orientation|screenLayout|screenSize|smallestScreenSize|touchscreen|uiMode"
+        android:enableOnBackInvokedCallback="true"
         android:hardwareAccelerated="true"
-        android:appCategory="audio"
         android:icon="@mipmap/ic_launcher"
         android:label="${appName}"
+        android:networkSecurityConfig="@xml/network_security_config"
+        android:requestLegacyExternalStorage="true"
         android:supportsRtl="true"
         android:theme="@style/Theme.RiMusic"
-        android:requestLegacyExternalStorage="true"
-        android:enableOnBackInvokedCallback="true"
-        android:networkSecurityConfig="@xml/network_security_config"
         android:usesCleartextTraffic="false"
         tools:targetApi="tiramisu">
-
+        <profileable
+            android:shell="true"
+            tools:targetApi="29" />
 
         <activity
             android:name=".MainActivity"
+            android:configChanges="screenSize|smallestScreenSize|screenLayout|orientation"
             android:exported="true"
             android:launchMode="singleTask"
-            android:theme="@style/Theme.RiMusic"
-            android:windowSoftInputMode="adjustResize"
             android:supportsPictureInPicture="true"
-            android:configChanges=
-                "screenSize|smallestScreenSize|screenLayout|orientation">
+            android:theme="@style/Theme.RiMusic"
+            android:windowSoftInputMode="adjustResize">
 
             <!-- NEW PLAYER SERVICE -->
             <intent-filter>
@@ -104,7 +111,6 @@
                 <!-- playlist prefix -->
                 <data android:pathPrefix="/playlist" />
             </intent-filter>
-
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
                 <action android:name="android.media.action.MEDIA_PLAY_FROM_SEARCH" />
@@ -140,30 +146,33 @@
             </intent-filter>
             <!-- NEW PLAYER SERVICE -->
 
-            <meta-data android:name="android.app.shortcuts"
+            <meta-data
+                android:name="android.app.shortcuts"
                 android:resource="@xml/shortcuts" />
         </activity>
 
-        <receiver android:name=".ui.widgets.PlayerVerticalWidgetReceiver"
+        <receiver
+            android:name=".ui.widgets.PlayerVerticalWidgetReceiver"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
             </intent-filter>
+
             <meta-data
                 android:name="android.appwidget.provider"
                 android:resource="@xml/player_vertical_widget_info" />
         </receiver>
-        <receiver android:name=".ui.widgets.PlayerHorizontalWidgetReceiver"
+        <receiver
+            android:name=".ui.widgets.PlayerHorizontalWidgetReceiver"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
             </intent-filter>
+
             <meta-data
                 android:name="android.appwidget.provider"
                 android:resource="@xml/player_horizontal_widget_info" />
-        </receiver>
-
-        <!-- NEW PLAYER SERVICE -->
+        </receiver> <!-- NEW PLAYER SERVICE -->
         <service
             android:name=".service.modern.PlayerServiceModern"
             android:exported="true"
@@ -176,34 +185,37 @@
             </intent-filter>
         </service>
 
-        <receiver android:name="androidx.media3.session.MediaButtonReceiver"
+        <receiver
+            android:name="androidx.media3.session.MediaButtonReceiver"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MEDIA_BUTTON" />
             </intent-filter>
-        </receiver>
-        <!-- NEW PLAYER SERVICE -->
-
-        <service android:name=".service.MyDownloadService"
+        </receiver> <!-- NEW PLAYER SERVICE -->
+        <service
+            android:name=".service.MyDownloadService"
             android:exported="false"
             android:foregroundServiceType="dataSync">
+
             <!-- This is needed for Scheduler -->
             <intent-filter>
-                <action android:name="androidx.media3.exoplayer.downloadService.action.RESTART"/>
-                <category android:name="android.intent.category.DEFAULT"/>
+                <action android:name="androidx.media3.exoplayer.downloadService.action.RESTART" />
+
+                <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
         </service>
-
-        <service android:name=".service.MyPreCacheService"
+        <service
+            android:name=".service.MyPreCacheService"
             android:exported="false"
             android:foregroundServiceType="dataSync">
+
             <!-- This is needed for Scheduler -->
             <intent-filter>
-                <action android:name="androidx.media3.exoplayer.downloadService.action.RESTART"/>
-                <category android:name="android.intent.category.DEFAULT"/>
+                <action android:name="androidx.media3.exoplayer.downloadService.action.RESTART" />
+
+                <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
         </service>
-
         <service
             android:name="androidx.appcompat.app.AppLocalesMetadataHolderService"
             android:enabled="false"
@@ -217,10 +229,12 @@
             android:name=".service.modern.PlayerServiceModern$NotificationDismissReceiver"
             android:exported="false" />
 
-        <meta-data android:name="com.google.android.gms.car.application"
-            android:resource="@xml/automotive_app_desc"/>
-
-        <meta-data android:name="com.google.android.gms.car.notification.SmallIcon"
+        <meta-data
+            android:name="com.google.android.gms.car.application"
+            android:resource="@xml/automotive_app_desc" />
+        <meta-data
+            android:name="com.google.android.gms.car.notification.SmallIcon"
             android:resource="@drawable/app_icon" />
     </application>
+
 </manifest>

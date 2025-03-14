@@ -347,6 +347,13 @@ android {
             applicationIdSuffix = ".twri_debug"
             manifestPlaceholders["appName"] = "TwRiMusic-Debug"
         }
+        create("benchmark") {
+            initWith(buildTypes.getByName("release"))
+            matchingFallbacks += listOf("release")
+            isDebuggable = false
+            applicationIdSuffix = ".twri_benchmark"
+            signingConfig = signingConfigs.getByName("debug")
+        }
 
         release {
             vcsInfo.include = false
@@ -502,6 +509,7 @@ dependencies {
     implementation(libs.compose.ui.graphics.android)
     implementation(libs.constraintlayout)
     implementation(libs.compose.runtime.livedata)
+    implementation(libs.compose.runtime.tracing)
     implementation(libs.compose.animation)
     implementation(libs.kotlin.csv)
     implementation(libs.monetcompat)
