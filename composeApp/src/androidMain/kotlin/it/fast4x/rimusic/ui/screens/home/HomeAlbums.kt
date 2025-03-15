@@ -399,6 +399,8 @@ fun HomeAlbums(
                                 yearCentered = false,
                                 showAuthors = true,
                                 album = album,
+                                homePage = true,
+                                iconSize = itemSize.size.dp,
                                 thumbnailSizeDp = itemSize.size.dp,
                                 thumbnailSizePx = itemSize.size.px,
                                 modifier = Modifier
@@ -566,6 +568,8 @@ fun HomeAlbums(
                                 alternative = true,
                                 showAuthors = true,
                                 album = album,
+                                homePage = true,
+                                iconSize = itemSize.size.dp,
                                 thumbnailSizeDp = itemSize.size.dp,
                                 thumbnailSizePx = itemSize.size.px,
                                 modifier = Modifier

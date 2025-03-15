@@ -148,8 +148,8 @@ import it.fast4x.rimusic.utils.addToYtLikedSongs
 import it.fast4x.rimusic.utils.align
 import it.fast4x.rimusic.utils.color
 import it.fast4x.rimusic.utils.formatAsDuration
-import it.fast4x.rimusic.utils.getHttpClient
-import it.fast4x.rimusic.utils.isNetworkConnected
+import org.dailyislam.android.utilities.getHttpClient
+import org.dailyislam.android.utilities.isNetworkConnected
 import it.fast4x.rimusic.utils.languageDestination
 import it.fast4x.rimusic.utils.setLikeState
 import kotlinx.coroutines.flow.filterNotNull
