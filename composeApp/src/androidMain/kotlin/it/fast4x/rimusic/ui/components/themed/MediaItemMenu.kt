@@ -125,7 +125,7 @@ import it.fast4x.rimusic.typography
 import it.fast4x.rimusic.ui.screens.settings.isYouTubeSyncEnabled
 import it.fast4x.rimusic.utils.addSongToYtPlaylist
 import it.fast4x.rimusic.utils.addToYtLikedSong
-import it.fast4x.rimusic.utils.isNetworkConnected
+import org.dailyislam.android.utilities.isNetworkConnected
 import it.fast4x.rimusic.utils.removeYTSongFromPlaylist
 import it.fast4x.rimusic.utils.mediaItemToggleLike
 import it.fast4x.rimusic.utils.setDisLikeState
@@ -293,19 +293,39 @@ fun NonQueuedMediaItemMenuLibrary(
         mutableStateOf(false)
     }
 
+    var deleteAlsoPlayTimes by remember {
+        mutableStateOf(false)
+    }
+
     if (isHiding) {
         ConfirmationDialog(
             text = stringResource(R.string.update_song),
             onDismiss = { isHiding = false },
+            checkBoxText = stringResource(R.string.also_delete_playback_data),
+            onCheckBox = {
+                deleteAlsoPlayTimes = it
+            },
             onConfirm = {
                 onDismiss()
-                if (binder != null) {
-                    binder.cache.removeResource(mediaItem.mediaId)
-                    binder.downloadCache.removeResource(mediaItem.mediaId)
-                    Database.asyncTransaction {
-                        resetTotalPlayTimeMs(mediaItem.mediaId)
+                mediaItem.mediaId.let {
+                    try {
+                        binder?.cache?.removeResource(it) //try to remove from cache if exists
+                    } catch (e: Exception) {
+                        Timber.e("MediaItemMenu cache resource removeResource ${e.stackTraceToString()}")
+                    }
+                    try {
+                        binder?.downloadCache?.removeResource(it) //try to remove from download cache if exists
+                    } catch (e: Exception) {
+                        Timber.e("MediaItemMenu downloadCache resource removeResource ${e.stackTraceToString()}")
                     }
                 }
+
+                if (deleteAlsoPlayTimes)
+                    Database.asyncTransaction {
+                        println("MediaItemMenu deleteAlsoPlayTimes")
+                        resetTotalPlayTimeMs(mediaItem.mediaId)
+                    }
+
             }
         )
     }

@@ -99,7 +99,7 @@ import it.fast4x.rimusic.typography
 import it.fast4x.rimusic.ui.screens.settings.isYouTubeSyncEnabled
 import it.fast4x.rimusic.utils.addSongToYtPlaylist
 import it.fast4x.rimusic.utils.addToYtLikedSong
-import it.fast4x.rimusic.utils.isNetworkConnected
+import org.dailyislam.android.utilities.isNetworkConnected
 import it.fast4x.rimusic.utils.getLikeState
 import it.fast4x.rimusic.utils.setDisLikeState
 import it.fast4x.rimusic.utils.unlikeYtVideoOrSong
