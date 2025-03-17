@@ -23,6 +23,7 @@
     <string name="enter_the_playlist_name">Digite o nome da playlist</string>
     <string name="playlists">Playlists</string>
     <string name="favorites">Favoritos</string>
+    <string name="disliked">Disliked</string>
     <string name="quick_picks">Escolhas rápidas</string>
     <string name="songs">Músicas</string>
     <string name="other_versions">Outras versões</string>
@@ -556,6 +557,7 @@
     <string name="position_bottom">Fundo</string>
     <string name="added_to_favorites">Adicionado aos favoritos</string>
     <string name="removed_from_favorites">Removido dos favoritos</string>
+    <string name="added_to_disliked">Added to disliked</string>
     <string name="lang_filipino">Filipino (Pilipino)</string>
     <string name="action_bar_transparent_background">Fundo transparente</string>
     <string name="pinfo_type">Tipo de informação</string>
@@ -579,7 +581,7 @@
     <string name="info_prevent_play_songs_with_age_limitation">Prevenir reprodução de músicas com restrição de idade</string>
     <string name="cache_location_private">Privado</string>
     <string name="cache_location_system">Sistema</string>
-    <string name="info_cannot_rename_a_monthly_or_piped_playlist">Cannot rename a monthly or online or piped playlist</string>
+    <string name="info_cannot_rename_a_monthly_or_piped_playlist">Não é possível renomear uma playlist mensal ou piped</string>
     <string name="debug">DEPURAÇÃO</string>
     <string name="enable_log_debug">Ativar log de depuração</string>
     <string name="if_enabled_create_a_log_file_to_highlight_errors">Se ativado, crie um arquivo de log para destacar erros</string>
@@ -768,7 +770,7 @@
     <string name="actionbar">Action Bar</string>
     <string name="center">Center</string>
     <string name="lyricsalignment">Lyrics Alignment</string>
-    <string name="lang_azerbaijani">Azerbaijani</string>
+    <string name="lang_azerbaijani"></string>
     <string name="translators">Tradutores</string>
     <string name="lang_tamil">Tamil</string>
     <string name="player_auto_load_songs_in_queue">Auto load songs in queue</string>
@@ -946,4 +948,5 @@
     <string name="use_alternative_dns">Use alternative dns</string>
     <string name="use_dns_over_https_title">Use dns over https</string>
     <string name="also_delete_playback_data">Also delete playback data</string>
+    <string name="rescue_center">Rescue Center</string>
 </resources>

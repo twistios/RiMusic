@@ -61,28 +61,17 @@ internal suspend fun PlayerServiceModern.dataSpecProcess(
         return dataSpec //.withUri(Uri.parse(dataSpec.uri.toString()))
     }
 
-    //var dataSpecReturn: DataSpec = dataSpec
     try {
-        //runBlocking(Dispatchers.IO) {
         println("PlayerServiceModern DataSpecProcess Playing song start timeout ${videoId}")
-            val dataSpecWithTimeout = withTimeout(5000){
-                //if loggedin use advanced player with webPotoken and new newpipe extractor
-                val format = if (!useYtLoginOnlyForBrowse() && isYouTubeLoginEnabled() && isYouTubeLoggedIn())
-                    getAvancedInnerTubeStream(videoId, audioQualityFormat, connectionMetered)
-                else getInnerTubeStream(videoId, audioQualityFormat, connectionMetered)
-                // Play always without login because login break song
-                //val format = getInnerTubeStream(videoId, audioQualityFormat, connectionMetered)
+        //if loggedin use advanced player with webPotoken and new newpipe extractor
+        val format = if (!useYtLoginOnlyForBrowse() && isYouTubeLoginEnabled() && isYouTubeLoggedIn())
+            getAvancedInnerTubeStream(videoId, audioQualityFormat, connectionMetered)
+        else getInnerTubeStream(videoId, audioQualityFormat, connectionMetered)
 
-                println("PlayerServiceModern DataSpecProcess Playing song ${videoId} from url=${format?.url}")
+        println("PlayerServiceModern DataSpecProcess Playing song ${videoId} from url=${format?.url}")
 
-                if (format?.url == null) throw PlayableFormatNotFoundException()
-                else
-                return@withTimeout dataSpec.withUri(Uri.parse(format?.url)).subrange(dataSpec.uriPositionOffset, chunkLength)
-            }
-        println("PlayerServiceModern DataSpecProcess Playing song stop timeout ${videoId}")
-            return dataSpecWithTimeout
-        //}
-
+        if (format?.url == null) throw PlayableFormatNotFoundException()
+        return dataSpec.withUri(Uri.parse(format?.url)).subrange(dataSpec.uriPositionOffset, chunkLength)
 
     } catch ( e: Exception ) {
         Timber.e("PlayerServiceModern DataSpecProcess Error: ${e.stackTraceToString()}")

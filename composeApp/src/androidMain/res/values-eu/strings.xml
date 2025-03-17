@@ -23,6 +23,7 @@
     <string name="enter_the_playlist_name">Sartu zerrendaren izena</string>
     <string name="playlists">Zerrendak</string>
     <string name="favorites">Gustokoenak</string>
+    <string name="disliked">Disliked</string>
     <string name="quick_picks">Aukeraketa azkarrak</string>
     <string name="songs">Abestiak</string>
     <string name="other_versions">Beste bertsioak</string>
@@ -556,6 +557,7 @@
     <string name="position_bottom">Behekaldea</string>
     <string name="added_to_favorites">Gustokoetara gehitua</string>
     <string name="removed_from_favorites">Gustokoenetatik ezabatu</string>
+    <string name="added_to_disliked">Added to disliked</string>
     <string name="lang_filipino">Filipinera</string>
     <string name="action_bar_transparent_background">Atzealde gardena</string>
     <string name="pinfo_type">Info mota</string>
@@ -946,4 +948,5 @@
     <string name="use_alternative_dns">Use alternative dns</string>
     <string name="use_dns_over_https_title">Use dns over https</string>
     <string name="also_delete_playback_data">Also delete playback data</string>
+    <string name="rescue_center">Rescue Center</string>
 </resources>

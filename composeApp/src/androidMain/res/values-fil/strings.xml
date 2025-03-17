@@ -23,6 +23,7 @@
     <string name="enter_the_playlist_name">Ilagay ang pangalan ng playlist</string>
     <string name="playlists">Mga playlist</string>
     <string name="favorites">Mga paborito</string>
+    <string name="disliked">Disliked</string>
     <string name="quick_picks">Quick Picks</string>
     <string name="songs">Mga Kanta</string>
     <string name="other_versions">Ibang klase</string>
@@ -556,6 +557,7 @@
     <string name="position_bottom">Pinakamababa</string>
     <string name="added_to_favorites">Inilagay sa favorites</string>
     <string name="removed_from_favorites">Inalis sa favorites</string>
+    <string name="added_to_disliked">Added to disliked</string>
     <string name="lang_filipino">Tagalog</string>
     <string name="action_bar_transparent_background">Transparent na background</string>
     <string name="pinfo_type">Type ng info</string>
@@ -579,7 +581,7 @@
     <string name="info_prevent_play_songs_with_age_limitation">Huwag i-play ang mga kanta na may age restriction</string>
     <string name="cache_location_private">Private</string>
     <string name="cache_location_system">Sistema</string>
-    <string name="info_cannot_rename_a_monthly_or_piped_playlist">Cannot rename a monthly or online or piped playlist</string>
+    <string name="info_cannot_rename_a_monthly_or_piped_playlist">Hindi maaring baguhin ang pangalan ng isang buwanang o piped playlist</string>
     <string name="debug">DEBUG</string>
     <string name="enable_log_debug">I-enable and debug log</string>
     <string name="if_enabled_create_a_log_file_to_highlight_errors">Kapag ito ay naka enable, ito ay gagawa ng log file para ma i-highlight and mga error</string>
@@ -946,4 +948,5 @@
     <string name="use_alternative_dns">Use alternative dns</string>
     <string name="use_dns_over_https_title">Use dns over https</string>
     <string name="also_delete_playback_data">Also delete playback data</string>
+    <string name="rescue_center">Rescue Center</string>
 </resources>

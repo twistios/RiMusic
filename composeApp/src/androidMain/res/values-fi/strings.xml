@@ -23,6 +23,7 @@
     <string name="enter_the_playlist_name">Anna soittolistan nimi</string>
     <string name="playlists">Soittolistat</string>
     <string name="favorites">Suosikit</string>
+    <string name="disliked">Disliked</string>
     <string name="quick_picks">Pikavalinnat</string>
     <string name="songs">Kappaleet</string>
     <string name="other_versions">Muut versiot</string>
@@ -556,6 +557,7 @@
     <string name="position_bottom">Alhaalla</string>
     <string name="added_to_favorites">Lisätty suosikkeihin</string>
     <string name="removed_from_favorites">Poistettu suosikeista</string>
+    <string name="added_to_disliked">Added to disliked</string>
     <string name="lang_filipino">filippiini</string>
     <string name="action_bar_transparent_background">Läpinäkyvä tausta</string>
     <string name="pinfo_type">Tietojen tyyli</string>
@@ -946,4 +948,5 @@
     <string name="use_alternative_dns">Use alternative dns</string>
     <string name="use_dns_over_https_title">Use dns over https</string>
     <string name="also_delete_playback_data">Also delete playback data</string>
+    <string name="rescue_center">Rescue Center</string>
 </resources>

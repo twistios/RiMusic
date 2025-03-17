@@ -23,6 +23,7 @@
     <string name="enter_the_playlist_name">Entrez le nom de la playlist</string>
     <string name="playlists">Playlists</string>
     <string name="favorites">Favoris</string>
+    <string name="disliked">Disliked</string>
     <string name="quick_picks">Sélection Rapide</string>
     <string name="songs">Titres</string>
     <string name="other_versions">Autres versions</string>
@@ -558,6 +559,7 @@
     <string name="position_bottom">En bas</string>
     <string name="added_to_favorites">Ajouté aux favoris</string>
     <string name="removed_from_favorites">Retiré des favoris</string>
+    <string name="added_to_disliked">Added to disliked</string>
     <string name="lang_filipino">Philippin (Filipino)</string>
     <string name="action_bar_transparent_background">Arrière-plan transparent</string>
     <string name="pinfo_type">Type d\'informations</string>
@@ -943,10 +945,11 @@ Volume BAS : titre précédent</string>
     <string name="value_must_be_valid_url">La valeur doit être une URL valide</string>
     <string name="caching">Mise en cache...</string>
     <string name="lang_basque">Basque</string>
-    <string name="custom_dns_is_invalid">Custom DNS is invalid</string>
-    <string name="custom_dns_over_https_server">Custom dns over https server</string>
-    <string name="info_aternative_dns_server">If you have loading problems, you can use an alternative dns server</string>
-    <string name="use_alternative_dns">Use alternative dns</string>
-    <string name="use_dns_over_https_title">Use dns over https</string>
-    <string name="also_delete_playback_data">Also delete playback data</string>
+    <string name="custom_dns_is_invalid">Le DNS personnalisé n\'est pas valide</string>
+    <string name="custom_dns_over_https_server">Serveur DNS personnalisé sur https</string>
+    <string name="info_aternative_dns_server">Si vous rencontrez des problèmes de chargement, vous pouvez utiliser un serveur DNS alternatif</string>
+    <string name="use_alternative_dns">Utiliser un DNS alternatif</string>
+    <string name="use_dns_over_https_title">Utiliser DNS plutôt que https</string>
+    <string name="also_delete_playback_data">Supprimer également les données de lecture</string>
+    <string name="rescue_center">Centre de Sauvetage</string>
 </resources>

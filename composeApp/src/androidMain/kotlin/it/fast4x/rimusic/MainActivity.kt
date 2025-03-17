@@ -9,6 +9,7 @@ import android.content.Intent
 import android.content.ServiceConnection
 import android.content.SharedPreferences
 import android.content.res.Configuration
+import android.graphics.Bitmap
 import android.graphics.drawable.BitmapDrawable
 import android.hardware.Sensor
 import android.hardware.SensorEvent
@@ -233,6 +234,7 @@ import it.fast4x.rimusic.utils.useSystemFontKey
 import it.fast4x.rimusic.utils.ytCookieKey
 import it.fast4x.rimusic.utils.ytDataSyncIdKey
 import it.fast4x.rimusic.utils.ytVisitorDataKey
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
@@ -554,11 +556,18 @@ class MainActivity :
                     defaultValue = Environment._uMYwa66ycM
                 )
 
-                if (visitorData.isEmpty()) runBlocking {
-                    Environment.visitorData().getOrNull()?.also {
-                        visitorData = it
+                if (visitorData.isEmpty() || visitorData == "null")
+                    runCatching {
+                        println("MainActivity.onCreate visitorData.isEmpty() getInitialVisitorData")
+                        CoroutineScope(Dispatchers.IO).launch {
+                            Environment.getInitialVisitorData().getOrNull()?.also {
+                                visitorData = it
+                            }
+                        }
+                    }.onFailure {
+                        Timber.e("MainActivity.onCreate visitorData.isEmpty() getInitialVisitorData ${it.stackTraceToString()}")
+                        println("MainActivity.onCreate visitorData.isEmpty() getInitialVisitorData ${it.stackTraceToString()}")
                     }
-                }
 
                 val cookie = preferences.getString(ytCookieKey, "")
                 println("MainActivity.onCreate cookie: $cookie")
@@ -654,6 +663,8 @@ class MainActivity :
                         val result = imageLoader.execute(
                             ImageRequest.Builder(this@MainActivity)
                                 .data(url)
+                                // Required to get work getPixels
+                                .bitmapConfig(if (isAtLeastAndroid8) Bitmap.Config.RGBA_F16 else Bitmap.Config.ARGB_8888)
                                 .allowHardware(false)
                                 .build()
                         )

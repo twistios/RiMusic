@@ -23,6 +23,7 @@
     <string name="enter_the_playlist_name">Zadejte název playlistu</string>
     <string name="playlists">Playlisty</string>
     <string name="favorites">Oblíbené</string>
+    <string name="disliked">Disliked</string>
     <string name="quick_picks">Rychlý výběr</string>
     <string name="songs">Skladby</string>
     <string name="other_versions">Další verze</string>
@@ -556,6 +557,7 @@
     <string name="position_bottom">Dole</string>
     <string name="added_to_favorites">Přidáno do oblíbených</string>
     <string name="removed_from_favorites">Odstraněno z oblíbených</string>
+    <string name="added_to_disliked">Added to disliked</string>
     <string name="lang_filipino">Filipínština (Mga Pilipino)</string>
     <string name="action_bar_transparent_background">Průhledné pozadí</string>
     <string name="pinfo_type">Typ informací</string>
@@ -946,4 +948,5 @@
     <string name="use_alternative_dns">Use alternative dns</string>
     <string name="use_dns_over_https_title">Use dns over https</string>
     <string name="also_delete_playback_data">Also delete playback data</string>
+    <string name="rescue_center">Rescue Center</string>
 </resources>

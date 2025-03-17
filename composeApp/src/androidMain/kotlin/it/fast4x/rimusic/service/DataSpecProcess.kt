@@ -134,27 +134,20 @@ internal suspend fun MyDownloadHelper.dataSpecProcess(
 
 
     try {
-        //runBlocking(Dispatchers.IO) {
         Timber.d("MyDownloadHelper DataSpecProcess Playing song start timeout ${videoId}")
-        println("MyDownloadHelper DataSpecProcess Playing song start timeout ${videoId}")
-        val dataSpecWithTimeout = withTimeout(5000){
-            //if loggedin use advanced player with webPotoken and new newpipe extractor
-            val format = if (!useYtLoginOnlyForBrowse() && isYouTubeLoginEnabled() && isYouTubeLoggedIn())
-                getAvancedInnerTubeStream(videoId, audioQualityFormat, connectionMetered)
-            else getInnerTubeStream(videoId, audioQualityFormat, connectionMetered)
-            // Play always without login because login break song
-            //val format = getInnerTubeStream(videoId, audioQualityFormat, connectionMetered)
 
-            println("MyDownloadHelper DataSpecProcess Playing song ${videoId} from url=${format?.url}")
+        //if loggedin use advanced player with webPotoken and new newpipe extractor
+//        val format = if (!useYtLoginOnlyForBrowse() && isYouTubeLoginEnabled() && isYouTubeLoggedIn())
+//            getAvancedInnerTubeStream(videoId, audioQualityFormat, connectionMetered)
+//        else getInnerTubeStream(videoId, audioQualityFormat, connectionMetered)
 
-            if (format?.url == null) throw PlayableFormatNotFoundException()
-            else
-                return@withTimeout dataSpec.withUri(Uri.parse(format?.url))
-        }
-        println("MyDownloadHelper DataSpecProcess Playing song stop timeout ${videoId}")
-        return dataSpecWithTimeout
-        //}
+        val format = getInnerTubeStream(videoId, audioQualityFormat, connectionMetered)
 
+        println("MyDownloadHelper DataSpecProcess Playing song ${videoId} from url=${format?.url}")
+
+        if (format?.url == null) throw PlayableFormatNotFoundException()
+
+        return dataSpec.withUri(Uri.parse(format?.url))
 
     } catch ( e: Exception ) {
         Timber.e("MyDownloadHelper DataSpecProcess Error: ${e.stackTraceToString()}")
@@ -200,25 +193,19 @@ internal suspend fun MyPreCacheHelper.dataSpecProcess(
     try {
         //runBlocking(Dispatchers.IO) {
         Timber.d("MyPreCacheHelper DataSpecProcess Playing song start timeout ${videoId}")
-        println("MyPreCacheHelper DataSpecProcess Playing song start timeout ${videoId}")
-        val dataSpecWithTimeout = withTimeout(5000){
+
             //if loggedin use advanced player with webPotoken and new newpipe extractor
-            val format = if (!useYtLoginOnlyForBrowse() && isYouTubeLoginEnabled() && isYouTubeLoggedIn())
-                getAvancedInnerTubeStream(videoId, audioQualityFormat, connectionMetered)
-            else getInnerTubeStream(videoId, audioQualityFormat, connectionMetered)
-            // Play always without login because login break song
-            //val format = getInnerTubeStream(videoId, audioQualityFormat, connectionMetered)
+//        val format = if (!useYtLoginOnlyForBrowse() && isYouTubeLoginEnabled() && isYouTubeLoggedIn())
+//            getAvancedInnerTubeStream(videoId, audioQualityFormat, connectionMetered)
+//        else getInnerTubeStream(videoId, audioQualityFormat, connectionMetered)
+
+        val format = getInnerTubeStream(videoId, audioQualityFormat, connectionMetered)
 
             println("MyPreCacheHelper DataSpecProcess Playing song ${videoId} from url=${format?.url}")
 
             if (format?.url == null) throw PlayableFormatNotFoundException()
-            else
-                return@withTimeout dataSpec.withUri(Uri.parse(format?.url))
-        }
-        println("MyPreCacheHelper DataSpecProcess Playing song stop timeout ${videoId}")
-        return dataSpecWithTimeout
-        //}
 
+        return dataSpec.withUri(Uri.parse(format?.url))
 
     } catch ( e: Exception ) {
         Timber.e("MyPreCacheHelper DataSpecProcess Error: ${e.stackTraceToString()}")

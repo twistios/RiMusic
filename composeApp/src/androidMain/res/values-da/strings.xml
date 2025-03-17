@@ -23,6 +23,7 @@
     <string name="enter_the_playlist_name">Indtast playlistens navn</string>
     <string name="playlists">Playlister</string>
     <string name="favorites">Favoritter</string>
+    <string name="disliked">Disliked</string>
     <string name="quick_picks">Hurtige valg</string>
     <string name="songs">Sange</string>
     <string name="other_versions">Andre versioner</string>
@@ -556,6 +557,7 @@
     <string name="position_bottom">Nederst</string>
     <string name="added_to_favorites">Føjet til favoritter</string>
     <string name="removed_from_favorites">Fjernet fra favoritter</string>
+    <string name="added_to_disliked">Added to disliked</string>
     <string name="lang_filipino">Filippinsk</string>
     <string name="action_bar_transparent_background">Gennemsigtig baggrund</string>
     <string name="pinfo_type">Infotype</string>
@@ -946,4 +948,5 @@
     <string name="use_alternative_dns">Use alternative dns</string>
     <string name="use_dns_over_https_title">Use dns over https</string>
     <string name="also_delete_playback_data">Also delete playback data</string>
+    <string name="rescue_center">Rescue Center</string>
 </resources>

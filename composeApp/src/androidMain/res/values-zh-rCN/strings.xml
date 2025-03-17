@@ -23,6 +23,7 @@
     <string name="enter_the_playlist_name">输入播放列表名称</string>
     <string name="playlists">播放列表</string>
     <string name="favorites">收藏夹</string>
+    <string name="disliked">Disliked</string>
     <string name="quick_picks">快速选择</string>
     <string name="songs">歌曲</string>
     <string name="other_versions">其他版本</string>
@@ -556,6 +557,7 @@
     <string name="position_bottom">底部</string>
     <string name="added_to_favorites">已添加到收藏夹</string>
     <string name="removed_from_favorites">已从收藏夹移除</string>
+    <string name="added_to_disliked">Added to disliked</string>
     <string name="lang_filipino">菲律宾语</string>
     <string name="action_bar_transparent_background">透明背景</string>
     <string name="pinfo_type">标题样式</string>
@@ -946,4 +948,5 @@
     <string name="use_alternative_dns">Use alternative dns</string>
     <string name="use_dns_over_https_title">Use dns over https</string>
     <string name="also_delete_playback_data">Also delete playback data</string>
+    <string name="rescue_center">Rescue Center</string>
 </resources>

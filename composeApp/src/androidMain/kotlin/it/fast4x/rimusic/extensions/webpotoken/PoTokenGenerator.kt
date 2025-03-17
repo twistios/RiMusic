@@ -68,7 +68,14 @@ class PoTokenGenerator {
 
                     runBlocking {
                         // close the current webPoTokenGenerator on the main thread
-                        webPoTokenGenerator?.let { Handler(Looper.getMainLooper()).post { it.close() } }
+                        try {
+                            webPoTokenGenerator?.let { Handler(Looper.getMainLooper()).post { it.close() } }
+                        } catch (e: Exception) {
+                            if (TAG != null) {
+                                Timber.tag(TAG).e(e, "Failed to close webPoTokenGenerator")
+                            }
+                            println("$TAG Failed to close webPoTokenGenerator")
+                        }
 
                         // create a new webPoTokenGenerator
                         webPoTokenGenerator = PoTokenWebView.newPoTokenGenerator(context())

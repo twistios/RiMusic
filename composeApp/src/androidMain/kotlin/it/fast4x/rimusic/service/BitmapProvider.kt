@@ -77,7 +77,7 @@ class BitmapProvider(
                 ImageRequest.Builder(appContext())
                     .networkCachePolicy(CachePolicy.ENABLED)
                     .data(uri.thumbnail(bitmapSize))
-                    .allowHardware(false)
+                    //.allowHardware(false)
                     .diskCacheKey(uri.thumbnail(bitmapSize).toString())
                     //.memoryCacheKey(uri.thumbnail(bitmapSize).toString())
                     .listener(

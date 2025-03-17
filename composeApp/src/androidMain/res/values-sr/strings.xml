@@ -23,6 +23,7 @@
     <string name="enter_the_playlist_name">Унесите име за плејлисту</string>
     <string name="playlists">Плејлисте</string>
     <string name="favorites">Омиљено</string>
+    <string name="disliked">Disliked</string>
     <string name="quick_picks">Брзи Одабири</string>
     <string name="songs">Песме</string>
     <string name="other_versions">Друге верзије</string>
@@ -389,7 +390,7 @@
     <string name="export_playlist">Извези плејлисту</string>
     <string name="lang_afrikaans">Афрички</string>
     <string name="playlist_top">Најбоља Плејлиста</string>
-    <string name="my_playlist_top">Моја Најбоља %s</string>
+    <string name="my_playlist_top">Мојих Најбољих %s</string>
     <string name="navigation_bar_position">Положај траке за навигацију</string>
     <string name="direction_left">Лево</string>
     <string name="direction_right">Десно</string>
@@ -547,8 +548,8 @@
     <string name="show_background_in_lyrics">Прикажи боју позадине у Стиховима</string>
     <string name="bg_colors_blurred_cover_background">Замућена позадина омота</string>
     <string name="lang_estonian">Естонски</string>
-    <string name="pcontrols_modern">Модерне</string>
-    <string name="pcontrols_essential">Есенцијалне</string>
+    <string name="pcontrols_modern">Модеран</string>
+    <string name="pcontrols_essential">Есенцијални</string>
     <string name="pcontrols_type">Контроле типа</string>
     <string name="player_swiping_down_is_disabled">Превлачење плејера надоле је онемогућено</string>
     <string name="player_position">Позиција плејера</string>
@@ -556,6 +557,7 @@
     <string name="position_bottom">Дно</string>
     <string name="added_to_favorites">Додато у омиљенo</string>
     <string name="removed_from_favorites">Уклоњено из омиљених</string>
+    <string name="added_to_disliked">Added to disliked</string>
     <string name="lang_filipino">Филипински</string>
     <string name="action_bar_transparent_background">Прозирна позадина</string>
     <string name="pinfo_type">Врста информације</string>
@@ -769,7 +771,7 @@
     <string name="center">Центар</string>
     <string name="lyricsalignment">Поравнање Стихова</string>
     <string name="lang_azerbaijani">Азербејџански</string>
-    <string name="translators">Преводиоци</string>
+    <string name="translators">Преводиоца</string>
     <string name="lang_tamil">Тамилски</string>
     <string name="player_auto_load_songs_in_queue">Аутоматско учитавање песама у редоследу</string>
     <string name="player_auto_load_songs_in_queue_description">Додаје песме када се редослед ускоро завршава</string>
@@ -946,4 +948,5 @@
     <string name="use_alternative_dns">Use alternative dns</string>
     <string name="use_dns_over_https_title">Use dns over https</string>
     <string name="also_delete_playback_data">Also delete playback data</string>
+    <string name="rescue_center">Rescue Center</string>
 </resources>

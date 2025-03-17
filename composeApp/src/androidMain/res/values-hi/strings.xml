@@ -23,6 +23,7 @@
     <string name="enter_the_playlist_name">प्लेलिस्ट का नाम लिखें</string>
     <string name="playlists">प्लेलिस्ट</string>
     <string name="favorites">पसंदीदा</string>
+    <string name="disliked">Disliked</string>
     <string name="quick_picks">त्वरित चयन</string>
     <string name="songs">गाने</string>
     <string name="other_versions">अन्य संस्करण</string>
@@ -502,7 +503,7 @@
     <string name="info_reorder_is_possible_only_in_ascending_sort">Reorder is possible only in ascending sort</string>
     <string name="information">जानकारी</string>
     <string name="info_lyrics_found_on_s">बोल मिल गये %s पर </string>
-    <string name="info_lyrics_not_found_on_s_try_on_s">Lyrics not found on %s, try on %s</string>
+    <string name="info_lyrics_not_found_on_s_try_on_s"></string>
     <string name="info_lyrics_not_found_on_s">Lyrics not found on %s</string>
     <string name="info_lyrics_tracks_found_on_s">Lyrics tracks found on %s</string>
     <string name="info_lyrics_tracks_not_found_on_s">Lyrics tracks not found on %s</string>
@@ -556,6 +557,7 @@
     <string name="position_bottom">नीचे</string>
     <string name="added_to_favorites">पसंदीदा में जोड़ें</string>
     <string name="removed_from_favorites">पसंदीदा से हटाएं</string>
+    <string name="added_to_disliked">Added to disliked</string>
     <string name="lang_filipino">Filipino</string>
     <string name="action_bar_transparent_background">Transparent background</string>
     <string name="pinfo_type">Info type</string>
@@ -579,7 +581,7 @@
     <string name="info_prevent_play_songs_with_age_limitation">Prevent play songs with age limitation</string>
     <string name="cache_location_private">Private</string>
     <string name="cache_location_system">System</string>
-    <string name="info_cannot_rename_a_monthly_or_piped_playlist">Cannot rename a monthly or online or piped playlist</string>
+    <string name="info_cannot_rename_a_monthly_or_piped_playlist">Cannot rename a monthly or piped playlist</string>
     <string name="debug">DEBUG</string>
     <string name="enable_log_debug">Enable log debug</string>
     <string name="if_enabled_create_a_log_file_to_highlight_errors">If enabled, create a log file to highlight errors</string>
@@ -946,4 +948,5 @@
     <string name="use_alternative_dns">Use alternative dns</string>
     <string name="use_dns_over_https_title">Use dns over https</string>
     <string name="also_delete_playback_data">Also delete playback data</string>
+    <string name="rescue_center">Rescue Center</string>
 </resources>

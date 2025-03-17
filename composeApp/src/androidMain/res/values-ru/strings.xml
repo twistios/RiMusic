@@ -24,6 +24,7 @@
     <string name="enter_the_playlist_name">Введите название плейлиста</string>
     <string name="playlists">Плейлисты</string>
     <string name="favorites">Избранное</string>
+    <string name="disliked">Disliked</string>
     <string name="quick_picks">Обзор</string>
     <string name="songs">Песни</string>
     <string name="other_versions">Другие версии</string>
@@ -557,6 +558,7 @@
     <string name="position_bottom">Снизу</string>
     <string name="added_to_favorites">Добавлено в избранное</string>
     <string name="removed_from_favorites">Удалено из избранного</string>
+    <string name="added_to_disliked">Added to disliked</string>
     <string name="lang_filipino">Филиппинский (Wikang Filipino)</string>
     <string name="action_bar_transparent_background">Прозрачный фон</string>
     <string name="pinfo_type">Стиль отображения</string>
@@ -941,11 +943,12 @@
     <string name="export_log">Экспорт журнала</string>
     <string name="value_must_be_valid_url">Значение должно быть корректным URL-адресом</string>
     <string name="caching">Кэширование...</string>
-    <string name="lang_basque">Basque</string>
-    <string name="custom_dns_is_invalid">Custom DNS is invalid</string>
-    <string name="custom_dns_over_https_server">Custom dns over https server</string>
-    <string name="info_aternative_dns_server">If you have loading problems, you can use an alternative dns server</string>
-    <string name="use_alternative_dns">Use alternative dns</string>
-    <string name="use_dns_over_https_title">Use dns over https</string>
-    <string name="also_delete_playback_data">Also delete playback data</string>
+    <string name="lang_basque">Баскский</string>
+    <string name="custom_dns_is_invalid">Неверный пользовательский DNS</string>
+    <string name="custom_dns_over_https_server">Пользовательский DNS через https-сервер</string>
+    <string name="info_aternative_dns_server">Если у вас возникли проблемы с загрузкой, вы можете использовать альтернативный DNS-сервер</string>
+    <string name="use_alternative_dns">Использовать альтернативный DNS</string>
+    <string name="use_dns_over_https_title">Использовать DNS через https</string>
+    <string name="also_delete_playback_data">Также удалять данные воспроизведения</string>
+    <string name="rescue_center">Служба поддержки</string>
 </resources>
