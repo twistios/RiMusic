@@ -13,9 +13,6 @@ import it.fast4x.rimusic.utils.getSignatureTimestampOrNull
 suspend fun advancedWebPoTokenPlayer(body: PlayerBody): Result<Triple<String?, PlayerResponse?, String?>> =
     runCatching {
 
-        val maxRetries = 2
-        var retryCount = 0
-        var loop = true
         var response: PlayerResponse? = null
 
         println("advancedPoTokenPlayer with login videoId ${body.videoId}")
@@ -28,24 +25,6 @@ suspend fun advancedWebPoTokenPlayer(body: PlayerBody): Result<Triple<String?, P
                 Pair(it.playerRequestPoToken, it.streamingDataPoToken)
             } ?: Pair(null, null)
 
-//    while (loop == true) {
-//
-//        response = playerWithWebPoToken(
-//            body.videoId,
-//            body.playlistId,
-//            signatureTimestamp,
-//            webPlayerPot
-//        ).body<PlayerResponse>()
-//
-//        println("advancedPoTokenPlayer with login webStreamingPot: $webStreamingPot webPlayerPot: $webPlayerPot signatureTimestamp: $signatureTimestamp")
-//
-//
-//        if (response.playabilityStatus?.status == "OK" || retryCount >= maxRetries)
-//            loop = false
-//
-//        println("advancedPoTokenPlayer retryCount: $retryCount")
-//        retryCount++
-//    }
 
         val call = if (signatureTimestamp != null && webPlayerPot != null)
             playerWithWebPoToken(

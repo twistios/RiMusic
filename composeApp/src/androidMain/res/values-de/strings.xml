@@ -23,6 +23,7 @@
     <string name="enter_the_playlist_name">Name der Wiedergabeliste eingeben</string>
     <string name="playlists">Wiedergabelisten</string>
     <string name="favorites">Favoriten</string>
+    <string name="disliked">Disliked</string>
     <string name="quick_picks">Startseite</string>
     <string name="songs">Songs</string>
     <string name="other_versions">Alternative Versionen</string>
@@ -556,6 +557,7 @@
     <string name="position_bottom">Unten</string>
     <string name="added_to_favorites">Zu Favoriten hinzugefügt</string>
     <string name="removed_from_favorites">Von Favoriten entfernt</string>
+    <string name="added_to_disliked">Added to disliked</string>
     <string name="lang_filipino">Philippinisch (Filipino)</string>
     <string name="action_bar_transparent_background">Transparenter Hintergrund</string>
     <string name="pinfo_type">Kopfzeilen-Stil</string>
@@ -579,7 +581,7 @@
     <string name="info_prevent_play_songs_with_age_limitation">Verhindere die Wiedergabe von Liedern mit Altersbegrenzung</string>
     <string name="cache_location_private">Privat</string>
     <string name="cache_location_system">System</string>
-    <string name="info_cannot_rename_a_monthly_or_piped_playlist">Das Umbenennen einer monatlichen, online oder piped Wiedergabeliste ist nicht möglich</string>
+    <string name="info_cannot_rename_a_monthly_or_piped_playlist">Umbenennen einer monatlichen oder Piped-Wiedergabeliste nicht möglich</string>
     <string name="debug">DEBUG</string>
     <string name="enable_log_debug">Fehlerprotokoll aktivieren</string>
     <string name="if_enabled_create_a_log_file_to_highlight_errors">Wenn aktiviert, erzeuge eine Protokolldatei für auftretende Fehler</string>
@@ -946,4 +948,5 @@
     <string name="use_alternative_dns">Use alternative dns</string>
     <string name="use_dns_over_https_title">Use dns over https</string>
     <string name="also_delete_playback_data">Also delete playback data</string>
+    <string name="rescue_center">Rescue Center</string>
 </resources>

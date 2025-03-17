@@ -568,7 +568,7 @@ object Environment {
 
     suspend fun getSwJsData() = client.get("https://$_1Vv31MecRl/sw.js_data")
 
-    suspend fun visitorData(): Result<String> = runCatching {
+    suspend fun getInitialVisitorData(): Result<String> = runCatching {
         Json.parseToJsonElement(getSwJsData().bodyAsText().substring(5))
             .jsonArray[0]
             .jsonArray[2]

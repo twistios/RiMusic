@@ -23,6 +23,7 @@
     <string name="enter_the_playlist_name">Oynatma listesi adı gir</string>
     <string name="playlists">Oynatma listeleri</string>
     <string name="favorites">Favoriler</string>
+    <string name="disliked">Disliked</string>
     <string name="quick_picks">Hızlı Seçimler</string>
     <string name="songs">Şarkılar</string>
     <string name="other_versions">Diğer versiyonlar</string>
@@ -556,6 +557,7 @@
     <string name="position_bottom">En alt</string>
     <string name="added_to_favorites">Favorilere eklendi</string>
     <string name="removed_from_favorites">Favorilerden çıkarıldı</string>
+    <string name="added_to_disliked">Added to disliked</string>
     <string name="lang_filipino">Filipino</string>
     <string name="action_bar_transparent_background">Şeffaf arkaplan</string>
     <string name="pinfo_type">Bilgi tipi</string>
@@ -939,11 +941,12 @@
     <string name="export_log">Günlüğü dışa aktar</string>
     <string name="value_must_be_valid_url">Değer geçerli bir URL olmalıdır</string>
     <string name="caching">Önbelleğe alınıyor...</string>
-    <string name="lang_basque">Basque</string>
-    <string name="custom_dns_is_invalid">Custom DNS is invalid</string>
-    <string name="custom_dns_over_https_server">Custom dns over https server</string>
-    <string name="info_aternative_dns_server">If you have loading problems, you can use an alternative dns server</string>
-    <string name="use_alternative_dns">Use alternative dns</string>
-    <string name="use_dns_over_https_title">Use dns over https</string>
-    <string name="also_delete_playback_data">Also delete playback data</string>
+    <string name="lang_basque">Baskça</string>
+    <string name="custom_dns_is_invalid">Özel DNS geçersiz</string>
+    <string name="custom_dns_over_https_server">Https sunucusu üzerinden özel DNS</string>
+    <string name="info_aternative_dns_server">Yükleme sorunları yaşıyorsanız, alternatif bir dns sunucusu kullanabilirsiniz</string>
+    <string name="use_alternative_dns">Alternatif DNS kullan</string>
+    <string name="use_dns_over_https_title">Https üzerinden DNS kullan</string>
+    <string name="also_delete_playback_data">Oynatma verilerini de sil</string>
+    <string name="rescue_center">Kurtarma Merkezi</string>
 </resources>

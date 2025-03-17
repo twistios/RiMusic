@@ -23,6 +23,7 @@
     <string name="enter_the_playlist_name">Введіть назву плейлиста</string>
     <string name="playlists">Плейлисти</string>
     <string name="favorites">Вибране</string>
+    <string name="disliked">Disliked</string>
     <string name="quick_picks">Швидкий вибір</string>
     <string name="songs">Композиції</string>
     <string name="other_versions">Альтернативний варіант</string>
@@ -556,6 +557,7 @@
     <string name="position_bottom">Знизу</string>
     <string name="added_to_favorites">Додано до обраного</string>
     <string name="removed_from_favorites">Видалено з обраного</string>
+    <string name="added_to_disliked">Added to disliked</string>
     <string name="lang_filipino">Філіппінська</string>
     <string name="action_bar_transparent_background">Прозорий фон</string>
     <string name="pinfo_type">Тип інформації</string>
@@ -939,11 +941,12 @@
     <string name="export_log">Експорт журналу</string>
     <string name="value_must_be_valid_url">Значення має бути коректною URL-адресою</string>
     <string name="caching">Кешування...</string>
-    <string name="lang_basque">Basque</string>
-    <string name="custom_dns_is_invalid">Custom DNS is invalid</string>
-    <string name="custom_dns_over_https_server">Custom dns over https server</string>
-    <string name="info_aternative_dns_server">If you have loading problems, you can use an alternative dns server</string>
-    <string name="use_alternative_dns">Use alternative dns</string>
-    <string name="use_dns_over_https_title">Use dns over https</string>
-    <string name="also_delete_playback_data">Also delete playback data</string>
+    <string name="lang_basque">Баскська</string>
+    <string name="custom_dns_is_invalid">Неправильний DNS користувача</string>
+    <string name="custom_dns_over_https_server">DNS користувача через https-сервер</string>
+    <string name="info_aternative_dns_server">Якщо у вас виникли проблеми із завантаженням, ви можете використовувати альтернативний DNS-сервер</string>
+    <string name="use_alternative_dns">Використати альтернативний DNS</string>
+    <string name="use_dns_over_https_title">Використовувати DNS через https</string>
+    <string name="also_delete_playback_data">Також видаляти дані відтворення</string>
+    <string name="rescue_center">Служба підтримки</string>
 </resources>

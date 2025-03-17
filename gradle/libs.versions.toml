@@ -19,6 +19,7 @@ brotli = "0.1.2"
 palette = "1.0.0"
 desugaring = "2.1.5"
 appcompat = "1.7.0"
+support = "1.0.0"
 media = "1.7.0"
 material = "1.7.8"
 materialdesktop = "1.7.0"
@@ -84,6 +85,7 @@ desugaring = {group = "com.android.tools", name = "desugar_jdk_libs", version.re
 desugaring-nio = {group = "com.android.tools", name = "desugar_jdk_libs_nio", version.ref = "desugaring"}
 appcompat = {group = "androidx.appcompat", name = "appcompat", version.ref = "appcompat"}
 appcompat-resources = {group = "androidx.appcompat", name = "appcompat-resources", version.ref = "appcompat"}
+support = {group = "androidx.legacy", name = "legacy-support-v4", version.ref = "support"}
 media = {group = "androidx.media", name = "media", version.ref = "media"}
 material = {group = "androidx.compose.material", name = "material", version.ref = "material"}
 material-icon-desktop = {group = "org.jetbrains.compose.material", name = "material-icons-extended-desktop", version.ref = "materialdesktop"}

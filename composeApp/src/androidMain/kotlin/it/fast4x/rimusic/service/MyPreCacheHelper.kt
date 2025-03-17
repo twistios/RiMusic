@@ -213,13 +213,13 @@ object MyPreCacheHelper {
                 println("MyPreCacheService scheduleDownload exception ${it.stackTraceToString()}")
             }
             DownloadSyncedLyrics(it = SongEntity(mediaItem.asSong), coroutineScope = coroutineScope)
-            context.imageLoader.execute(
+            context.imageLoader.enqueue(
                 ImageRequest.Builder(context)
                     .networkCachePolicy(CachePolicy.ENABLED)
                     .data(imageUrl)
                     .size(1200)
-                    .bitmapConfig(Bitmap.Config.ARGB_8888)
-                    .allowHardware(false)
+                    //.bitmapConfig(Bitmap.Config.ARGB_8888)
+                    //.allowHardware(false)
                     .diskCacheKey(imageUrl.toString())
                     .build()
             )

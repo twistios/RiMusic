@@ -23,6 +23,7 @@
     <string name="enter_the_playlist_name">Masukkan nama daftar putar</string>
     <string name="playlists">Daftar putar</string>
     <string name="favorites">Favorit</string>
+    <string name="disliked">Disliked</string>
     <string name="quick_picks">Pilihan cepat</string>
     <string name="songs">Lagu</string>
     <string name="other_versions">Versi lainnya</string>
@@ -556,6 +557,7 @@
     <string name="position_bottom">Bawah</string>
     <string name="added_to_favorites">Ditambahkan ke favorit</string>
     <string name="removed_from_favorites">Dihapus dari favorit</string>
+    <string name="added_to_disliked">Added to disliked</string>
     <string name="lang_filipino">Filipina (Tagalog)</string>
     <string name="action_bar_transparent_background">Transparan</string>
     <string name="pinfo_type">Gaya tajuk</string>
@@ -946,4 +948,5 @@
     <string name="use_alternative_dns">Use alternative dns</string>
     <string name="use_dns_over_https_title">Use dns over https</string>
     <string name="also_delete_playback_data">Also delete playback data</string>
+    <string name="rescue_center">Rescue Center</string>
 </resources>

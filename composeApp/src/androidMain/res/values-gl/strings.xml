@@ -23,6 +23,7 @@
     <string name="enter_the_playlist_name">Insire o nome da lista de reprodución</string>
     <string name="playlists">Listas de reprodución</string>
     <string name="favorites">Favoritos</string>
+    <string name="disliked">Disliked</string>
     <string name="quick_picks">Escollas rápidas</string>
     <string name="songs">Cancións</string>
     <string name="other_versions">Outras versións</string>
@@ -556,6 +557,7 @@
     <string name="position_bottom">Abaixo</string>
     <string name="added_to_favorites">Engadido aos favoritos</string>
     <string name="removed_from_favorites">Eliminado dos favoritos</string>
+    <string name="added_to_disliked">Added to disliked</string>
     <string name="lang_filipino">Filipino</string>
     <string name="action_bar_transparent_background">Fondo transparente</string>
     <string name="pinfo_type">Tipo de información</string>
@@ -946,4 +948,5 @@
     <string name="use_alternative_dns">Use alternative dns</string>
     <string name="use_dns_over_https_title">Use dns over https</string>
     <string name="also_delete_playback_data">Also delete playback data</string>
+    <string name="rescue_center">Rescue Center</string>
 </resources>

@@ -72,11 +72,6 @@ internal fun PlayerServiceModern.createDataSourceFactory(): DataSource.Factory {
 
             return@Factory runBlocking {
                 dataSpecProcess(dataSpec, applicationContext, applicationContext.isConnectionMetered())
-                    /*
-                    .also {
-                    //loudnessEnhancer?.update(current_song, context)
-                    }
-                     */
             }
         }
         catch (e: Throwable) {
