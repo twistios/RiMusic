@@ -23,7 +23,7 @@
     <string name="enter_the_playlist_name">Oynatma listesi adı gir</string>
     <string name="playlists">Oynatma listeleri</string>
     <string name="favorites">Favoriler</string>
-    <string name="disliked">Disliked</string>
+    <string name="disliked">Beğenmedim</string>
     <string name="quick_picks">Hızlı Seçimler</string>
     <string name="songs">Şarkılar</string>
     <string name="other_versions">Diğer versiyonlar</string>
@@ -557,7 +557,7 @@
     <string name="position_bottom">En alt</string>
     <string name="added_to_favorites">Favorilere eklendi</string>
     <string name="removed_from_favorites">Favorilerden çıkarıldı</string>
-    <string name="added_to_disliked">Added to disliked</string>
+    <string name="added_to_disliked">Beğenilmeyenlere eklendi</string>
     <string name="lang_filipino">Filipino</string>
     <string name="action_bar_transparent_background">Şeffaf arkaplan</string>
     <string name="pinfo_type">Bilgi tipi</string>
