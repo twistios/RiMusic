@@ -160,11 +160,9 @@ fun HomeArtists(
     LaunchedEffect( Unit, sort.sortBy, sort.sortOrder, artistType ) {
         when( artistType ) {
             ArtistsType.Favorites -> {
-                shuffle.setSongs { Database.songsInAllFollowedArtistsFiltered(itemsOnDisplay.map { it.id }).map{ it.map( Song::asMediaItem ) } }
                 Database.artists( sort.sortBy, sort.sortOrder ).collect { itemsToFilter = it }
                 }
             ArtistsType.Library -> {
-                shuffle.setSongs { Database.songsInLibraryArtistsFiltered(itemsOnDisplay.map { it.id }).map{ it.map( Song::asMediaItem ) } }
                 Database.artistsInLibrary( sort.sortBy, sort.sortOrder ).collect { itemsToFilter = it }
                 }
             //ArtistsType.All -> Database.artistsWithSongsSaved( sort.sortBy, sort.sortOrder ).collect { items = it }
