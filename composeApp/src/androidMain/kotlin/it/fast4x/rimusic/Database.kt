@@ -1557,6 +1557,13 @@ interface Database {
             "ORDER BY A.bookmarkedAt ASC")
     fun artistsInLibraryByRowIdAsc(): Flow<List<Artist>>
 
+    @Transaction
+    @Query("SELECT DISTINCT S.* FROM Song S INNER JOIN SongArtistMap SM ON S.id=SM.songId " +
+            "INNER JOIN Artist A ON A.id=SM.artistId " +
+            "LEFT JOIN SongPlaylistMap ON S.id = SongPlaylistMap.songId " +
+            "WHERE (S.totalPlayTimeMs > 0 AND S.likedAt > 0) OR SongPlaylistMap.playlistId IS NOT NULL AND A.id IN (:artists)")
+    fun songsInLibraryArtistsFiltered(artists: List<String>): Flow<List<Song>>
+
     @Query("SELECT * FROM Artist A WHERE A.id in ( " +
             "SELECT DISTINCT artistId FROM SongArtistMap INNER JOIN Song " +
             "ON Song.id = SongArtistMap.songId " +
@@ -2013,6 +2020,11 @@ interface Database {
     @Query("SELECT DISTINCT S.* FROM Song S INNER JOIN SongArtistMap SM ON S.id=SM.songId " +
             "INNER JOIN Artist A ON A.id=SM.artistId WHERE A.bookmarkedAt IS NOT NULL")
     fun songsInAllFollowedArtists(): Flow<List<Song>>
+
+    @Transaction
+    @Query("SELECT DISTINCT S.* FROM Song S INNER JOIN SongArtistMap SM ON S.id=SM.songId " +
+            "INNER JOIN Artist A ON A.id=SM.artistId WHERE A.bookmarkedAt IS NOT NULL AND A.id IN (:artists)")
+    fun songsInAllFollowedArtistsFiltered(artists: List<String>): Flow<List<Song>>
 
     @Transaction
     @Query("SELECT DISTINCT S.* FROM Song S INNER JOIN songplaylistmap SM ON S.id=SM.songId")

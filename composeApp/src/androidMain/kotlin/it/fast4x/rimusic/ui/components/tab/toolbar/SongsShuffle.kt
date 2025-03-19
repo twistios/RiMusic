@@ -18,7 +18,7 @@ import kotlin.coroutines.cancellation.CancellationException
 @UnstableApi
 class SongsShuffle private constructor(
     private val binder: PlayerServiceModern.Binder?,
-    private val songs: () -> Flow<List<MediaItem>>
+    private var songs: () -> Flow<List<MediaItem>>
 ): MenuIcon, Descriptive {
 
     companion object {
@@ -41,5 +41,9 @@ class SongsShuffle private constructor(
                 throw CancellationException()
             }
         }
+    }
+
+    fun setSongs(songs: () -> Flow<List<MediaItem>>){
+        this.songs = songs
     }
 }

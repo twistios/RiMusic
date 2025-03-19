@@ -23,7 +23,7 @@
     <string name="enter_the_playlist_name">Pleylist adın qeyd et</string>
     <string name="playlists">Dinləmə siyahıları</string>
     <string name="favorites">Sevimlilər</string>
-    <string name="disliked">Disliked</string>
+    <string name="disliked">Bəyənilmədi</string>
     <string name="quick_picks">Cəld seçimlər</string>
     <string name="songs">Mahnılar</string>
     <string name="other_versions">Digər versiyalar</string>
@@ -557,7 +557,7 @@
     <string name="position_bottom">Aşağı</string>
     <string name="added_to_favorites">Sevimlilərə əlavə edildi</string>
     <string name="removed_from_favorites">Sevimlilərdən silindi</string>
-    <string name="added_to_disliked">Added to disliked</string>
+    <string name="added_to_disliked">Bəyənilməyənlərə əlavə edildi</string>
     <string name="lang_filipino">Filippincə (Filipino)</string>
     <string name="action_bar_transparent_background">Şəffaf arxa plan</string>
     <string name="pinfo_type">Məlumat növü</string>

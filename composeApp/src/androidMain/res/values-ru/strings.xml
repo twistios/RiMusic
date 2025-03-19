@@ -24,7 +24,7 @@
     <string name="enter_the_playlist_name">Введите название плейлиста</string>
     <string name="playlists">Плейлисты</string>
     <string name="favorites">Избранное</string>
-    <string name="disliked">Disliked</string>
+    <string name="disliked">Не понравилось</string>
     <string name="quick_picks">Обзор</string>
     <string name="songs">Песни</string>
     <string name="other_versions">Другие версии</string>
@@ -558,7 +558,7 @@
     <string name="position_bottom">Снизу</string>
     <string name="added_to_favorites">Добавлено в избранное</string>
     <string name="removed_from_favorites">Удалено из избранного</string>
-    <string name="added_to_disliked">Added to disliked</string>
+    <string name="added_to_disliked">Добавлено в не понравившееся</string>
     <string name="lang_filipino">Филиппинский (Wikang Filipino)</string>
     <string name="action_bar_transparent_background">Прозрачный фон</string>
     <string name="pinfo_type">Стиль отображения</string>

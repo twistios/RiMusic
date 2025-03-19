@@ -13,12 +13,14 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.material.LinearProgressIndicator
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
 import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -30,6 +32,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.Stroke
@@ -55,6 +58,10 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import it.fast4x.rimusic.colorPalette
 import it.fast4x.rimusic.typography
+import org.jetbrains.compose.resources.painterResource
+import rimusic.composeapp.generated.resources.Res
+import rimusic.composeapp.generated.resources.app_icon
+import rimusic.composeapp.generated.resources.play
 
 @OptIn(UnstableApi::class)
 @Composable
@@ -294,31 +301,55 @@ fun GetSeekBar(
             .padding(horizontal = 10.dp)
             .fillMaxWidth()
     ) {
-        Box(
-
-        ) {
-            BasicText(
-                text = formatAsDuration(scrubbingPosition ?: position),
-                style = typography().xxs.semiBold,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
+        Row(
+            modifier = Modifier
+                .clickable(
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = ripple(false),
+                    onClick = {binder.player.seekTo(position - 5000)}
+                )
+        ){
+            Box(
                 modifier = Modifier
-                    .clickable(
-                        interactionSource = remember { MutableInteractionSource() },
-                        indication = ripple(false),
-                        onClick = {binder.player.seekTo(position - 5000)}
-                    )
-            )
-            BasicText(
-                text = formatAsDuration(scrubbingPosition ?: position),
-                style = typography().xxs.semiBold.merge(TextStyle(
-                    drawStyle = Stroke(width = 1.0f, join = StrokeJoin.Round),
-                    color = if (!textoutline) Color.Transparent else if (colorPaletteMode == ColorPaletteMode.Light || (colorPaletteMode == ColorPaletteMode.System && (!isSystemInDarkTheme()))) Color.White.copy(0.5f)
-                    else Color.Black)),
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
+                    .align(Alignment.CenterVertically)
+            ){
+                Icon(
+                    painter =  painterResource(Res.drawable.play),
+                    contentDescription = "",
+                    tint = colorPalette().text,
+                    modifier = Modifier
+                        .size(10.dp)
+                        .rotate(180f)
+                        .offset((5).dp,0.dp)
+                )
+                Icon(
+                    painter =  painterResource(Res.drawable.play),
+                    contentDescription = "",
+                    tint = colorPalette().text,
+                    modifier = Modifier
+                        .size(10.dp)
+                        .rotate(180f)
+                )
+            }
+            Box{
+                BasicText(
+                    text = formatAsDuration(scrubbingPosition ?: position),
+                    style = typography().xxs.semiBold,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                BasicText(
+                    text = formatAsDuration(scrubbingPosition ?: position),
+                    style = typography().xxs.semiBold.merge(TextStyle(
+                        drawStyle = Stroke(width = 1.0f, join = StrokeJoin.Round),
+                        color = if (!textoutline) Color.Transparent else if (colorPaletteMode == ColorPaletteMode.Light || (colorPaletteMode == ColorPaletteMode.System && (!isSystemInDarkTheme()))) Color.White.copy(0.5f)
+                        else Color.Black)),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
         }
+
 
         if (duration != C.TIME_UNSET) {
             val positionAndDuration = binder.player.positionAndDurationState()
@@ -387,35 +418,56 @@ fun GetSeekBar(
                 overflow = TextOverflow.Ellipsis,
             )
              */
-            Box(
-
-            ) {
-                BasicText(
-                    text = formatAsDuration(duration),
-                    style = typography().xxs.semiBold,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier
-                        .clickable(
-                            interactionSource = remember { MutableInteractionSource() },
-                            indication = ripple(false),
-                            onClick = {binder.player.seekTo(position + 5000)}
-                        )
-                )
-                BasicText(
-                    text = formatAsDuration(duration),
-                    style = typography().xxs.semiBold.merge(
-                        TextStyle(
-                            drawStyle = Stroke(width = 1.0f, join = StrokeJoin.Round),
-                            color = if (!textoutline) Color.Transparent else if (colorPaletteMode == ColorPaletteMode.Light || (colorPaletteMode == ColorPaletteMode.System && (!isSystemInDarkTheme()))) Color.White.copy(
-                                0.5f
+            Row(
+                modifier = Modifier
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = ripple(false),
+                        onClick = {binder.player.seekTo(position + 5000)}
+                    )
+            ){
+                Box{
+                    BasicText(
+                        text = formatAsDuration(duration),
+                        style = typography().xxs.semiBold,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                    BasicText(
+                        text = formatAsDuration(duration),
+                        style = typography().xxs.semiBold.merge(
+                            TextStyle(
+                                drawStyle = Stroke(width = 1.0f, join = StrokeJoin.Round),
+                                color = if (!textoutline) Color.Transparent else if (colorPaletteMode == ColorPaletteMode.Light || (colorPaletteMode == ColorPaletteMode.System && (!isSystemInDarkTheme()))) Color.White.copy(
+                                    0.5f
+                                )
+                                else Color.Black
                             )
-                            else Color.Black
-                        )
-                    ),
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
+                        ),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.CenterVertically)
+                ){
+                    Icon(
+                        painter =  painterResource(Res.drawable.play),
+                        contentDescription = "",
+                        tint = colorPalette().text,
+                        modifier = Modifier
+                            .size(10.dp)
+                            .offset((5).dp,0.dp)
+                    )
+                    Icon(
+                        painter =  painterResource(Res.drawable.play),
+                        contentDescription = "",
+                        tint = colorPalette().text,
+                        modifier = Modifier
+                            .size(10.dp)
+                    )
+                }
             }
 
           }
