@@ -706,6 +706,7 @@
     <string name="info_pauses_player_when_volume_zero">소리 크기가 0에 도달하면 재생을 멈추고, 0보다 커지면 다시 재생합니다</string>
     <string name="quality">품질</string>
     <string name="value_must_be_ip_address">값은 반드시 IP 주소여야 합니다</string>
+    <string name="value_must_be_hex">Value must be an hex code</string>
     <string name="swipe_up_to_open_the_queue">스와이프하여 대기열 열기</string>
     <string name="pinfo_show_icons">아이콘과 정보 표시</string>
     <string name="format_ms">%1$s ms</string>
@@ -951,4 +952,5 @@
     <string name="rescue_center">구조 센터</string>
     <string name="midnightodyssey">Midnight Odyssey</string>
     <string name="circle">Circle</string>
+    <string name="enter_hex">Enter the 7-digit HEX code</string>
 </resources>

@@ -706,6 +706,7 @@
     <string name="info_pauses_player_when_volume_zero">Ses seviyesi sıfıra ulaştığında çalmayı duraklatır ve sıfırdan büyük olduğunda çalmaya devam eder</string>
     <string name="quality">Kalite</string>
     <string name="value_must_be_ip_address">Değer bir ip adresi olmalıdır</string>
+    <string name="value_must_be_hex">Değer bir hex kodu olmalıdır</string>
     <string name="swipe_up_to_open_the_queue">Oynatma sırasını açmak için yukarı kaydır</string>
     <string name="pinfo_show_icons">Bilgiyi simgelerle göster</string>
     <string name="format_ms">%1$s ms</string>
@@ -951,4 +952,5 @@
     <string name="rescue_center">Kurtarma Merkezi</string>
     <string name="midnightodyssey">Geceyarısı Destanı</string>
     <string name="circle">Çember</string>
+    <string name="enter_hex">7 haneli HEX kodunu girin</string>
 </resources>

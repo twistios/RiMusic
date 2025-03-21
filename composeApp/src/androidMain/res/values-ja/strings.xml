@@ -706,6 +706,7 @@
     <string name="info_pauses_player_when_volume_zero">音量が 0 になれば曲を停止し、音量が 0 以上になれば再開します</string>
     <string name="quality">品質</string>
     <string name="value_must_be_ip_address">値はIPアドレスでなければなりません</string>
+    <string name="value_must_be_hex">Value must be an hex code</string>
     <string name="swipe_up_to_open_the_queue">Swipe up to open the queue</string>
     <string name="pinfo_show_icons">アイコン付きの情報を表示</string>
     <string name="format_ms">%1$s ミリ秒</string>
@@ -951,4 +952,5 @@
     <string name="rescue_center">レスキューセンター</string>
     <string name="midnightodyssey">Midnight Odyssey</string>
     <string name="circle">Circle</string>
+    <string name="enter_hex">Enter the 7-digit HEX code</string>
 </resources>
