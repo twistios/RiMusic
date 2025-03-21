@@ -951,4 +951,6 @@
     <string name="use_dns_over_https_title">Использовать DNS через https</string>
     <string name="also_delete_playback_data">Также удалять данные воспроизведения</string>
     <string name="rescue_center">Служба поддержки</string>
+    <string name="midnightodyssey">Полуночная Одиссея</string>
+    <string name="circle">Круг</string>
 </resources>

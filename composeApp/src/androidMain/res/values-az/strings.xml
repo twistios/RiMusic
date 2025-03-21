@@ -949,4 +949,6 @@
     <string name="use_dns_over_https_title">Https üzərindən dns istifadə et</string>
     <string name="also_delete_playback_data">Həmçinin səslənmə məlumatın sil</string>
     <string name="rescue_center">Bərpa Mərkəzi</string>
+    <string name="midnightodyssey">Gecə yarısı Odyssey</string>
+    <string name="circle">Dairə</string>
 </resources>

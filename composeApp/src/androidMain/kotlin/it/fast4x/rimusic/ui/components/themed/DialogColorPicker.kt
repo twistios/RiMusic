@@ -41,18 +41,22 @@ import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.core.graphics.toRect
 import it.fast4x.rimusic.R
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import it.fast4x.rimusic.colorPalette
+import it.fast4x.rimusic.enums.ValidationType
+import it.fast4x.rimusic.ui.screens.settings.TextDialogSettingEntry
 import android.graphics.Color as AndroidColor
 
 
 @Composable
 fun DialogColorPicker(
     onDismiss: () -> Unit,
+    color: Color,
     onColorSelected: (Color) -> Unit
 ) {
     DefaultDialog(
@@ -67,13 +71,26 @@ fun DialogColorPicker(
 
             val hsv = remember {
                 val hsv = floatArrayOf(0f, 0f, 0f)
-                AndroidColor.colorToHSV(Color.Blue.toArgb(), hsv)
+                AndroidColor.colorToHSV(color.toArgb(), hsv)
                 mutableStateOf(
                     Triple(hsv[0], hsv[1], hsv[2])
                 )
             }
             var backgroundColor = remember(hsv.value) {
                 mutableStateOf(Color.hsv(hsv.value.first, hsv.value.second, hsv.value.third))
+            }
+
+            fun hexToInt(hexColor: String): Int {
+                val colorChosen = try {
+                    hexColor.replace("#", "").toInt(16)
+                } catch (e: Exception) {
+                    0xFF000000.toInt()
+                }
+                return if (hexColor.length == 7) {
+                    colorChosen or 0xFF000000.toInt()
+                } else {
+                    colorChosen
+                }
             }
 
             SatValPanel(hue = hsv.value.first) { sat, value ->
@@ -86,6 +103,16 @@ fun DialogColorPicker(
                 hsv.value = Triple(hue, hsv.value.second, hsv.value.third)
             }
 
+            Spacer(modifier = Modifier.height(32.dp))
+            TextDialogSettingEntry(
+                title = stringResource(R.string.enter_hex),
+                text = "#"+Integer.toHexString(color.toArgb()).uppercase().substringAfter("FF"),
+                currentText = "#"+Integer.toHexString(color.toArgb()).uppercase().substringAfter("FF"),
+                onTextSave = {
+                    onColorSelected(Color(hexToInt(it)))
+                },
+                validationType = ValidationType.Hex
+            )
             Spacer(modifier = Modifier.height(32.dp))
 
             Box(

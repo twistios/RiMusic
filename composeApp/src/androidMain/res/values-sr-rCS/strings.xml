@@ -23,7 +23,7 @@
     <string name="enter_the_playlist_name">Unesite ime za plejlistu</string>
     <string name="playlists">Plejliste</string>
     <string name="favorites">Omiljeno</string>
-    <string name="disliked">Disliked</string>
+    <string name="disliked">Dislajkovi</string>
     <string name="quick_picks">Brzi Odabiri</string>
     <string name="songs">Pesme</string>
     <string name="other_versions">Druge verzije</string>
@@ -557,7 +557,7 @@
     <string name="position_bottom">Dno</string>
     <string name="added_to_favorites">Dodato u omiljeno</string>
     <string name="removed_from_favorites">Uklonjeno iz omiljenih</string>
-    <string name="added_to_disliked">Added to disliked</string>
+    <string name="added_to_disliked">Dodato u Dislajkovane</string>
     <string name="lang_filipino">Filipinski</string>
     <string name="action_bar_transparent_background">Prozirna pozadina</string>
     <string name="pinfo_type">Vrsta informacije</string>
@@ -941,12 +941,14 @@
     <string name="export_log">Izvezi belešku</string>
     <string name="value_must_be_valid_url">Vrednost mora biti važeći url</string>
     <string name="caching">Keširanje...</string>
-    <string name="lang_basque">Basque</string>
-    <string name="custom_dns_is_invalid">Custom DNS is invalid</string>
-    <string name="custom_dns_over_https_server">Custom dns over https server</string>
-    <string name="info_aternative_dns_server">If you have loading problems, you can use an alternative dns server</string>
-    <string name="use_alternative_dns">Use alternative dns</string>
-    <string name="use_dns_over_https_title">Use dns over https</string>
-    <string name="also_delete_playback_data">Also delete playback data</string>
-    <string name="rescue_center">Rescue Center</string>
+    <string name="lang_basque">Baskijski</string>
+    <string name="custom_dns_is_invalid">Prilagođeni DNS nije validan</string>
+    <string name="custom_dns_over_https_server">Prilagođeni dns preko https servera</string>
+    <string name="info_aternative_dns_server">Ako imate problema s učitavanjem, možete koristiti alternativni dns server</string>
+    <string name="use_alternative_dns">Koristi alternativni dns</string>
+    <string name="use_dns_over_https_title">Koristi dns preko https</string>
+    <string name="also_delete_playback_data">Takođe izbriši podatke o reprodukciji</string>
+    <string name="rescue_center">Centar Za Spasavanje</string>
+    <string name="midnightodyssey">Midnight Odyssey</string>
+    <string name="circle">Circle</string>
 </resources>

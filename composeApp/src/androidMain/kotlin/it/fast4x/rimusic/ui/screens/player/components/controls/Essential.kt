@@ -24,6 +24,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.material3.Icon
@@ -103,6 +104,7 @@ import it.fast4x.rimusic.utils.setDisLikeState
 import it.fast4x.rimusic.utils.setLikeState
 import it.fast4x.rimusic.utils.setQueueLoopState
 import it.fast4x.rimusic.utils.showthumbnailKey
+import it.fast4x.rimusic.utils.shuffleQueue
 import it.fast4x.rimusic.utils.textCopyToClipboard
 import it.fast4x.rimusic.utils.textoutlineKey
 import it.fast4x.rimusic.utils.unlikeYtVideoOrSong
@@ -258,7 +260,7 @@ fun InfoAlbumAndArtistEssential(
             }
 
             //}
-            if (playerControlsType == PlayerControlsType.Modern){
+            if (playerControlsType == PlayerControlsType.Modern && playerBackgroundColors != PlayerBackgroundColors.MidnightOdyssey){
                 BoxWithConstraints(
                     modifier = Modifier.weight(0.1f)
                 ) {
@@ -466,58 +468,72 @@ fun ControlsEssential(
     var lightTheme = colorPaletteMode == ColorPaletteMode.Light || (colorPaletteMode == ColorPaletteMode.System && (!isSystemInDarkTheme()))
 
     Box {
-        IconButton(
-            color = colorPalette().favoritesIcon,
-            icon = getLikeState(mediaId),
-            onClick = {
-                if (!isNetworkConnected(appContext()) && isYouTubeSyncEnabled()) {
-                    SmartMessage(appContext().resources.getString(R.string.no_connection), context = appContext(), type = PopupType.Error)
-                } else if (!isYouTubeSyncEnabled()){
-                    Database.asyncTransaction {
-                        CoroutineScope(Dispatchers.IO).launch {
-                            currentMediaItem?.takeIf { it.mediaId == mediaId }?.let { mediaItem ->
-                                mediaItemToggleLike(mediaItem)
-                                MyDownloadHelper.autoDownloadWhenLiked(context(), currentMediaItem)
-                            }
-                        }
-                    }
-                } else {
-                    CoroutineScope(Dispatchers.IO).launch {
-                        if (currentMediaItem != null) {
-                            addToYtLikedSong(currentMediaItem)
-                        }
-                    }
-                }
-                if (effectRotationEnabled) isRotated = !isRotated
-            },
-            onLongClick = {
-                if (!isNetworkConnected(appContext()) && isYouTubeSyncEnabled()) {
-                    SmartMessage(appContext().resources.getString(R.string.no_connection), context = appContext(), type = PopupType.Error)
-                } else if (!isYouTubeSyncEnabled()){
-                    Database.asyncTransaction {
-                        CoroutineScope(Dispatchers.IO).launch {
-                            currentMediaItem?.takeIf { it.mediaId == mediaId }?.let { mediaItem ->
-                                if (like(mediaId, setDisLikeState(likedAt)) == 0){
-                                    insert(currentMediaItem, Song::toggleDislike)
+        if (playerBackgroundColors != PlayerBackgroundColors.MidnightOdyssey){
+            IconButton(
+                color = colorPalette().favoritesIcon,
+                icon = getLikeState(mediaId),
+                onClick = {
+                    if (!isNetworkConnected(appContext()) && isYouTubeSyncEnabled()) {
+                        SmartMessage(appContext().resources.getString(R.string.no_connection), context = appContext(), type = PopupType.Error)
+                    } else if (!isYouTubeSyncEnabled()){
+                        Database.asyncTransaction {
+                            CoroutineScope(Dispatchers.IO).launch {
+                                currentMediaItem?.takeIf { it.mediaId == mediaId }?.let { mediaItem ->
+                                    mediaItemToggleLike(mediaItem)
+                                    MyDownloadHelper.autoDownloadWhenLiked(context(), currentMediaItem)
                                 }
-                                MyDownloadHelper.autoDownloadWhenLiked(context(), currentMediaItem)
+                            }
+                        }
+                    } else {
+                        CoroutineScope(Dispatchers.IO).launch {
+                            if (currentMediaItem != null) {
+                                addToYtLikedSong(currentMediaItem)
                             }
                         }
                     }
-                } else {
-                    CoroutineScope(Dispatchers.IO).launch {
-                        if (currentMediaItem != null) {
-                            // currently can not implement dislike for sync, so unliking the song
-                            unlikeYtVideoOrSong(currentMediaItem)
+                    if (effectRotationEnabled) isRotated = !isRotated
+                },
+                onLongClick = {
+                    if (!isNetworkConnected(appContext()) && isYouTubeSyncEnabled()) {
+                        SmartMessage(appContext().resources.getString(R.string.no_connection), context = appContext(), type = PopupType.Error)
+                    } else if (!isYouTubeSyncEnabled()){
+                        Database.asyncTransaction {
+                            CoroutineScope(Dispatchers.IO).launch {
+                                currentMediaItem?.takeIf { it.mediaId == mediaId }?.let { mediaItem ->
+                                    if (like(mediaId, setDisLikeState(likedAt)) == 0){
+                                        insert(currentMediaItem, Song::toggleDislike)
+                                    }
+                                    MyDownloadHelper.autoDownloadWhenLiked(context(), currentMediaItem)
+                                }
+                            }
+                        }
+                    } else {
+                        CoroutineScope(Dispatchers.IO).launch {
+                            if (currentMediaItem != null) {
+                                // currently can not implement dislike for sync, so unliking the song
+                                unlikeYtVideoOrSong(currentMediaItem)
+                            }
                         }
                     }
-                }
-                if (effectRotationEnabled) isRotated = !isRotated
-            },
-            modifier = Modifier
-                //.padding(10.dp)
-                .size(26.dp)
-        )
+                    if (effectRotationEnabled) isRotated = !isRotated
+                },
+                modifier = Modifier
+                    //.padding(10.dp)
+                    .size(26.dp)
+            )
+        } else {
+            IconButton(
+                icon = R.drawable.shuffle,
+                color = colorPalette().text,
+                enabled = true,
+                onClick = {
+                    binder.player.shuffleQueue()
+                },
+                modifier = Modifier
+                    .size(26.dp),
+            )
+        }
+
         if (playerBackgroundColors == PlayerBackgroundColors.BlurredCoverColor) {
             Icon(
                 painter = painterResource(id = getUnlikedIcon()),
@@ -579,7 +595,8 @@ fun ControlsEssential(
                 onLongClick = onShowSpeedPlayerDialog
             )
             .bounceClick()
-            .clip(RoundedCornerShape(playPauseRoundness))
+            .conditional(playerPlayButtonType != PlayerPlayButtonType.Circle){clip(RoundedCornerShape(playPauseRoundness))}
+            .conditional(playerPlayButtonType == PlayerPlayButtonType.Circle){clip(CircleShape)}
             .background(
                 when (playerPlayButtonType) {
                     PlayerPlayButtonType.CircularRibbed, PlayerPlayButtonType.Disabled -> Color.Transparent
