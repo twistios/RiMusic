@@ -137,19 +137,6 @@ fun OnlineSearch(
         }
     }
 
-    /*
-    val playlistId = remember(textFieldValue.text) {
-        val isPlaylistUrl = listOf(
-            "https://www.youtube.com/playlist?",
-            "https://youtube.com/playlist?",
-            "https://music.youtube.com/playlist?",
-            "https://m.youtube.com/playlist?"
-        ).any(textFieldValue.text::startsWith)
-
-        if (isPlaylistUrl) textFieldValue.text.toUri().getQueryParameter("list") else null
-    }
-    */
-
     val rippleIndication = ripple(bounded = false)
     val timeIconPainter = painterResource(R.drawable.search_circle)
     val closeIconPainter = painterResource(R.drawable.trash)
@@ -167,8 +154,6 @@ fun OnlineSearch(
 
     val lazyListState = rememberLazyListState()
 
-    //val navigationBarPosition by rememberPreference(navigationBarPositionKey, NavigationBarPosition.Bottom)
-    //val contentWidth = context.preferences.getFloat(contentWidthKey,0.8f)
     var downloadState by remember {
         mutableStateOf(Download.STATE_STOPPED)
     }
@@ -203,25 +188,6 @@ fun OnlineSearch(
                 key = "header",
                 contentType = 0
             ) {
-                /*
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(10.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                ) {
-                    HeaderWithIcon(
-                        title = "${stringResource(R.string.search)} ${stringResource(R.string.online)}",
-                        iconId = R.drawable.globe,
-                        enabled = true,
-                        showIcon = true,
-                        modifier = Modifier
-                            .padding(bottom = 8.dp),
-                        onClick = {}
-                    )
-
-                }
-                 */
                 Header(
                     titleContent = {
                         BasicTextField(
@@ -251,89 +217,7 @@ fun OnlineSearch(
                                 .fillMaxWidth()
                         )
                     },
-                    actionsContent = {
-                        /*
-                        Row(
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier
-                                .padding(horizontal = 40.dp)
-                                .fillMaxWidth()
-                        ) {
-                            IconButton(
-                                onClick = onAction1,
-                                icon = R.drawable.globe,
-                                color = colorPalette().favoritesIcon,
-                                modifier = Modifier
-                                    .size(24.dp)
-                            )
-                            IconButton(
-                                onClick = onAction2,
-                                icon = R.drawable.library,
-                                color = colorPalette().favoritesIcon,
-                                modifier = Modifier
-                                    .size(24.dp)
-                            )
-                            IconButton(
-                                onClick = onAction3,
-                                icon = R.drawable.link,
-                                color = colorPalette().favoritesIcon,
-                                modifier = Modifier
-                                    .size(24.dp)
-                            )
-
-                            /*
-                            IconButton(
-                                onClick = onAction4,
-                                icon = R.drawable.chevron_back,
-                                color = colorPalette().favoritesIcon,
-                                modifier = Modifier
-                                    .size(24.dp)
-                            )
-                             */
-                        }
-                        /*
-                        if (playlistId != null) {
-                            val isAlbum = playlistId.startsWith("OLAK5uy_")
-
-                            SecondaryTextButton(
-                                text = "View ${if (isAlbum) "album" else "playlist"}",
-                                onClick = { onViewPlaylist(textFieldValue.text) }
-                            )
-                        }
-
-                        Spacer(
-                            modifier = Modifier
-                                .weight(1f)
-                        )
-
-                         */
-                        /*
-                        if (textFieldValue.text.isNotEmpty()) {
-                            SecondaryTextButton(
-                                text = stringResource(R.string.clear),
-                                onClick = { onTextFieldValueChanged(TextFieldValue()) }
-                            )
-                        }
-                         */
-
-                         */
-                    },
-                    /*
-                    modifier = Modifier
-                        .drawBehind {
-
-                            val strokeWidth = 1 * density
-                            val y = size.height - strokeWidth / 2
-
-                            drawLine(
-                                color = colorPalette().textDisabled,
-                                start = Offset(x = 0f, y = y/2),
-                                end = Offset(x = size.maxDimension, y = y/2),
-                                strokeWidth = 2.dp.toPx()
-                            )
-                        }
-                     */
+                    actionsContent = {},
                 )
             }
 
@@ -421,13 +305,6 @@ fun OnlineSearch(
                             .clickable (
                                 onClick = {
                                     onSearch(query.replace("/", "", true))
-                                    /*
-                                    onTextFieldValueChanged(
-                                        TextFieldValue(
-                                            cleanString(query)
-                                        )
-                                    )
-                                     */
                                 }
                             )
                             .fillMaxWidth()
@@ -482,14 +359,6 @@ fun OnlineSearch(
                         TitleMiniSection(title = stringResource(R.string.searches_no_suggestions),
                             modifier = Modifier.padding(start = 12.dp).padding(vertical = 10.dp)
                         )
-                        /*
-                        BasicText(
-                            text = stringResource(R.string.error),
-                            style = typography().s.secondary.center,
-                            modifier = Modifier
-                                .align(Alignment.Center)
-                        )
-                         */
                     }
                 }
             }
@@ -508,13 +377,6 @@ fun OnlineSearch(
                     modifier = Modifier
                         .clickable(onClick = {
                             onSearch(searchQuery.query.replace("/", "", true))
-                            /*
-                            onTextFieldValueChanged(
-                                TextFieldValue(
-                                    cleanString(searchQuery.query)
-                                )
-                            )
-                             */
                         })
                         .fillMaxWidth()
                         .padding(all = 16.dp)

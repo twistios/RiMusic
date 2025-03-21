@@ -706,6 +706,7 @@
     <string name="info_pauses_player_when_volume_zero">Detén o reprodutor cando o volume chega a 0 e reanuda cando o volume é superior a 0</string>
     <string name="quality">Calidade</string>
     <string name="value_must_be_ip_address">O valor debe ser un enderezo ip</string>
+    <string name="value_must_be_hex">Value must be an hex code</string>
     <string name="swipe_up_to_open_the_queue">Desliza cara arriba para abrir a cola</string>
     <string name="pinfo_show_icons">Amosar información con iconas</string>
     <string name="format_ms">%1$s ms</string>
@@ -951,4 +952,5 @@
     <string name="rescue_center">Rescue Center</string>
     <string name="midnightodyssey">Midnight Odyssey</string>
     <string name="circle">Circle</string>
+    <string name="enter_hex">Enter the 7-digit HEX code</string>
 </resources>

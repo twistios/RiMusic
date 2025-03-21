@@ -2,9 +2,12 @@ package it.fast4x.rimusic
 
 import android.app.Application
 import android.graphics.Bitmap
+import android.os.StrictMode
+import android.os.StrictMode.VmPolicy
 import coil.ImageLoader
 import coil.ImageLoaderFactory
 import coil.disk.DiskCache
+import coil.memory.MemoryCache
 import coil.request.CachePolicy
 import it.fast4x.rimusic.enums.CoilDiskCacheMaxSize
 import it.fast4x.rimusic.utils.CaptureCrash
@@ -12,6 +15,7 @@ import it.fast4x.rimusic.utils.FileLoggingTree
 import it.fast4x.rimusic.utils.coilCustomDiskCacheKey
 import it.fast4x.rimusic.utils.coilDiskCacheMaxSizeKey
 import it.fast4x.rimusic.utils.getEnum
+import it.fast4x.rimusic.utils.isAtLeastAndroid12
 import it.fast4x.rimusic.utils.isAtLeastAndroid8
 import it.fast4x.rimusic.utils.logDebugEnabledKey
 import it.fast4x.rimusic.utils.preferences
@@ -56,22 +60,19 @@ class MainApplication : Application(), ImageLoaderFactory {
 
         return ImageLoader.Builder(this)
             .crossfade(true)
-            .allowHardware(if (isAtLeastAndroid8) true else false)
-            .bitmapConfig(if (isAtLeastAndroid8) Bitmap.Config.HARDWARE else Bitmap.Config.ARGB_8888)
-            .networkCachePolicy(CachePolicy.ENABLED)
+            //.allowHardware(if (isAtLeastAndroid8) true else false)
+            //.bitmapConfig(if (isAtLeastAndroid8) Bitmap.Config.HARDWARE else Bitmap.Config.ARGB_8888)
+            //.networkCachePolicy(CachePolicy.ENABLED)
             .respectCacheHeaders(false)
             .placeholder(R.drawable.loader)
             .error(R.drawable.noimage)
             .fallback(R.drawable.noimage)
-            .memoryCachePolicy(CachePolicy.DISABLED)
-            /*
             .memoryCachePolicy(CachePolicy.ENABLED)
             .memoryCache(
                 MemoryCache.Builder(this)
-                    .maxSizePercent(0.25)
+                    .maxSizePercent(0.1)
                     .build()
             )
-             */
             .diskCachePolicy(CachePolicy.ENABLED)
             .diskCache(
                 DiskCache.Builder()

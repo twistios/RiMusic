@@ -13,6 +13,7 @@ import it.fast4x.rimusic.ui.screens.settings.isYouTubeLoginEnabled
 import it.fast4x.rimusic.useYtLoginOnlyForBrowse
 import kotlinx.coroutines.withTimeout
 import timber.log.Timber
+import androidx.core.net.toUri
 
 //private suspend fun getPipedFormatUrl(
 //    videoId: String,
@@ -73,38 +74,45 @@ internal suspend fun PlayerService.dataSpecProcess(
     }
     if( dataSpec.isLocal || isCached || isDownloaded ) {
         println("PlayerService DataSpecProcess Playing song ${videoId} from cached or local file")
-        return dataSpec.withUri(Uri.parse(dataSpec.uri.toString()))
+        return dataSpec.withUri(dataSpec.uri.toString().toUri())
     }
 
-    try {
+    //try {
 
-        val format = getInnerTubeFormatUrl(videoId, audioQualityFormat, connectionMetered)
+    println("PlayerService DataSpecProcess Playing song ${videoId}")
+    //if loggedin use advanced player with webPotoken and new newpipe extractor
+    val format = if (!useYtLoginOnlyForBrowse() && isYouTubeLoginEnabled() && isYouTubeLoggedIn())
+        getAvancedInnerTubeStream(videoId, audioQualityFormat, connectionMetered)
+    else getInnerTubeStream(videoId, audioQualityFormat, connectionMetered)
 
-        println("PlayerService DataSpecProcess Playing song ${videoId} from format $format from url=${format?.url}")
-        return dataSpec.withUri(Uri.parse(format?.url))
+    println("PlayerService DataSpecProcess Playing song ${videoId} from url=${format?.url}")
 
-    } catch ( e: LoginRequiredException ) {
-        throw e
-//        try {
-//            // Switch to Piped
-//            val formatUrl = getPipedFormatUrl( videoId, audioQualityFormat )
-//
-//            println("PlayerService DataSpecProcess Playing song $videoId from url $formatUrl")
-//            return dataSpec.withUri( formatUrl )
-//
-//        } catch ( e: NoSuchElementException ) {
-//            throw e
-//            // Switch to Invidious
-////            val formatUrl = getInvidiousFormatUrl( videoId, audioQualityFormat )
+    if (format?.url == null) throw PlayableFormatNotFoundException()
+    return dataSpec.withUri(format.url!!.toUri()).subrange(dataSpec.uriPositionOffset, chunkLength)
+
+
+//    } catch ( e: LoginRequiredException ) {
+//        throw e
+////        try {
+////            // Switch to Piped
+////            val formatUrl = getPipedFormatUrl( videoId, audioQualityFormat )
 ////
 ////            println("PlayerService DataSpecProcess Playing song $videoId from url $formatUrl")
 ////            return dataSpec.withUri( formatUrl )
-//        }
-
-    } catch ( e: Exception ) {
-        // Rethrow exception if it's not handled
-        throw e
-    }
+////
+////        } catch ( e: NoSuchElementException ) {
+////            throw e
+////            // Switch to Invidious
+//////            val formatUrl = getInvidiousFormatUrl( videoId, audioQualityFormat )
+//////
+//////            println("PlayerService DataSpecProcess Playing song $videoId from url $formatUrl")
+//////            return dataSpec.withUri( formatUrl )
+////        }
+//
+//    } catch ( e: Exception ) {
+//        // Rethrow exception if it's not handled
+//        throw e
+//    }
 }
 
 @OptIn(UnstableApi::class)
@@ -129,41 +137,49 @@ internal suspend fun MyDownloadHelper.dataSpecProcess(
     if( dataSpec.isLocal || isDownloaded ) {
         Timber.d("MyDownloadHelper DataSpecProcess download song ${videoId} from cached or local file")
         println("MyDownloadHelper DataSpecProcess download song ${videoId} from cached or local file")
-        return dataSpec.withUri(Uri.parse(dataSpec.uri.toString()))
+        return dataSpec.withUri(dataSpec.uri.toString().toUri())
     }
 
+    Timber.d("MyDownloadHelper DataSpecProcess Playing song ${videoId}")
+    val format = getInnerTubeStream(videoId, audioQualityFormat, connectionMetered)
 
-    try {
-        Timber.d("MyDownloadHelper DataSpecProcess Playing song start timeout ${videoId}")
+    println("MyDownloadHelper DataSpecProcess Playing song ${videoId} from url=${format?.url}")
 
-        //if loggedin use advanced player with webPotoken and new newpipe extractor
-//        val format = if (!useYtLoginOnlyForBrowse() && isYouTubeLoginEnabled() && isYouTubeLoggedIn())
-//            getAvancedInnerTubeStream(videoId, audioQualityFormat, connectionMetered)
-//        else getInnerTubeStream(videoId, audioQualityFormat, connectionMetered)
+    if (format?.url == null) throw PlayableFormatNotFoundException()
 
-        val format = getInnerTubeStream(videoId, audioQualityFormat, connectionMetered)
+    return dataSpec.withUri(format.url!!.toUri())
 
-        println("MyDownloadHelper DataSpecProcess Playing song ${videoId} from url=${format?.url}")
-
-        if (format?.url == null) throw PlayableFormatNotFoundException()
-
-        return dataSpec.withUri(Uri.parse(format?.url))
-
-    } catch ( e: Exception ) {
-        Timber.e("MyDownloadHelper DataSpecProcess Error: ${e.stackTraceToString()}")
-        println("MyDownloadHelper DataSpecProcess Error: ${e.stackTraceToString()}")
-        val format = getInnerTubeStream(videoId, audioQualityFormat, connectionMetered)
-        return dataSpec.withUri(Uri.parse(format?.url))
-//        println("MyDownloadHelper DataSpecProcess Playing song $videoId from ALTERNATIVE url")
-//        val alternativeUrl = "https://jossred.josprox.com/yt/stream/$videoId"
-//        return dataSpec.withUri(alternativeUrl.toUri())
-
-    } catch ( e: Exception ) {
-        // Rethrow exception if it's not handled
-        Timber.e("MyDownloadHelper DataSpecProcess Error: ${e.stackTraceToString()}")
-        println("MyDownloadHelper DataSpecProcess Error: ${e.stackTraceToString()}")
-        throw e
-    }
+//    try {
+//        Timber.d("MyDownloadHelper DataSpecProcess Playing song start timeout ${videoId}")
+//
+//        //if loggedin use advanced player with webPotoken and new newpipe extractor
+////        val format = if (!useYtLoginOnlyForBrowse() && isYouTubeLoginEnabled() && isYouTubeLoggedIn())
+////            getAvancedInnerTubeStream(videoId, audioQualityFormat, connectionMetered)
+////        else getInnerTubeStream(videoId, audioQualityFormat, connectionMetered)
+//
+//        val format = getInnerTubeStream(videoId, audioQualityFormat, connectionMetered)
+//
+//        println("MyDownloadHelper DataSpecProcess Playing song ${videoId} from url=${format?.url}")
+//
+//        if (format?.url == null) throw PlayableFormatNotFoundException()
+//
+//        return dataSpec.withUri(Uri.parse(format?.url))
+//
+//    } catch ( e: Exception ) {
+//        Timber.e("MyDownloadHelper DataSpecProcess Error: ${e.stackTraceToString()}")
+//        println("MyDownloadHelper DataSpecProcess Error: ${e.stackTraceToString()}")
+//        val format = getInnerTubeStream(videoId, audioQualityFormat, connectionMetered)
+//        return dataSpec.withUri(Uri.parse(format?.url))
+////        println("MyDownloadHelper DataSpecProcess Playing song $videoId from ALTERNATIVE url")
+////        val alternativeUrl = "https://jossred.josprox.com/yt/stream/$videoId"
+////        return dataSpec.withUri(alternativeUrl.toUri())
+//
+//    } catch ( e: Exception ) {
+//        // Rethrow exception if it's not handled
+//        Timber.e("MyDownloadHelper DataSpecProcess Error: ${e.stackTraceToString()}")
+//        println("MyDownloadHelper DataSpecProcess Error: ${e.stackTraceToString()}")
+//        throw e
+//    }
 }
 
 @OptIn(UnstableApi::class)
@@ -186,42 +202,48 @@ internal suspend fun MyPreCacheHelper.dataSpecProcess(
     if( dataSpec.isLocal || isCached) {
         Timber.d("MyPreCacheHelper DataSpecProcess download song ${videoId} from cached or local file")
         println("MyPreCacheHelper DataSpecProcess download song ${videoId} from cached or local file")
-        return dataSpec.withUri(Uri.parse(dataSpec.uri.toString()))
+        return dataSpec.withUri(dataSpec.uri.toString().toUri())
     }
 
+    Timber.d("MyPreCacheHelper DataSpecProcess Playing song ${videoId}")
+    val format = getInnerTubeStream(videoId, audioQualityFormat, connectionMetered)
+    println("MyPreCacheHelper DataSpecProcess Playing song ${videoId} from url=${format?.url}")
+    if (format?.url == null) throw PlayableFormatNotFoundException()
 
-    try {
-        //runBlocking(Dispatchers.IO) {
-        Timber.d("MyPreCacheHelper DataSpecProcess Playing song start timeout ${videoId}")
+    return dataSpec.withUri(format.url!!.toUri())
 
-            //if loggedin use advanced player with webPotoken and new newpipe extractor
-//        val format = if (!useYtLoginOnlyForBrowse() && isYouTubeLoginEnabled() && isYouTubeLoggedIn())
-//            getAvancedInnerTubeStream(videoId, audioQualityFormat, connectionMetered)
-//        else getInnerTubeStream(videoId, audioQualityFormat, connectionMetered)
-
-        val format = getInnerTubeStream(videoId, audioQualityFormat, connectionMetered)
-
-            println("MyPreCacheHelper DataSpecProcess Playing song ${videoId} from url=${format?.url}")
-
-            if (format?.url == null) throw PlayableFormatNotFoundException()
-
-        return dataSpec.withUri(Uri.parse(format?.url))
-
-    } catch ( e: Exception ) {
-        Timber.e("MyPreCacheHelper DataSpecProcess Error: ${e.stackTraceToString()}")
-        println("MyPreCacheHelper DataSpecProcess Error: ${e.stackTraceToString()}")
-        val format = getInnerTubeStream(videoId, audioQualityFormat, connectionMetered)
-        return dataSpec.withUri(Uri.parse(format?.url))
-//        println("MyPreCacheHelper DataSpecProcess Playing song $videoId from ALTERNATIVE url")
-//        val alternativeUrl = "https://jossred.josprox.com/yt/stream/$videoId"
-//        return dataSpec.withUri(alternativeUrl.toUri())
-
-    } catch ( e: Exception ) {
-        // Rethrow exception if it's not handled
-        Timber.e("MyPreCacheHelper DataSpecProcess Error: ${e.stackTraceToString()}")
-        println("MyPreCacheHelper DataSpecProcess Error: ${e.stackTraceToString()}")
-        throw e
-    }
+//    try {
+//        //runBlocking(Dispatchers.IO) {
+//        Timber.d("MyPreCacheHelper DataSpecProcess Playing song ${videoId}")
+//
+//            //if loggedin use advanced player with webPotoken and new newpipe extractor
+////        val format = if (!useYtLoginOnlyForBrowse() && isYouTubeLoginEnabled() && isYouTubeLoggedIn())
+////            getAvancedInnerTubeStream(videoId, audioQualityFormat, connectionMetered)
+////        else getInnerTubeStream(videoId, audioQualityFormat, connectionMetered)
+//
+//        val format = getInnerTubeStream(videoId, audioQualityFormat, connectionMetered)
+//
+//        println("MyPreCacheHelper DataSpecProcess Playing song ${videoId} from url=${format?.url}")
+//
+//        if (format?.url == null) throw PlayableFormatNotFoundException()
+//
+//        return dataSpec.withUri(Uri.parse(format?.url))
+//
+//    } catch ( e: Exception ) {
+//        Timber.e("MyPreCacheHelper DataSpecProcess Error: ${e.stackTraceToString()}")
+//        println("MyPreCacheHelper DataSpecProcess Error: ${e.stackTraceToString()}")
+//        val format = getInnerTubeStream(videoId, audioQualityFormat, connectionMetered)
+//        return dataSpec.withUri(Uri.parse(format?.url))
+////        println("MyPreCacheHelper DataSpecProcess Playing song $videoId from ALTERNATIVE url")
+////        val alternativeUrl = "https://jossred.josprox.com/yt/stream/$videoId"
+////        return dataSpec.withUri(alternativeUrl.toUri())
+//
+//    } catch ( e: Exception ) {
+//        // Rethrow exception if it's not handled
+//        Timber.e("MyPreCacheHelper DataSpecProcess Error: ${e.stackTraceToString()}")
+//        println("MyPreCacheHelper DataSpecProcess Error: ${e.stackTraceToString()}")
+//        throw e
+//    }
 }
 
 

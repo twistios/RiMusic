@@ -84,10 +84,6 @@ fun GoToLink(
         mutableStateOf("")
     }
 
-    //val context = LocalContext.current
-    //val navigationBarPosition by rememberPreference(navigationBarPositionKey, NavigationBarPosition.Bottom)
-    //val contentWidth = context.preferences.getFloat(contentWidthKey,0.8f)
-
     Box(
         modifier = Modifier
             .background(colorPalette().background0)
@@ -131,46 +127,6 @@ fun GoToLink(
 
                 }
 
-                /*
-                Row(
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier
-                        .padding(horizontal = 40.dp)
-                        .fillMaxWidth()
-                ) {
-                    IconButton(
-                        onClick = onAction1,
-                        icon = R.drawable.globe,
-                        color = colorPalette().favoritesIcon,
-                        modifier = Modifier
-                            .size(24.dp)
-                    )
-                    IconButton(
-                        onClick = onAction2,
-                        icon = R.drawable.library,
-                        color = colorPalette().favoritesIcon,
-                        modifier = Modifier
-                            .size(24.dp)
-                    )
-                    IconButton(
-                        onClick = onAction3,
-                        icon = R.drawable.link,
-                        color = colorPalette().favoritesIcon,
-                        modifier = Modifier
-                            .size(24.dp)
-                    )
-                    /*
-                    IconButton(
-                        onClick = onAction4,
-                        icon = R.drawable.chevron_back,
-                        color = colorPalette().favoritesIcon,
-                        modifier = Modifier
-                            .size(24.dp)
-                    )
-                     */
-                }
-                */
                 InputTextField(
                     onDismiss = { },
                     title = stringResource(R.string.paste_or_type_a_valid_url),
@@ -231,13 +187,7 @@ fun GoToLink(
                                     }
                                 }
                             }
-/*
-                            if (uri.pathSegments.firstOrNull()?.startsWith("@") == true)
-                                uri.pathSegments.firstOrNull()?.let { channelId ->
-                                    navController.navigate(route = "${NavRoutes.artist.name}/${channelId.removePrefix("@")}")
-                                }
 
- */
 
                         }
 

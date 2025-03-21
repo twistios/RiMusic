@@ -63,6 +63,7 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -130,6 +131,7 @@ import it.fast4x.rimusic.enums.PipModule
 import it.fast4x.rimusic.enums.PlayerBackgroundColors
 import it.fast4x.rimusic.enums.PopupType
 import it.fast4x.rimusic.enums.ThumbnailRoundness
+import it.fast4x.rimusic.extensions.connectivity.InternetConnectivityObserver
 import it.fast4x.rimusic.extensions.pip.PipEventContainer
 import it.fast4x.rimusic.extensions.pip.PipModuleContainer
 import it.fast4x.rimusic.extensions.pip.PipModuleCover
@@ -156,6 +158,8 @@ import it.fast4x.rimusic.utils.InitDownloader
 import it.fast4x.rimusic.utils.LocalMonetCompat
 import it.fast4x.rimusic.utils.OkHttpRequest
 import it.fast4x.rimusic.extensions.rescuecenter.RescueScreen
+import it.fast4x.rimusic.ui.screens.settings.isYouTubeLoggedIn
+import it.fast4x.rimusic.utils.InitializeEnvironment
 import it.fast4x.rimusic.utils.UiTypeKey
 import it.fast4x.rimusic.utils.animatedGradientKey
 import it.fast4x.rimusic.utils.applyFontPaddingKey
@@ -264,6 +268,7 @@ class MainActivity :
 //,PersistMapOwner
 {
     var downloadHelper = MyDownloadHelper
+    //lateinit var internetConnectivityObserver: InternetConnectivityObserver
 
     var client = OkHttpClient()
     var request = OkHttpRequest(client)
@@ -300,6 +305,10 @@ class MainActivity :
 
     private val pipState: MutableState<Boolean> = mutableStateOf(false)
 
+    var cookie: MutableState<String> = mutableStateOf("") //mutableStateOf(preferences.getString(ytCookieKey, "").toString())
+    var visitorData: MutableState<String> = mutableStateOf("") //mutableStateOf(preferences.getString(ytVisitorDataKey, "").toString())
+
+
     override fun onStart() {
         super.onStart()
 
@@ -310,6 +319,7 @@ class MainActivity :
         }.onFailure {
             Timber.e("MainActivity.onStart bindService ${it.stackTraceToString()}")
         }
+
     }
 
     @ExperimentalMaterialApi
@@ -466,28 +476,25 @@ class MainActivity :
                     )
                 }
             }
-            //if (getBoolean(isEnabledDiscoveryLangCodeKey, true))
+
         }
 
         setContent {
 
-            // Valid to get log when app crash
-//            if (intent.action == action_rescuecenter) {
-//                RescueScreen()
-//            } else {
+
+//            try {
+//                internetConnectivityObserver.unregister()
+//            } catch (e: Exception) {
+//                // isn't registered, can be registered without issue
+//            }
+//            internetConnectivityObserver = InternetConnectivityObserver(this@MainActivity)
+//            val isInternetAvailable by internetConnectivityObserver.internetNetworkStatus.collectAsState(true)
 
                 val colorPaletteMode by rememberPreference(
                     colorPaletteModeKey,
                     ColorPaletteMode.Dark
                 )
                 val isPicthBlack = colorPaletteMode == ColorPaletteMode.PitchBlack
-//            val isDark =
-//                colorPaletteMode == ColorPaletteMode.Dark || isPicthBlack || (colorPaletteMode == ColorPaletteMode.System && isSystemInDarkTheme())
-
-                //TODO: Check internet connection
-//            val internetConnectivityObserver = InternetConnectivityObserver(this)
-//            val internetConnected by internetConnectivityObserver.networkStatus.collectAsState(false)
-//            if (internetConnected) downloadHelper.resumeDownloads(this)
 
                 if (preferences.getEnum(
                         checkUpdateStateKey,
@@ -519,9 +526,11 @@ class MainActivity :
                     })
                 }
 
-                runBlocking {
-                    InitializeEnvironment()
-                }
+
+                InitializeEnvironment(
+                    appContext()
+                )
+
 
                 val coroutineScope = rememberCoroutineScope()
                 val isSystemInDarkTheme = isSystemInDarkTheme()
@@ -549,35 +558,45 @@ class MainActivity :
                         gl = locale.country
                             ?: "US"
                     )
-                //TODO Manage login
-                //if (preferences.getBoolean(enableYouTubeLoginKey, false)) {
-                var visitorData by rememberPreference(
-                    key = ytVisitorDataKey,
-                    defaultValue = Environment._uMYwa66ycM
-                )
 
-                if (visitorData.isEmpty() || visitorData == "null")
+                cookie.value = preferences.getString(ytCookieKey, "").toString()
+                visitorData.value = preferences.getString(ytVisitorDataKey, "").toString()
+
+
+                // If visitorData is empty, get it from the server with or without login
+                if (visitorData.value.isEmpty() || visitorData.value == "null")
                     runCatching {
-                        println("MainActivity.onCreate visitorData.isEmpty() getInitialVisitorData")
-                        CoroutineScope(Dispatchers.IO).launch {
-                            Environment.getInitialVisitorData().getOrNull()?.also {
-                                visitorData = it
-                            }
-                        }
+                        println("MainActivity.onCreate visitorData.isEmpty() getInitialVisitorData visitorData ${visitorData.value}")
+                        visitorData.value = runBlocking {
+                                Environment.getInitialVisitorData().getOrNull()
+                        }.takeIf { it != "null" } ?: Environment._uMYwa66ycM
+                        // Save visitorData in SharedPreferences
+                        preferences.edit { putString(ytVisitorDataKey, visitorData.value) }
                     }.onFailure {
                         Timber.e("MainActivity.onCreate visitorData.isEmpty() getInitialVisitorData ${it.stackTraceToString()}")
                         println("MainActivity.onCreate visitorData.isEmpty() getInitialVisitorData ${it.stackTraceToString()}")
+                        visitorData.value = Environment._uMYwa66ycM
                     }
 
-                val cookie = preferences.getString(ytCookieKey, "")
-                println("MainActivity.onCreate cookie: $cookie")
+                Environment.visitorData = visitorData.value
+                println("MainActivity.onCreate visitorData in use: ${visitorData.value}")
+
+                cookie.let{
+                    if(isYouTubeLoggedIn())
+                        Environment.cookie = it.value
+                    else {
+                        Environment.cookie = ""
+                        cookie.value = ""
+                        preferences.edit { putString(ytCookieKey, "") }
+                    }
+                }
+
+                Environment.dataSyncId = preferences.getString(ytDataSyncIdKey, "").toString()
+
+                println("MainActivity.onCreate cookie: ${cookie.value}")
                 val customDnsOverHttpsServer =
                     preferences.getString(customDnsOverHttpsServerKey, "")
 
-                Environment.cookie = cookie
-                Environment.visitorData = visitorData.takeIf { it != "null" }
-                    ?: Environment._uMYwa66ycM
-                Environment.dataSyncId = preferences.getString(ytDataSyncIdKey, "").toString()
                 val customDnsIsOk = customDnsOverHttpsServer?.let { isValidHttpUrl(it) }
                 if (customDnsIsOk == false && getDnsOverHttpsType() == DnsOverHttpsType.Custom)
                     SmartMessage(
@@ -657,14 +676,14 @@ class MainActivity :
 
                     if (!isDynamicPalette) return
 
-//                val colorPaletteMode =
-//                    preferences.getEnum(colorPaletteModeKey, ColorPaletteMode.Dark)
+
                     coroutineScope.launch(Dispatchers.IO) {
                         val result = imageLoader.execute(
                             ImageRequest.Builder(this@MainActivity)
                                 .data(url)
                                 // Required to get work getPixels
-                                .bitmapConfig(if (isAtLeastAndroid8) Bitmap.Config.RGBA_F16 else Bitmap.Config.ARGB_8888)
+                                //.bitmapConfig(if (isAtLeastAndroid8) Bitmap.Config.RGBA_F16 else Bitmap.Config.ARGB_8888)
+                                .bitmapConfig(Bitmap.Config.ARGB_8888)
                                 .allowHardware(false)
                                 .build()
                         )
@@ -706,47 +725,6 @@ class MainActivity :
 
 
                 DisposableEffect(binder, !lightTheme) {
-                    /*
-            var bitmapListenerJob: Job? = null
-
-            fun setDynamicPalette(colorPaletteMode: ColorPaletteMode) {
-                val isDark =
-                    colorPaletteMode == ColorPaletteMode.Dark || (colorPaletteMode == ColorPaletteMode.System && isSystemInDarkTheme)
-                val isPicthBlack = colorPaletteMode == ColorPaletteMode.PitchBlack
-
-                binder?.setBitmapListener { bitmap: Bitmap? ->
-                    if (bitmap == null) {
-                        val colorPalette =
-                            colorPaletteOf(
-                                ColorPaletteName.Dynamic,
-                                colorPaletteMode,
-                                isSystemInDarkTheme
-                            )
-
-                        setSystemBarAppearance(colorPalette.isDark)
-
-                        appearance = appearance.copy(
-                            colorPalette = colorPalette,
-                            typography = appearance.typography.copy(colorPalette.text)
-                        )
-
-                        return@setBitmapListener
-                    }
-
-                    bitmapListenerJob = coroutineScope.launch(Dispatchers.IO) {
-                        dynamicColorPaletteOf(bitmap, isDark, isPicthBlack)?.let {
-                            withContext(Dispatchers.Main) {
-                                setSystemBarAppearance(it.isDark)
-                            }
-                            appearance = appearance.copy(
-                                colorPalette = it,
-                                typography = appearance.typography.copy(it.text)
-                            )
-                        }
-                    }
-                }
-            }
-            */
 
                     val listener =
                         SharedPreferences.OnSharedPreferenceChangeListener { sharedPreferences, key ->
@@ -758,10 +736,9 @@ class MainActivity :
                                         Languages.English
                                     )
 
-                                    //val precLangCode = LocaleListCompat.getDefault().get(0).toString()
+
                                     val systemLangCode =
                                         AppCompatDelegate.getApplicationLocales().get(0).toString()
-                                    //Log.d("LanguageActivity", "lang.code ${lang.code} precLangCode $precLangCode systemLangCode $systemLangCode")
 
                                     val sysLocale: LocaleListCompat =
                                         LocaleListCompat.forLanguageTags(systemLangCode)
@@ -928,6 +905,16 @@ class MainActivity :
                                         ),
                                     )
                                 }
+
+                                ytCookieKey -> cookie.value =
+                                    sharedPreferences.getString(ytCookieKey, "").toString()
+
+                                ytVisitorDataKey -> {
+                                    if (visitorData.value.isEmpty())
+                                        visitorData.value =
+                                            sharedPreferences.getString(ytVisitorDataKey, "").toString()
+                                }
+
                             }
                         }
 
@@ -1095,7 +1082,7 @@ class MainActivity :
                                 LocalDownloadHelper provides downloadHelper,
                                 LocalPlayerSheetState provides playerState,
                                 LocalMonetCompat provides monet,
-                                //LocalInternetConnected provides internetConnected
+                                //LocalInternetAvailable provides isInternetAvailable
                             ) {
 
                                 if (intent.action == action_rescuecenter) {
@@ -1511,50 +1498,50 @@ class MainActivity :
         }
     }
 
-    fun InitializeEnvironment() {
-        EnvironmentPreferences.preference = EnvironmentPreferenceItem(
-            p0 = resources.getString(R.string.env_CrQ0JjAXgv),
-            p1 = resources.getString(R.string.env_hNpBzzAn7i),
-            p2 = resources.getString(R.string.env_lEi9YM74OL),
-            p3 = resources.getString(R.string.env_C0ZR993zmk),
-            p4 = resources.getString(R.string.env_w3TFBFL74Y),
-            p5 = resources.getString(R.string.env_mcchaHCWyK),
-            p6 = resources.getString(R.string.env_L2u4JNdp7L),
-            p7 = resources.getString(R.string.env_sqDlfmV4Mt),
-            p8 = resources.getString(R.string.env_WpLlatkrVv),
-            p9 = resources.getString(R.string.env_1zNshDpFoh),
-            p10 = resources.getString(R.string.env_mPVWVuCxJz),
-            p11 = resources.getString(R.string.env_auDsjnylCZ),
-            p12 = resources.getString(R.string.env_AW52cvJIJx),
-            p13 = resources.getString(R.string.env_0RGAyC1Zqu),
-            p14 = resources.getString(R.string.env_4Fdmu9Jkax),
-            p15 = resources.getString(R.string.env_kuSdQLhP8I),
-            p16 = resources.getString(R.string.env_QrgDKwvam1),
-            p17 = resources.getString(R.string.env_wLwNESpPtV),
-            p18 = resources.getString(R.string.env_JJUQaehRFg),
-            p19 = resources.getString(R.string.env_i7WX2bHV6R),
-            p20 = resources.getString(R.string.env_XpiuASubrV),
-            p21 = resources.getString(R.string.env_lOlIIVw38L),
-            p22 = resources.getString(R.string.env_mtcR0FhFEl),
-            p23 = resources.getString(R.string.env_DTihHAFaBR),
-            p24 = resources.getString(R.string.env_a4AcHS8CSg),
-            p25 = resources.getString(R.string.env_krdLqpYLxM),
-            p26 = resources.getString(R.string.env_ye6KGLZL7n),
-            p27 = resources.getString(R.string.env_ec09m20YH5),
-            p28 = resources.getString(R.string.env_LDRlbOvbF1),
-            p29 = resources.getString(R.string.env_EEqX0yizf2),
-            p30 = resources.getString(R.string.env_i3BRhLrV1v),
-            p31 = resources.getString(R.string.env_MApdyHLMyJ),
-            p32 = resources.getString(R.string.env_hizI7yLjL4),
-            p33 = resources.getString(R.string.env_rLoZP7BF4c),
-            p34 = resources.getString(R.string.env_nza34sU88C),
-            p35 = resources.getString(R.string.env_dwbUvjWUl3),
-            p36 = resources.getString(R.string.env_fqqhBZd0cf),
-            p37 = resources.getString(R.string.env_9sZKrkMg8p),
-            p38 = resources.getString(R.string.env_aQpNCVOe2i),
-
-            )
-    }
+//    fun InitializeEnvironment() {
+//        EnvironmentPreferences.preference = EnvironmentPreferenceItem(
+//            p0 = resources.getString(R.string.env_CrQ0JjAXgv),
+//            p1 = resources.getString(R.string.env_hNpBzzAn7i),
+//            p2 = resources.getString(R.string.env_lEi9YM74OL),
+//            p3 = resources.getString(R.string.env_C0ZR993zmk),
+//            p4 = resources.getString(R.string.env_w3TFBFL74Y),
+//            p5 = resources.getString(R.string.env_mcchaHCWyK),
+//            p6 = resources.getString(R.string.env_L2u4JNdp7L),
+//            p7 = resources.getString(R.string.env_sqDlfmV4Mt),
+//            p8 = resources.getString(R.string.env_WpLlatkrVv),
+//            p9 = resources.getString(R.string.env_1zNshDpFoh),
+//            p10 = resources.getString(R.string.env_mPVWVuCxJz),
+//            p11 = resources.getString(R.string.env_auDsjnylCZ),
+//            p12 = resources.getString(R.string.env_AW52cvJIJx),
+//            p13 = resources.getString(R.string.env_0RGAyC1Zqu),
+//            p14 = resources.getString(R.string.env_4Fdmu9Jkax),
+//            p15 = resources.getString(R.string.env_kuSdQLhP8I),
+//            p16 = resources.getString(R.string.env_QrgDKwvam1),
+//            p17 = resources.getString(R.string.env_wLwNESpPtV),
+//            p18 = resources.getString(R.string.env_JJUQaehRFg),
+//            p19 = resources.getString(R.string.env_i7WX2bHV6R),
+//            p20 = resources.getString(R.string.env_XpiuASubrV),
+//            p21 = resources.getString(R.string.env_lOlIIVw38L),
+//            p22 = resources.getString(R.string.env_mtcR0FhFEl),
+//            p23 = resources.getString(R.string.env_DTihHAFaBR),
+//            p24 = resources.getString(R.string.env_a4AcHS8CSg),
+//            p25 = resources.getString(R.string.env_krdLqpYLxM),
+//            p26 = resources.getString(R.string.env_ye6KGLZL7n),
+//            p27 = resources.getString(R.string.env_ec09m20YH5),
+//            p28 = resources.getString(R.string.env_LDRlbOvbF1),
+//            p29 = resources.getString(R.string.env_EEqX0yizf2),
+//            p30 = resources.getString(R.string.env_i3BRhLrV1v),
+//            p31 = resources.getString(R.string.env_MApdyHLMyJ),
+//            p32 = resources.getString(R.string.env_hizI7yLjL4),
+//            p33 = resources.getString(R.string.env_rLoZP7BF4c),
+//            p34 = resources.getString(R.string.env_nza34sU88C),
+//            p35 = resources.getString(R.string.env_dwbUvjWUl3),
+//            p36 = resources.getString(R.string.env_fqqhBZd0cf),
+//            p37 = resources.getString(R.string.env_9sZKrkMg8p),
+//            p38 = resources.getString(R.string.env_aQpNCVOe2i),
+//
+//            )
+//    }
 
 }
 
@@ -1570,5 +1557,5 @@ val LocalDownloadHelper = staticCompositionLocalOf<MyDownloadHelper> { error("No
 val LocalPlayerSheetState =
     staticCompositionLocalOf<SheetState> { error("No player sheet state provided") }
 
-//val LocalInternetConnected = staticCompositionLocalOf<Boolean> { error("No Network Status provided") }
+//val LocalInternetAvailable = staticCompositionLocalOf<Boolean> { error("No Internet Status provided") }
 

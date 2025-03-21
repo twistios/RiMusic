@@ -71,7 +71,9 @@ kotlin {
         androidMain.dependencies {
             implementation(libs.navigation)
             implementation(libs.media3.session)
+            implementation(libs.media3.ui)
             implementation(libs.kotlin.coroutines.guava)
+            implementation(libs.kotlin.concurrent.futures)
             implementation(libs.newpipe.extractor)
             implementation(libs.nanojson)
             implementation(libs.androidx.webkit)
@@ -133,8 +135,8 @@ android {
         applicationId = "it.fast4x.rimusic"
         minSdk = 21
         targetSdk = 35
-        versionCode = 88
-        versionName = "0.6.75"
+        versionCode = 89
+        versionName = "0.6.76"
 
         // INIT ENVIRONMENT
         resValue(

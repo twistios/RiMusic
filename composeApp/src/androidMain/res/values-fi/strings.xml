@@ -706,6 +706,7 @@
     <string name="info_pauses_player_when_volume_zero">Pysäyttää soiton, kun äänenvoimakkuus on 0 ja jatkaa soittoa, kun äänenvoimakkuus suurempi kuin 0</string>
     <string name="quality">Laatu</string>
     <string name="value_must_be_ip_address">Arvon on oltava IP-osoite</string>
+    <string name="value_must_be_hex">Value must be an hex code</string>
     <string name="swipe_up_to_open_the_queue">Pyyhkäise ylös avataksesi jonon</string>
     <string name="pinfo_show_icons">Näytä tiedot kuvakkeilla</string>
     <string name="format_ms">%1$s ms</string>
@@ -951,4 +952,5 @@
     <string name="rescue_center">Rescue Center</string>
     <string name="midnightodyssey">Midnight Odyssey</string>
     <string name="circle">Circle</string>
+    <string name="enter_hex">Enter the 7-digit HEX code</string>
 </resources>

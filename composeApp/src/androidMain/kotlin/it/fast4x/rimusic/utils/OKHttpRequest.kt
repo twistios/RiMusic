@@ -5,6 +5,7 @@ package it.fast4x.rimusic.utils
  */
 
 
+import it.fast4x.environment.Environment
 import it.fast4x.environment.utils.ProxyPreferences
 import it.fast4x.environment.utils.getProxy
 import okhttp3.Call
@@ -16,7 +17,6 @@ import okhttp3.Request
 import java.time.Duration
 
 class OkHttpRequest(client: OkHttpClient) {
-    //internal var client = OkHttpClient()
     internal var client = okHttpClient()
 
     init {
@@ -29,14 +29,15 @@ class OkHttpRequest(client: OkHttpClient) {
                 .proxy(
                     getProxy(it)
                 )
-                .connectTimeout(Duration.ofSeconds(16))
-                .readTimeout(Duration.ofSeconds(8))
+                //.connectTimeout(Duration.ofSeconds(16))
+                //.readTimeout(Duration.ofSeconds(8))
                 .build()
         }
         return OkHttpClient.Builder()
-            .connectTimeout(Duration.ofSeconds(16))
-            .readTimeout(Duration.ofSeconds(8))
+            //.connectTimeout(Duration.ofSeconds(16))
+            //.readTimeout(Duration.ofSeconds(8))
             .build()
+
     }
 
 

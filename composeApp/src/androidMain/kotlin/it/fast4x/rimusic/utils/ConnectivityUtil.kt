@@ -8,6 +8,7 @@ import android.net.NetworkInfo
 import android.os.Build
 import android.telephony.TelephonyManager
 import androidx.annotation.RequiresApi
+import androidx.core.content.getSystemService
 import io.ktor.client.HttpClient
 import io.ktor.client.plugins.UserAgent
 import it.fast4x.environment.utils.ProxyPreferences
@@ -157,6 +158,23 @@ fun getNetworkType(context: Context): String {
              */
         }
         else -> return "?"
+    }
+}
+
+@RequiresApi(Build.VERSION_CODES.M)
+fun isInternetAvailable(context: Context): Boolean {
+    val connectivityManager = context.getSystemService<ConnectivityManager>() ?: return false
+
+    val activeNetwork = connectivityManager.activeNetwork ?: return false
+
+    val networkCapabilities =
+        connectivityManager.getNetworkCapabilities(activeNetwork) ?: return false
+
+    return when {
+        networkCapabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) -> true
+        networkCapabilities.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR) -> true
+        networkCapabilities.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET) -> true
+        else -> false
     }
 }
 

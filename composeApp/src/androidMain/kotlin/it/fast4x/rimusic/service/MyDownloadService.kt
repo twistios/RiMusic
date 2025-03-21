@@ -79,17 +79,17 @@ class MyDownloadService : DownloadService(
         )
         .setChannelId(DOWNLOAD_NOTIFICATION_CHANNEL_ID)
         // Add action in notification
-        .addAction(
-            NotificationCompat.Action.Builder(
-                /* icon = */ R.drawable.close,
-                /* title = */ getString(R.string.cancel),
-                              notificationActionReceiver.cancel.pendingIntent
-//                /* intent = */ Intent(this,MyDownloadService::class.java).also {
-//                    it.action = notificationActionReceiver.cancel.value
-//                    it.putExtra("id", FOREGROUND_NOTIFICATION_ID + 1)
-//                }
-            ).build()
-        )
+//        .addAction(
+//            NotificationCompat.Action.Builder(
+//                /* icon = */ R.drawable.close,
+//                /* title = */ getString(R.string.cancel),
+//                              notificationActionReceiver.cancel.pendingIntent
+////                /* intent = */ Intent(this,MyDownloadService::class.java).also {
+////                    it.action = notificationActionReceiver.cancel.value
+////                    it.putExtra("id", FOREGROUND_NOTIFICATION_ID + 1)
+////                }
+//            ).build()
+//        )
 
         .build()
 

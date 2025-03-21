@@ -287,50 +287,6 @@ fun Thumbnail(
                                     .fillMaxSize()
                                     .clip(thumbnailShape())
                             )
-                            /*
-                        AsyncImage(
-                            model = currentWindow.mediaItem.mediaMetadata.artworkUri.toString()
-                                .resize(1200, 1200),
-                            /*
-                            model = currentWindow.mediaItem.mediaMetadata.artworkUri.thumbnail(
-                                thumbnailSizePx
-                            ),
-                             */
-                            /*
-                            model = ImageRequest.Builder(LocalContext.current)
-                                .data(currentWindow.mediaItem.mediaMetadata.artworkUri.toString().resize(1200, 1200))
-                                .size(Size.ORIGINAL)
-                                .scale(Scale.FIT)
-                                .build(),
-                             */
-                            onSuccess = {
-                                artImageAvailable = true
-                            },
-                            onError = {
-                                artImageAvailable = false
-                            },
-                            contentDescription = null,
-                            contentScale = ContentScale.Fit,
-                            modifier = Modifier
-                                .pointerInput(Unit) {
-                                    detectTapGestures(
-                                        onLongPress = { onShowStatsForNerds(true) },
-                                        onTap = if (thumbnailTapEnabledKey) {
-                                            {
-                                                onShowLyrics(true)
-                                                onShowEqualizer(false)
-                                            }
-                                        } else null,
-                                        onDoubleTap = { onDoubleTap() }
-                                    )
-
-                                }
-                                .fillMaxSize()
-                                .clip(thumbnailShape())
-
-
-                        )
-                        */
 
                     } else {
                         Image(
@@ -390,7 +346,7 @@ fun Thumbnail(
                 if (error != null) {
                     errorCounter = errorCounter.plus(1)
                     if (errorCounter < 3) {
-                        Timber.e("Playback error: ${error?.cause?.cause}")
+                        Timber.e("Playback error: error ${error?.message} code ${error?.errorCode} ${error?.cause?.cause}")
                         SmartMessage(
                             if (currentWindow.mediaItem.isLocal) localMusicFileNotFoundError
                             else when (error?.cause?.cause) {

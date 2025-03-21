@@ -16,7 +16,7 @@
     <string name="hide_from_quick_picks">\"Hautaketa azkar\"etatik ezkutatu</string>
     <string name="related_albums">Erlazionatutako albumak</string>
     <string name="similar_artists">Antzeko artistak</string>
-    <string name="playlists_you_might_like"></string>
+    <string name="playlists_you_might_like">Playlists you might like</string>
     <string name="an_error_has_occurred">Hutsegite bat egon da</string>
     <string name="albums">Albumak</string>
     <string name="artists">Artistak</string>
@@ -103,7 +103,7 @@
     <string name="invincible_service">Zerbitzu garaiezina</string>
     <string name="turning_off_battery_optimizations_is_not_enough">Bateriaren optimizazioak itzaltzea nahikoa ez denean</string>
     <string name="player">Erreproduktorea</string>
-    <string name="persistent_queue"></string>
+    <string name="persistent_queue">Disliked</string>
     <string name="save_and_restore_playing_songs">Gorde eta leheneratu erreproduzitutako abestiak</string>
     <string name="resume_playback">Erreprodukzioarekin jarraitu</string>
     <string name="when_device_is_connected">Bluetooth edota kable bidezko gailu bat konektatzen denean</string>
@@ -190,7 +190,7 @@
     <string name="download">Deskargatu</string>
     <string name="_default">Lehenetsia</string>
     <string name="dynamic">Dinamikoa</string>
-    <string name="discovery"></string>
+    <string name="discovery">Discovery</string>
     <string name="mood">Umorea</string>
     <string name="new_albums">Album berriak</string>
     <string name="moods_and_genres">Aldarteak eta generoak</string>
@@ -317,7 +317,7 @@
     <string name="app_update_dialog_new">%s bertsio berria deskargatu daiteke!</string>
     <string name="enable_language_in_discovery">Discovery-n hizkuntza gaitu</string>
     <string name="if_possible_allows_discovery_content_language">If possible, it allows to receive Discovery content in your own language.</string>
-    <string name="set_to"></string>
+    <string name="set_to">Set to</string>
     <string name="end_of_song">abestiaren amaiera</string>
     <string name="restore_completed">Berreskuratzea amaitu da!</string>
     <string name="click_to_close">Ixteko klik egin</string>
@@ -706,6 +706,7 @@
     <string name="info_pauses_player_when_volume_zero">Pauses the player when the volume reaches 0 and resumes when the volume is greater than 0</string>
     <string name="quality">Kalitatea</string>
     <string name="value_must_be_ip_address">Value must be an ip address</string>
+    <string name="value_must_be_hex">Value must be an hex code</string>
     <string name="swipe_up_to_open_the_queue">Swipe up to open Queue</string>
     <string name="pinfo_show_icons">Show info with icons</string>
     <string name="format_ms">%1$s ms</string>
@@ -951,4 +952,5 @@
     <string name="rescue_center">Rescue Center</string>
     <string name="midnightodyssey">Midnight Odyssey</string>
     <string name="circle">Circle</string>
+    <string name="enter_hex">Enter the 7-digit HEX code</string>
 </resources>

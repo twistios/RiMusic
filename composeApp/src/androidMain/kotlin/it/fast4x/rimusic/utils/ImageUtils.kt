@@ -22,13 +22,13 @@ fun cacheImage(context: Context, url: String, key: String) {
     }
     val imageRequest = ImageRequest.Builder(context)
         .data(url.thumbnail(256))
-        //.allowHardware(false)
+        .allowHardware(false)
         .listener(listener)
         .dispatcher(Dispatchers.IO)
-        //.memoryCacheKey(url.thumbnail(256))
+        .memoryCacheKey(url.thumbnail(256))
         .diskCacheKey(url.thumbnail(256))
-        //.diskCachePolicy(CachePolicy.ENABLED)
-        //.memoryCachePolicy(CachePolicy.ENABLED)
+        .diskCachePolicy(CachePolicy.ENABLED)
+        .memoryCachePolicy(CachePolicy.ENABLED)
         .build()
 
     ImageLoader(context).enqueue(imageRequest)

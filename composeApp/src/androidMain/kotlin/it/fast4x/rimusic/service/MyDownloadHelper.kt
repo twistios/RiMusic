@@ -147,7 +147,8 @@ object MyDownloadHelper {
                 context,
                 getDatabaseProvider(context),
                 getDownloadCache(context),
-                createDataSourceFactory(),
+                //createDataSourceFactory(),
+                createSimpleDataSourceFactory(),
                 //Executor(Runnable::run)
                 executor
             ).apply {
@@ -248,11 +249,11 @@ object MyDownloadHelper {
             DownloadSyncedLyrics(it = SongEntity(mediaItem.asSong), coroutineScope = coroutineScope)
             context.imageLoader.enqueue(
                 ImageRequest.Builder(context)
-                    .networkCachePolicy(CachePolicy.ENABLED)
+                    //.networkCachePolicy(CachePolicy.ENABLED)
                     .data(imageUrl)
                     .size(1200)
-                    //.bitmapConfig(Bitmap.Config.ARGB_8888)
-                    //.allowHardware(false)
+                    .bitmapConfig(Bitmap.Config.ARGB_8888)
+                    .allowHardware(false)
                     .diskCacheKey(imageUrl.toString())
                     .build()
             )

@@ -57,7 +57,7 @@ fun context(): Context = Dependencies.application
 fun getColorTheme() = appContext().preferences.getEnum(colorPaletteModeKey, ColorPaletteMode.Dark)
 fun getAudioQualityFormat() = appContext().preferences.getEnum(audioQualityFormatKey, AudioQualityFormat.Auto)
 fun getViewType() = appContext().preferences.getEnum(viewTypeKey, ViewType.Grid)
-fun getDnsOverHttpsType() = appContext().preferences.getEnum(dnsOverHttpsTypeKey, DnsOverHttpsType.Google)
+fun getDnsOverHttpsType() = appContext().preferences.getEnum(dnsOverHttpsTypeKey, DnsOverHttpsType.None)
 fun getUiType() = appContext().preferences.getEnum(UiTypeKey, UiType.RiMusic)
 
 fun ytAccountName() = appContext().preferences.getString(ytAccountNameKey, "")

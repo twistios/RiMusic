@@ -25,7 +25,7 @@ fun getAsyncImageLoader(context: PlatformContext) =
         //    MemoryCache.Builder().maxSizePercent(context, 0.3).strongReferencesEnabled(true).build()
         //}
         .diskCachePolicy(CachePolicy.ENABLED)
-        .networkCachePolicy(CachePolicy.ENABLED)
+        //.networkCachePolicy(CachePolicy.ENABLED)
         .diskCache {
             newDiskCache()
         }

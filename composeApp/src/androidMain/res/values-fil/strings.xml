@@ -706,6 +706,7 @@
     <string name="info_pauses_player_when_volume_zero">I-pause ang kanta kapag naka-reach ng 0 ang volume at i-resume ito kapag mas mataas sa 0 ang volume</string>
     <string name="quality">Quality</string>
     <string name="value_must_be_ip_address">Kailangan na IP Address ang value nito</string>
+    <string name="value_must_be_hex">Value must be an hex code</string>
     <string name="swipe_up_to_open_the_queue">Swipe up to open the queue</string>
     <string name="pinfo_show_icons">Magpakita ng info gamit ang icons</string>
     <string name="format_ms">%1$s ms</string>
@@ -951,4 +952,5 @@
     <string name="rescue_center">Rescue Center</string>
     <string name="midnightodyssey">Midnight Odyssey</string>
     <string name="circle">Circle</string>
+    <string name="enter_hex">Enter the 7-digit HEX code</string>
 </resources>

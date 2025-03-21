@@ -12,27 +12,28 @@ class InternetConnectivityObserver(context: Context) {
     private val connectivityManager =
         context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
 
-    private val _networkStatus = Channel<Boolean>(Channel.CONFLATED)
-    val networkStatus = _networkStatus.receiveAsFlow()
+    private val _internetNetworkStatus = Channel<Boolean>(Channel.CONFLATED)
+    val internetNetworkStatus = _internetNetworkStatus.receiveAsFlow()
 
-    private val networkCallback = object : ConnectivityManager.NetworkCallback() {
+    private val internetNetworkCallback = object : ConnectivityManager.NetworkCallback() {
         override fun onAvailable(network: Network) {
-            _networkStatus.trySend(true)
+            _internetNetworkStatus.trySend(true)
         }
 
         override fun onLost(network: Network) {
-            _networkStatus.trySend(false)
+            _internetNetworkStatus.trySend(false)
         }
     }
 
     init {
         val request = NetworkRequest.Builder()
+            // add Internet capability to request
             .addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
             .build()
-        connectivityManager.registerNetworkCallback(request, networkCallback)
+        connectivityManager.registerNetworkCallback(request, internetNetworkCallback)
     }
 
     fun unregister() {
-        connectivityManager.unregisterNetworkCallback(networkCallback)
+        connectivityManager.unregisterNetworkCallback(internetNetworkCallback)
     }
 }

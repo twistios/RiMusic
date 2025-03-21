@@ -706,6 +706,7 @@
     <string name="info_pauses_player_when_volume_zero">Pauses the player when the volume reaches 0 and resumes when the volume is greater than 0</string>
     <string name="quality">Quality</string>
     <string name="value_must_be_ip_address">Value must be an ip address</string>
+    <string name="value_must_be_hex">Value must be an hex code</string>
     <string name="swipe_up_to_open_the_queue">Swipe up to open Queue</string>
     <string name="pinfo_show_icons">Show info with icons</string>
     <string name="format_ms">%1$s ms</string>
@@ -951,4 +952,5 @@
     <string name="rescue_center">Rescue Center</string>
     <string name="midnightodyssey">Midnight Odyssey</string>
     <string name="circle">Circle</string>
+    <string name="enter_hex">Enter the 7-digit HEX code</string>
 </resources>

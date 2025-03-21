@@ -25,15 +25,21 @@ import com.google.common.util.concurrent.ListenableFuture
 import com.google.common.util.concurrent.SettableFuture
 import dagger.hilt.android.qualifiers.ApplicationContext
 import it.fast4x.environment.Environment
+import it.fast4x.environment.EnvironmentExt
+import it.fast4x.environment.models.BrowseEndpoint
 import it.fast4x.environment.models.bodies.SearchBody
 import it.fast4x.environment.requests.searchPage
+import it.fast4x.environment.utils.completed
 import it.fast4x.environment.utils.from
 import it.fast4x.rimusic.Database
+import it.fast4x.rimusic.MODIFIED_PREFIX
 import it.fast4x.rimusic.R
-import it.fast4x.rimusic.appContext
 import it.fast4x.rimusic.cleanPrefix
 import it.fast4x.rimusic.enums.MaxTopPlaylistItems
+import it.fast4x.rimusic.models.Album
 import it.fast4x.rimusic.models.Song
+import it.fast4x.rimusic.models.SongAlbumMap
+import it.fast4x.rimusic.models.SongArtistMap
 import it.fast4x.rimusic.service.MyDownloadHelper
 import it.fast4x.rimusic.service.modern.MediaSessionConstants.ID_CACHED
 import it.fast4x.rimusic.service.modern.MediaSessionConstants.ID_DOWNLOADED
@@ -41,13 +47,13 @@ import it.fast4x.rimusic.service.modern.MediaSessionConstants.ID_FAVORITES
 import it.fast4x.rimusic.service.modern.MediaSessionConstants.ID_ONDEVICE
 import it.fast4x.rimusic.service.modern.MediaSessionConstants.ID_TOP
 import it.fast4x.rimusic.utils.MaxTopPlaylistItemsKey
+import it.fast4x.rimusic.utils.asMediaItem
 import it.fast4x.rimusic.utils.asSong
 import it.fast4x.rimusic.utils.getEnum
 import it.fast4x.rimusic.utils.persistentQueueKey
 import it.fast4x.rimusic.utils.preferences
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOn
@@ -310,17 +316,114 @@ class MediaLibrarySessionCallback (
 
                         else -> when {
 
-                            parentId.startsWith("${PlayerServiceModern.ARTIST}/") ->
-                                database.artistSongs(parentId.removePrefix("${PlayerServiceModern.ARTIST}/"))
-                                    .first().map {
-                                        it.toMediaItem(parentId)
-                                    }
+                            parentId.startsWith("${PlayerServiceModern.ARTIST}/") -> {
+                                val browseId =
+                                    parentId.removePrefix("${PlayerServiceModern.ARTIST}/")
+                                val artist = database.artist(browseId).first()
+                                var songs = database.artistAllSongs(browseId).first()
+                                if (songs.isEmpty()) {
+                                    EnvironmentExt.getArtistPage(browseId = browseId)
+                                        .onSuccess { currentArtistPage ->
+                                            var moreEndPointBrowseId: String? = null
+                                            var moreEndPointParams: String? = null
+                                            currentArtistPage.sections
+                                                .forEach {
+                                                    if (it.items.firstOrNull() is Environment.SongItem) {
+                                                        moreEndPointBrowseId = it.moreEndpoint?.browseId
+                                                        moreEndPointParams = it.moreEndpoint?.params
+                                                        println("Android Auto onGetchildren artist songs moreEndPointBrowseId $moreEndPointBrowseId")
+                                                    }
+                                                }
+                                                .also {
+                                                    if (moreEndPointBrowseId != null)
+                                                        if (artist != null) {
+                                                            EnvironmentExt.getArtistItemsPage(
+                                                                BrowseEndpoint(
+                                                                    browseId = moreEndPointBrowseId!!,
+                                                                    params = moreEndPointParams!!
+                                                                )
+                                                            ).completed().getOrNull()
+                                                                ?.items
+                                                                ?.map { it as Environment.SongItem }
+                                                                ?.map { it.asSong }
+                                                                .also {
+                                                                    if (it != null) {
+                                                                        songs = it
+                                                                    }
+                                                                }
+                                                                ?.onEach(Database::insert)
+                                                                ?.map {
+                                                                    SongArtistMap(
+                                                                        songId = it.id,
+                                                                        artistId = artist!!.id
+                                                                    )
+                                                                }
+                                                                ?.onEach(Database::insert)
+                                                        }
 
-                            parentId.startsWith("${PlayerServiceModern.ALBUM}/") ->
-                                database.albumSongs(parentId.removePrefix("${PlayerServiceModern.ALBUM}/"))
-                                    .first().map {
-                                        it.toMediaItem(parentId)
-                                    }
+                                                }
+
+                                        }
+                                }
+                                println("Android Auto onGetchildren artist songs ${songs.size}")
+                                songs.map {
+                                    it.toMediaItem(parentId)
+                                }
+                            }
+
+                            parentId.startsWith("${PlayerServiceModern.ALBUM}/") -> {
+                                val browseId = parentId.removePrefix("${PlayerServiceModern.ALBUM}/")
+                                val album = database.album(browseId).first()
+                                var songs = database.albumSongs(browseId).first()
+                                if (songs.isEmpty()) {
+                                    EnvironmentExt.getAlbum(browseId)
+                                        .onSuccess { currentAlbumPage ->
+                                            val innerSongs = currentAlbumPage
+                                                .songs.distinct()
+                                                .also { songItems ->
+                                                    songs = songItems
+                                                        .map(Environment.SongItem::asSong)
+                                                }
+
+                                            val innerSongsAlbumMap = innerSongs
+                                                .map(Environment.SongItem::asMediaItem)
+                                                .onEach(Database::insert)
+                                                .mapIndexed { position, mediaItem ->
+                                                    SongAlbumMap(
+                                                        songId = mediaItem.mediaId,
+                                                        albumId = browseId,
+                                                        position = position
+                                                    )
+                                                }
+                                            database.upsert(
+                                                Album(
+                                                    id = browseId,
+                                                    title = album?.title ?: currentAlbumPage.album.title,
+                                                    thumbnailUrl = if (album?.thumbnailUrl?.startsWith(
+                                                            MODIFIED_PREFIX
+                                                        ) == true
+                                                    ) album.thumbnailUrl else currentAlbumPage.album.thumbnail?.url,
+                                                    year = currentAlbumPage.album.year,
+                                                    authorsText = if (album?.authorsText?.startsWith(
+                                                            MODIFIED_PREFIX
+                                                        ) == true
+                                                    ) album.authorsText else currentAlbumPage.album.authors
+                                                        ?.joinToString(", ") { it.name ?: "" },
+                                                    shareUrl = currentAlbumPage.url,
+                                                    timestamp = System.currentTimeMillis(),
+                                                    bookmarkedAt = album?.bookmarkedAt,
+                                                    isYoutubeAlbum = album?.isYoutubeAlbum == true
+                                                ),
+                                                innerSongsAlbumMap
+                                            )
+                                        }
+                                }
+
+                                println("Android Auto onGetchildren album songs ${songs.size}")
+                                songs.map {
+                                    it.toMediaItem(parentId)
+                                }
+                            }
 
                             parentId.startsWith("${PlayerServiceModern.PLAYLIST}/") -> {
 
@@ -457,8 +560,7 @@ class MediaLibrarySessionCallback (
                 PlayerServiceModern.ALBUM -> {
                     val songId = path.getOrNull(2) ?: return@future defaultResult
                     val albumId = path.getOrNull(1) ?: return@future defaultResult
-                    val albumWithSongs =
-                        database.albumSongs(albumId).first() ?: return@future defaultResult
+                    val albumWithSongs = database.albumSongs(albumId).first()
                     MediaSession.MediaItemsWithStartPosition(
                         albumWithSongs.map { it.toMediaItem() },
                         albumWithSongs.indexOfFirst { it.id == songId }.takeIf { it != -1 }

@@ -21,6 +21,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.media3.common.util.UnstableApi
 import androidx.navigation.NavController
 import it.fast4x.rimusic.R
+import it.fast4x.rimusic.appContext
 import it.fast4x.rimusic.enums.CheckUpdateState
 import it.fast4x.rimusic.enums.HomeScreenTabs
 import it.fast4x.rimusic.enums.NavRoutes
@@ -41,6 +42,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import it.fast4x.rimusic.ui.components.Skeleton
 import it.fast4x.rimusic.ui.screens.settings.isYouTubeLoggedIn
+import it.fast4x.rimusic.utils.InitializeEnvironment
 import kotlin.system.exitProcess
 
 
@@ -58,6 +60,12 @@ fun HomeScreen(
     miniPlayer: @Composable () -> Unit = {},
     openTabFromShortcut: Int
 ) {
+
+    InitializeEnvironment(
+        appContext()
+    )
+
+
     var showNewversionDialog by remember {
         mutableStateOf(true)
     }

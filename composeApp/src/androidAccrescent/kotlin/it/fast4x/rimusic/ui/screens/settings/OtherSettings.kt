@@ -82,14 +82,14 @@ fun OtherSettings() {
 
     //var isInvincibilityEnabled by rememberPreference(isInvincibilityEnabledKey, false)
 
-    var isIgnoringBatteryOptimizations by remember {
-        mutableStateOf(context.isIgnoringBatteryOptimizations)
-    }
-
-    val activityResultLauncher =
-        rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) {
-            isIgnoringBatteryOptimizations = context.isIgnoringBatteryOptimizations
-        }
+//    var isIgnoringBatteryOptimizations by remember {
+//        mutableStateOf(context.isIgnoringBatteryOptimizations)
+//    }
+//
+//    val activityResultLauncher =
+//        rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) {
+//            isIgnoringBatteryOptimizations = context.isIgnoringBatteryOptimizations
+//        }
 
 //    var isProxyEnabled by rememberPreference(isProxyEnabledKey, false)
 //    var proxyHost by rememberPreference(proxyHostnameKey, "")
@@ -98,7 +98,7 @@ fun OtherSettings() {
 
     var defaultFolder by rememberPreference(defaultFolderKey, "/")
 
-    var isKeepScreenOnEnabled by rememberPreference(isKeepScreenOnEnabledKey, false)
+//    var isKeepScreenOnEnabled by rememberPreference(isKeepScreenOnEnabledKey, false)
 
     //var checkUpdateState by rememberPreference(checkUpdateStateKey, CheckUpdateState.Disabled)
 
@@ -295,57 +295,57 @@ fun OtherSettings() {
         onCheckedChange = { extraspace = it }
     )
 
-    SettingsGroupSpacer()
-
-    SettingsEntryGroupText(title = stringResource(R.string.service_lifetime))
-
-    SwitchSettingEntry(
-        title = stringResource(R.string.keep_screen_on),
-        text = stringResource(R.string.prevents_screen_timeout),
-        isChecked = isKeepScreenOnEnabled,
-        onCheckedChange = { isKeepScreenOnEnabled = it }
-    )
-
-    ImportantSettingsDescription(text = stringResource(R.string.battery_optimizations_applied))
-
-    if (isAtLeastAndroid12) {
-        SettingsDescription(text = stringResource(R.string.is_android12))
-    }
-
-    val msgNoBatteryOptim = stringResource(R.string.not_find_battery_optimization_settings)
-
-    SettingsEntry(
-        title = stringResource(R.string.ignore_battery_optimizations),
-        isEnabled = !isIgnoringBatteryOptimizations,
-        text = if (isIgnoringBatteryOptimizations) {
-            stringResource(R.string.already_unrestricted)
-        } else {
-            stringResource(R.string.disable_background_restrictions)
-        },
-        onClick = {
-            if (!isAtLeastAndroid6) return@SettingsEntry
-
-            try {
-                activityResultLauncher.launch(
-                    Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).apply {
-                        data = Uri.parse("package:${context.packageName}")
-                    }
-                )
-            } catch (e: ActivityNotFoundException) {
-                try {
-                    activityResultLauncher.launch(
-                        Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS)
-                    )
-                } catch (e: ActivityNotFoundException) {
-                    SmartMessage(
-                        "$msgNoBatteryOptim RiMusic",
-                        type = PopupType.Info,
-                        context = context
-                    )
-                }
-            }
-        }
-    )
+//    SettingsGroupSpacer()
+//
+//    SettingsEntryGroupText(title = stringResource(R.string.service_lifetime))
+//
+//    SwitchSettingEntry(
+//        title = stringResource(R.string.keep_screen_on),
+//        text = stringResource(R.string.prevents_screen_timeout),
+//        isChecked = isKeepScreenOnEnabled,
+//        onCheckedChange = { isKeepScreenOnEnabled = it }
+//    )
+//
+//    ImportantSettingsDescription(text = stringResource(R.string.battery_optimizations_applied))
+//
+//    if (isAtLeastAndroid12) {
+//        SettingsDescription(text = stringResource(R.string.is_android12))
+//    }
+//
+//    val msgNoBatteryOptim = stringResource(R.string.not_find_battery_optimization_settings)
+//
+//    SettingsEntry(
+//        title = stringResource(R.string.ignore_battery_optimizations),
+//        isEnabled = !isIgnoringBatteryOptimizations,
+//        text = if (isIgnoringBatteryOptimizations) {
+//            stringResource(R.string.already_unrestricted)
+//        } else {
+//            stringResource(R.string.disable_background_restrictions)
+//        },
+//        onClick = {
+//            if (!isAtLeastAndroid6) return@SettingsEntry
+//
+//            try {
+//                activityResultLauncher.launch(
+//                    Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).apply {
+//                        data = Uri.parse("package:${context.packageName}")
+//                    }
+//                )
+//            } catch (e: ActivityNotFoundException) {
+//                try {
+//                    activityResultLauncher.launch(
+//                        Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS)
+//                    )
+//                } catch (e: ActivityNotFoundException) {
+//                    SmartMessage(
+//                        "$msgNoBatteryOptim RiMusic",
+//                        type = PopupType.Info,
+//                        context = context
+//                    )
+//                }
+//            }
+//        }
+//    )
 
         /*
     SwitchSettingEntry(

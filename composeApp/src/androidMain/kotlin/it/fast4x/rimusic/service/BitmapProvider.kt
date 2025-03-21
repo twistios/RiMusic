@@ -64,7 +64,7 @@ class BitmapProvider(
 
     fun load(uri: Uri?, onDone: (Bitmap) -> Unit) {
         Timber.d("BitmapProvider load method being called")
-        if (lastUri == uri) {
+        if (lastUri == uri || uri == null) {
             listener?.invoke(lastBitmap)
             return
         }
@@ -72,14 +72,15 @@ class BitmapProvider(
         lastEnqueued?.dispose()
         lastUri = uri
 
+        val url = uri.thumbnail(bitmapSize)
         runCatching {
             lastEnqueued = appContext().imageLoader.enqueue(
                 ImageRequest.Builder(appContext())
-                    .networkCachePolicy(CachePolicy.ENABLED)
-                    .data(uri.thumbnail(bitmapSize))
-                    //.allowHardware(false)
-                    .diskCacheKey(uri.thumbnail(bitmapSize).toString())
-                    //.memoryCacheKey(uri.thumbnail(bitmapSize).toString())
+                    //.networkCachePolicy(CachePolicy.ENABLED)
+                    .data(url)
+                    .allowHardware(false)
+                    .diskCacheKey(url.toString())
+                    .memoryCacheKey(url.toString())
                     .listener(
                         onError = { _, result ->
                             Timber.e("Failed to load bitmap ${result.throwable.stackTraceToString()}")

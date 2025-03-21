@@ -24,6 +24,7 @@ import it.fast4x.rimusic.LocalDownloadHelper
 import it.fast4x.rimusic.LocalPlayerServiceBinder
 import it.fast4x.rimusic.appContext
 import it.fast4x.rimusic.enums.DownloadedStateMedia
+import it.fast4x.rimusic.models.Format
 import it.fast4x.rimusic.service.MyDownloadHelper
 import it.fast4x.rimusic.service.MyPreCacheHelper
 import it.fast4x.rimusic.service.isLocal
@@ -46,35 +47,68 @@ fun InitDownloader() {
 @UnstableApi
 @Composable
 fun downloadedStateMedia(mediaId: String): DownloadedStateMedia {
+    if (mediaId.isBlank() || mediaId.isEmpty()) return DownloadedStateMedia.NOT_CACHED_OR_DOWNLOADED
+
+
     val binder = LocalPlayerServiceBinder.current
 
     val cachedBytes by remember(mediaId) {
         try {
             mutableStateOf(binder?.cache?.getCachedBytes(mediaId, 0, -1))
         } catch (e: Exception) {
-            mutableLongStateOf(0L)
+            mutableLongStateOf(-1L)
         }
 
     }
 
+    val downloadedBytes by remember(mediaId) {
+        try {
+            mutableStateOf(binder?.downloadCache?.getCachedBytes(mediaId, 0, -1))
+        } catch (e: Exception) {
+            mutableLongStateOf(-1)
+        }
+    }
 
-    var isDownloaded by remember { mutableStateOf(false) }
+    // If cache is in error return
+    if (cachedBytes == -1L || downloadedBytes == -1L) return DownloadedStateMedia.NOT_CACHED_OR_DOWNLOADED
+
+    var mediaFormatContentLenght by remember(mediaId) { mutableLongStateOf(0L) }
+    LaunchedEffect(mediaId) {
+        Database.format(mediaId).distinctUntilChanged().collectLatest { format ->
+            mediaFormatContentLenght = format?.contentLength ?: Long.MAX_VALUE
+        }
+    }
+
+    var isDownloaded by remember(mediaId) { mutableStateOf(false) }
     LaunchedEffect(mediaId) {
         MyDownloadHelper.getDownload(mediaId).collect { download ->
             isDownloaded = download?.state == Download.STATE_COMPLETED
-        }
-    }
-    var isCached by remember { mutableStateOf(false) }
-    LaunchedEffect(mediaId) {
-        Database.format(mediaId).distinctUntilChanged().collectLatest { format ->
-           isCached = format?.contentLength == cachedBytes
+                    && (downloadedBytes ?: 0L) >= mediaFormatContentLenght
         }
     }
 
+
+
+    var isCached by remember(mediaId) { mutableStateOf(false) }
+//    LaunchedEffect(mediaId) {
+//        Database.format(mediaId).distinctUntilChanged().collectLatest { format ->
+//           isCached = format?.contentLength == cachedBytes
+//        }
+//    }
+    isCached = when (cachedBytes){
+        0L -> false
+        null -> false
+        else -> (cachedBytes ?: 0L) >= mediaFormatContentLenght
+    }
+
+    println("downloadedStateMedia: mediaId $mediaId contentLength $mediaFormatContentLenght cachedBytes $cachedBytes isCached $isCached downloadedBytes $downloadedBytes isDownloaded $isDownloaded")
+
     return when {
-        isDownloaded && isCached -> DownloadedStateMedia.CACHED_AND_DOWNLOADED
-        isDownloaded && !isCached -> DownloadedStateMedia.DOWNLOADED
-        !isDownloaded && isCached -> DownloadedStateMedia.CACHED
+        isCached -> DownloadedStateMedia.CACHED
+        isDownloaded -> DownloadedStateMedia.DOWNLOADED
+        //isDownloaded && isCached -> DownloadedStateMedia.CACHED_AND_DOWNLOADED
+        //isDownloaded && !isCached -> DownloadedStateMedia.DOWNLOADED
+        //!isDownloaded && isCached -> DownloadedStateMedia.CACHED
         else -> DownloadedStateMedia.NOT_CACHED_OR_DOWNLOADED
     }
 }
@@ -87,7 +121,7 @@ fun manageDownload(
     downloadState: Boolean = false
 ) {
 
-    if (mediaItem.isLocal) return
+    if (mediaItem.isLocal || !isNetworkConnected(appContext())) return
 
     if (downloadState) {
         MyDownloadHelper.removeDownload(context = context, mediaItem = mediaItem)

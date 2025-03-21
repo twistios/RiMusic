@@ -3,6 +3,7 @@ package it.fast4x.rimusic.service.modern
 import android.content.Context
 import android.net.Uri
 import androidx.annotation.OptIn
+import androidx.core.content.ContextCompat.getString
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.datasource.DataSpec
 import it.fast4x.environment.Environment
@@ -34,6 +35,10 @@ import java.net.ConnectException
 import java.net.SocketTimeoutException
 import java.net.UnknownHostException
 import kotlin.time.Duration.Companion.seconds
+import androidx.core.net.toUri
+import androidx.media3.common.PlaybackException
+import it.fast4x.rimusic.R
+import it.fast4x.rimusic.appContext
 
 @OptIn(UnstableApi::class)
 internal suspend fun PlayerServiceModern.dataSpecProcess(
@@ -61,48 +66,59 @@ internal suspend fun PlayerServiceModern.dataSpecProcess(
         return dataSpec //.withUri(Uri.parse(dataSpec.uri.toString()))
     }
 
-    try {
-        println("PlayerServiceModern DataSpecProcess Playing song start timeout ${videoId}")
-        //if loggedin use advanced player with webPotoken and new newpipe extractor
-        val format = if (!useYtLoginOnlyForBrowse() && isYouTubeLoginEnabled() && isYouTubeLoggedIn())
-            getAvancedInnerTubeStream(videoId, audioQualityFormat, connectionMetered)
-        else getInnerTubeStream(videoId, audioQualityFormat, connectionMetered)
+    println("PlayerServiceModern DataSpecProcess Playing song ${videoId}")
+    //if loggedin use advanced player with webPotoken and new newpipe extractor
+    val format = if (!useYtLoginOnlyForBrowse() && isYouTubeLoginEnabled() && isYouTubeLoggedIn())
+        getAvancedInnerTubeStream(videoId, audioQualityFormat, connectionMetered)
+    else getInnerTubeStream(videoId, audioQualityFormat, connectionMetered)
 
-        println("PlayerServiceModern DataSpecProcess Playing song ${videoId} from url=${format?.url}")
+    println("PlayerServiceModern DataSpecProcess Playing song ${videoId} from url=${format?.url}")
 
-        if (format?.url == null) throw PlayableFormatNotFoundException()
-        return dataSpec.withUri(Uri.parse(format?.url)).subrange(dataSpec.uriPositionOffset, chunkLength)
+    if (format?.url == null) throw PlayableFormatNotFoundException()
+    return dataSpec.withUri(format.url!!.toUri()).subrange(dataSpec.uriPositionOffset, chunkLength)
 
-    } catch ( e: Exception ) {
-        Timber.e("PlayerServiceModern DataSpecProcess Error: ${e.stackTraceToString()}")
-        println("PlayerServiceModern DataSpecProcess Error: ${e.stackTraceToString()}")
-        val format = getInnerTubeStream(videoId, audioQualityFormat, connectionMetered)
-        return dataSpec.withUri(Uri.parse(format?.url)).subrange(dataSpec.uriPositionOffset, chunkLength)
-
-//        println("PlayerServiceModern DataSpecProcess Playing song $videoId from ALTERNATIVE url")
-//        val alternativeUrl = "https://jossred.josprox.com/yt/stream/$videoId"
-//        return dataSpec.withUri(alternativeUrl.toUri())
-
-        // Temporary disabled piped and invidious
-//        try {
-//            // Switch to Piped
-//            val formatUrl = getPipedFormatUrl( videoId, audioQualityFormat )
+//    try {
+//        println("PlayerServiceModern DataSpecProcess Playing song start timeout ${videoId}")
+//        //if loggedin use advanced player with webPotoken and new newpipe extractor
+//        val format = if (!useYtLoginOnlyForBrowse() && isYouTubeLoginEnabled() && isYouTubeLoggedIn())
+//            getAvancedInnerTubeStream(videoId, audioQualityFormat, connectionMetered)
+//        else getInnerTubeStream(videoId, audioQualityFormat, connectionMetered)
 //
-//            println("PlayerServiceModern DataSpecProcess Playing song $videoId from url $formatUrl")
-//            return dataSpec.withUri( formatUrl )
+//        println("PlayerServiceModern DataSpecProcess Playing song ${videoId} from url=${format?.url}")
 //
-//        } catch ( e: NoSuchElementException ) {
-//            // Switch to Invidious
-//            val formatUrl = getInvidiousFormatUrl( videoId, audioQualityFormat )
+//        if (format?.url == null) throw PlayableFormatNotFoundException()
+//        return dataSpec.withUri(Uri.parse(format?.url)).subrange(dataSpec.uriPositionOffset, chunkLength)
 //
-//            println("PlayerServiceModern DataSpecProcess Playing song $videoId from url $formatUrl")
-//            return dataSpec.withUri( formatUrl )
-//        }
-
-    } catch ( e: Exception ) {
-        // Rethrow exception if it's not handled
-        throw e
-    }
+//    } catch ( e: Exception ) {
+//        Timber.e("PlayerServiceModern DataSpecProcess Error: ${e.stackTraceToString()}")
+//        println("PlayerServiceModern DataSpecProcess Error: ${e.stackTraceToString()}")
+//        val format = getInnerTubeStream(videoId, audioQualityFormat, connectionMetered)
+//        return dataSpec.withUri(Uri.parse(format?.url)).subrange(dataSpec.uriPositionOffset, chunkLength)
+//
+////        println("PlayerServiceModern DataSpecProcess Playing song $videoId from ALTERNATIVE url")
+////        val alternativeUrl = "https://jossred.josprox.com/yt/stream/$videoId"
+////        return dataSpec.withUri(alternativeUrl.toUri())
+//
+//        // Temporary disabled piped and invidious
+////        try {
+////            // Switch to Piped
+////            val formatUrl = getPipedFormatUrl( videoId, audioQualityFormat )
+////
+////            println("PlayerServiceModern DataSpecProcess Playing song $videoId from url $formatUrl")
+////            return dataSpec.withUri( formatUrl )
+////
+////        } catch ( e: NoSuchElementException ) {
+////            // Switch to Invidious
+////            val formatUrl = getInvidiousFormatUrl( videoId, audioQualityFormat )
+////
+////            println("PlayerServiceModern DataSpecProcess Playing song $videoId from url $formatUrl")
+////            return dataSpec.withUri( formatUrl )
+////        }
+//
+//    } catch ( e: Exception ) {
+//        // Rethrow exception if it's not handled
+//        throw e
+//    }
 }
 
 @OptIn(UnstableApi::class)
@@ -200,6 +216,8 @@ suspend fun getAvancedInnerTubeStream(
                     throw NoInternetException()
                 }
 
+                is PlaybackException -> throw throwable
+
                 is SocketTimeoutException -> {
                     throw TimeoutException()
                 }
@@ -207,7 +225,11 @@ suspend fun getAvancedInnerTubeStream(
                 else -> {
                     Timber.d("PlayerServiceModern MyDownloadHelper DataSpecProcess Error: ${throwable.stackTraceToString()}")
                     println("PlayerServiceModern MyDownloadHelper DataSpecProcess Error: ${throwable.stackTraceToString()}")
-                    throw throwable
+                    throw throw PlaybackException(
+                        appContext().resources.getString(R.string.error_unknown),
+                        throwable,
+                        PlaybackException.ERROR_CODE_REMOTE_ERROR
+                    )
                 }
             }
 
@@ -300,6 +322,8 @@ suspend fun getInnerTubeStream(
                     throw NoInternetException()
                 }
 
+                is PlaybackException -> throw throwable
+
                 is SocketTimeoutException -> {
                     throw TimeoutException()
                 }
@@ -307,7 +331,11 @@ suspend fun getInnerTubeStream(
                 else -> {
                     Timber.d("PlayerServiceModern MyDownloadHelper DataSpecProcess Error: ${throwable.stackTraceToString()}")
                     println("PlayerServiceModern MyDownloadHelper DataSpecProcess Error: ${throwable.stackTraceToString()}")
-                    throw throwable
+                    throw PlaybackException(
+                        appContext().resources.getString(R.string.error_unknown),
+                        throwable,
+                        PlaybackException.ERROR_CODE_REMOTE_ERROR
+                    )
                 }
             }
 

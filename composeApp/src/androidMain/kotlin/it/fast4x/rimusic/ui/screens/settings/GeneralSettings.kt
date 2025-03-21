@@ -1,7 +1,13 @@
 package it.fast4x.rimusic.ui.screens.settings
 
+import android.content.ActivityNotFoundException
+import android.content.Intent
+import android.net.Uri
 import android.os.Build
+import android.provider.Settings
 import android.text.TextUtils
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.foundation.background
@@ -35,6 +41,7 @@ import androidx.media3.common.util.UnstableApi
 import androidx.navigation.NavController
 import it.fast4x.rimusic.LocalPlayerServiceBinder
 import it.fast4x.rimusic.R
+import it.fast4x.rimusic.appContext
 import it.fast4x.rimusic.enums.AudioQualityFormat
 import it.fast4x.rimusic.enums.BackgroundProgress
 import it.fast4x.rimusic.enums.CarouselSize
@@ -224,6 +231,7 @@ import it.fast4x.rimusic.utils.visualizerEnabledKey
 import it.fast4x.rimusic.utils.volumeNormalizationKey
 import it.fast4x.rimusic.colorPalette
 import it.fast4x.rimusic.enums.DnsOverHttpsType
+import it.fast4x.rimusic.enums.PopupType
 import it.fast4x.rimusic.enums.PresetsReverb
 import it.fast4x.rimusic.enums.ValidationType
 import it.fast4x.rimusic.ui.components.themed.Search
@@ -240,6 +248,9 @@ import it.fast4x.rimusic.utils.enablePreCacheKey
 import it.fast4x.rimusic.utils.getSystemlanguage
 import it.fast4x.rimusic.utils.handleAudioFocusEnabledKey
 import it.fast4x.rimusic.utils.isConnectionMeteredEnabledKey
+import it.fast4x.rimusic.utils.isIgnoringBatteryOptimizations
+import it.fast4x.rimusic.utils.isInvincibilityEnabledKey
+import it.fast4x.rimusic.utils.isKeepScreenOnEnabledKey
 import it.fast4x.rimusic.utils.isProxyEnabledKey
 import it.fast4x.rimusic.utils.proxyHostnameKey
 import it.fast4x.rimusic.utils.proxyModeKey
@@ -247,6 +258,8 @@ import it.fast4x.rimusic.utils.proxyPortKey
 import it.fast4x.rimusic.utils.restartActivityKey
 import it.fast4x.rimusic.utils.volumeBoostLevelKey
 import java.net.Proxy
+import androidx.core.net.toUri
+import androidx.core.text.isDigitsOnly
 
 
 @ExperimentalAnimationApi
@@ -280,15 +293,15 @@ fun GeneralSettings(
     var isConnectionMeteredEnabled by rememberPreference(isConnectionMeteredEnabledKey, true)
     var isPreCacheEnabled by rememberPreference(enablePreCacheKey, false)
 
-    var useDnsOverHttpsType by rememberPreference(dnsOverHttpsTypeKey, DnsOverHttpsType.Google)
+    var useDnsOverHttpsType by rememberPreference(dnsOverHttpsTypeKey, DnsOverHttpsType.None)
 
 
     var keepPlayerMinimized by rememberPreference(keepPlayerMinimizedKey,   false)
 
     var disableClosingPlayerSwipingDown by rememberPreference(disableClosingPlayerSwipingDownKey, false)
 
-    var navigationBarPosition by rememberPreference(navigationBarPositionKey, NavigationBarPosition.Bottom)
-    var navigationBarType by rememberPreference(navigationBarTypeKey, NavigationBarType.IconAndText)
+    val navigationBarPosition by rememberPreference(navigationBarPositionKey, NavigationBarPosition.Bottom)
+    //var navigationBarType by rememberPreference(navigationBarTypeKey, NavigationBarType.IconAndText)
     var pauseBetweenSongs  by rememberPreference(pauseBetweenSongsKey, PauseBetweenSongs.`0`)
     var maxSongsInQueue  by rememberPreference(maxSongsInQueueKey, MaxSongs.`500`)
 
@@ -533,6 +546,80 @@ fun GeneralSettings(
         }
 
         SettingsGroupSpacer()
+        SettingsEntryGroupText(title = stringResource(R.string.service_lifetime))
+        val context = LocalContext.current
+        var isKeepScreenOnEnabled by rememberPreference(isKeepScreenOnEnabledKey, false)
+        var isIgnoringBatteryOptimizations by remember {
+            mutableStateOf(context.isIgnoringBatteryOptimizations)
+        }
+        val activityResultLauncher =
+            rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) {
+                isIgnoringBatteryOptimizations = context.isIgnoringBatteryOptimizations
+            }
+
+        SwitchSettingEntry(
+            title = stringResource(R.string.keep_screen_on),
+            text = stringResource(R.string.prevents_screen_timeout),
+            isChecked = isKeepScreenOnEnabled,
+            onCheckedChange = { isKeepScreenOnEnabled = it }
+        )
+
+        ImportantSettingsDescription(text = stringResource(R.string.battery_optimizations_applied))
+
+        if (isAtLeastAndroid12) {
+            SettingsDescription(text = stringResource(R.string.is_android12))
+        }
+
+        val msgNoBatteryOptim = stringResource(R.string.not_find_battery_optimization_settings)
+
+        SettingsEntry(
+            title = stringResource(R.string.ignore_battery_optimizations),
+            isEnabled = !isIgnoringBatteryOptimizations,
+            text = if (isIgnoringBatteryOptimizations) {
+                stringResource(R.string.already_unrestricted)
+            } else {
+                stringResource(R.string.disable_background_restrictions)
+            },
+            onClick = {
+                if (!isAtLeastAndroid6) return@SettingsEntry
+
+                try {
+                    activityResultLauncher.launch(
+                        Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).apply {
+                            data = "package:${context.packageName}".toUri()
+                        }
+                    )
+                } catch (e: ActivityNotFoundException) {
+                    try {
+                        activityResultLauncher.launch(
+                            Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS)
+                        )
+                    } catch (e: ActivityNotFoundException) {
+                        SmartMessage(
+                            "$msgNoBatteryOptim RiMusic",
+                            type = PopupType.Info,
+                            context = context
+                        )
+                    }
+                }
+            }
+        )
+        var isInvincibilityEnabled by rememberPreference(isInvincibilityEnabledKey, false)
+
+        if (search.input.isBlank() || stringResource(R.string.invincible_service).contains(search.input,true)) {
+            SwitchSettingEntry(
+                title = stringResource(R.string.invincible_service),
+                text = stringResource(R.string.turning_off_battery_optimizations_is_not_enough),
+                isChecked = isInvincibilityEnabled,
+                onCheckedChange = {
+                    isInvincibilityEnabled = it
+                    restartService = true
+                }
+            )
+            RestartPlayerService(restartService, onRestart = { restartService = false } )
+        }
+
+        SettingsGroupSpacer()
         SettingsEntryGroupText(stringResource(R.string.player))
 
         if (search.input.isBlank() || stringResource(R.string.notification_type).contains(search.input,true)) {
@@ -604,7 +691,7 @@ fun GeneralSettings(
             TextField(
                 value = jumpPrevious,
                 onValueChange = {
-                    if (TextUtils.isDigitsOnly(it))
+                    if (it.isDigitsOnly())
                     jumpPrevious = it
                 },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
