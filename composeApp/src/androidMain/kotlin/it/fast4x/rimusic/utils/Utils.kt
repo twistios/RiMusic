@@ -1104,3 +1104,7 @@ inline fun <reified T : Throwable> Throwable.findCause(): T? {
 
     return null
 }
+
+fun isValidHex(hex: String): Boolean {
+    return hex.length == 7 && hex.startsWith("#")
+}

@@ -236,7 +236,7 @@ fun InfoAlbumAndArtistModern(
                 }
             }
             //}
-            if (playerControlsType == PlayerControlsType.Modern)
+            if (playerControlsType == PlayerControlsType.Modern && playerBackgroundColors != PlayerBackgroundColors.MidnightOdyssey)
                 Box(
                     modifier = Modifier
                         .weight(0.1f)
@@ -548,8 +548,8 @@ fun ControlsModern(
               backgroundColor = colorPalette().background2.copy(0.95f),
               onClick = {},
               modifier = Modifier
-                  .doubleShadowDrop(RoundedCornerShape(8.dp), 4.dp, 8.dp)
-                  .clip(RoundedCornerShape(8.dp))
+                  .doubleShadowDrop(if (playerPlayButtonType != PlayerPlayButtonType.Circle) RoundedCornerShape(8.dp) else CircleShape, 4.dp, 8.dp)
+                  .clip(if (playerPlayButtonType != PlayerPlayButtonType.Circle) RoundedCornerShape(8.dp) else CircleShape)
                   .combinedClickable(
                       indication = ripple(bounded = true),
                       interactionSource = remember { MutableInteractionSource() },

@@ -161,6 +161,7 @@ import it.fast4x.rimusic.utils.asSong
 import it.fast4x.rimusic.utils.bassboostLevelKey
 import it.fast4x.rimusic.utils.getLikeState
 import it.fast4x.rimusic.utils.isExplicit
+import it.fast4x.rimusic.utils.isValidHex
 import it.fast4x.rimusic.utils.isValidHttpUrl
 import it.fast4x.rimusic.utils.isValidUrl
 import it.fast4x.rimusic.utils.lyricsSizeKey
@@ -854,6 +855,7 @@ inline fun InputTextDialog(
     val value_cannot_empty = stringResource(R.string.value_cannot_be_empty)
     //val value_must_be_greater = stringResource(R.string.value_must_be_greater_than)
     val value_must_be_ip_address = stringResource(R.string.value_must_be_ip_address)
+    val value_must_be_hex = stringResource(R.string.value_must_be_hex)
     val value_must_be_valid_url = stringResource(R.string.value_must_be_valid_url)
     var checkedState = remember{
         mutableStateOf(value.startsWith(prefix))
@@ -863,6 +865,7 @@ inline fun InputTextDialog(
         ValidationType.Ip -> !isValidIP(txtField.value)
         ValidationType.Url -> !isValidUrl(txtField.value)
         ValidationType.Text -> txtField.value.isEmpty()
+        ValidationType.Hex -> !isValidHex(txtField.value)
         ValidationType.None -> false
     }
 
@@ -980,6 +983,13 @@ inline fun InputTextDialog(
                         if (txtField.value.isNotEmpty() && validationType == ValidationType.Ip) {
                             if (!isValidIP(txtField.value)) {
                                 txtFieldError.value = value_must_be_ip_address
+                                inError.value = true
+                                return@DialogTextButton
+                            }
+                        }
+                        if (txtField.value.isNotEmpty() && validationType == ValidationType.Hex) {
+                            if (!isValidHex(txtField.value)) {
+                                txtFieldError.value = value_must_be_hex
                                 inError.value = true
                                 return@DialogTextButton
                             }

@@ -298,7 +298,7 @@ fun GetSeekBar(
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
-            .padding(horizontal = 10.dp)
+            .padding(horizontal = if (playerTimelineType != PlayerTimelineType.FakeAudioBar) 20.dp else 15.dp)
             .fillMaxWidth()
     ) {
         Row(

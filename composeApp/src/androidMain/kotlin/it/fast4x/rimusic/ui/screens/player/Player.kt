@@ -44,6 +44,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredHeight
@@ -308,9 +309,22 @@ import androidx.compose.ui.geometry.center
 import androidx.compose.ui.graphics.Outline
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.input.pointer.pointerInteropFilter
 import androidx.compose.ui.unit.LayoutDirection
+import it.fast4x.rimusic.appContext
+import it.fast4x.rimusic.context
+import it.fast4x.rimusic.service.MyDownloadHelper
 import it.fast4x.rimusic.ui.components.themed.AddToPlaylistPlayerMenu
+import it.fast4x.rimusic.ui.screens.settings.isYouTubeSyncEnabled
+import it.fast4x.rimusic.ui.styling.favoritesIcon
+import it.fast4x.rimusic.utils.addToYtLikedSong
+import it.fast4x.rimusic.utils.getLikeState
+import it.fast4x.rimusic.utils.mediaItemToggleLike
+import it.fast4x.rimusic.utils.setDisLikeState
+import it.fast4x.rimusic.utils.unlikeYtVideoOrSong
+import kotlinx.coroutines.CoroutineScope
+import org.dailyislam.android.utilities.isNetworkConnected
 import kotlin.math.sqrt
 
 
@@ -1018,7 +1032,10 @@ fun Player(
     }
 
 
-    if (!isGradientBackgroundEnabled) {
+    if (playerBackgroundColors == PlayerBackgroundColors.MidnightOdyssey){
+        containerModifier = containerModifier
+            .background(dynamicColorPalette.accent.copy(0.8f).compositeOver(Color.Black))
+    } else if (!isGradientBackgroundEnabled) {
         if (playerBackgroundColors == PlayerBackgroundColors.BlurredCoverColor && (playerType == PlayerType.Essential || (showthumbnail && (!albumCoverRotation)))) {
             containerModifier = containerModifier
                 .background(dynamicColorPalette.background1)
@@ -2930,7 +2947,7 @@ fun Player(
                             Image(
                                 painter = painterResource(R.drawable.chevron_down),
                                 contentDescription = null,
-                                colorFilter = ColorFilter.tint(colorPalette().collapsedPlayerProgressBar),
+                                colorFilter = ColorFilter.tint(if (playerBackgroundColors == PlayerBackgroundColors.MidnightOdyssey) dynamicColorPalette.background2 else colorPalette().collapsedPlayerProgressBar),
                                 modifier = Modifier
                                     .clickable {
                                         onDismiss()
@@ -2944,7 +2961,7 @@ fun Player(
                             Image(
                                 painter = painterResource(R.drawable.app_icon),
                                 contentDescription = null,
-                                colorFilter = ColorFilter.tint(colorPalette().collapsedPlayerProgressBar),
+                                colorFilter = ColorFilter.tint(if (playerBackgroundColors == PlayerBackgroundColors.MidnightOdyssey) dynamicColorPalette.background2 else colorPalette().collapsedPlayerProgressBar),
                                 modifier = Modifier
                                     .clickable {
                                         onDismiss()
@@ -2960,7 +2977,7 @@ fun Player(
                                 Image(
                                     painter = painterResource(R.drawable.ellipsis_vertical),
                                     contentDescription = null,
-                                    colorFilter = ColorFilter.tint(colorPalette().collapsedPlayerProgressBar),
+                                    colorFilter = ColorFilter.tint(if (playerBackgroundColors == PlayerBackgroundColors.MidnightOdyssey) dynamicColorPalette.background2 else colorPalette().collapsedPlayerProgressBar),
                                     modifier = Modifier
                                         .clickable {
                                             menuState.display {
@@ -3237,7 +3254,77 @@ fun Player(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     modifier = Modifier
                     .conditional(!expandedplayer && (!isShowingLyrics || showlyricsthumbnail)){weight(1f)}
+                    .conditional(playerBackgroundColors == PlayerBackgroundColors.MidnightOdyssey){
+                        background(
+                        Brush.verticalGradient(
+                            0.0f to Color(0xff141414),
+                            1.0f to Color.Black,
+                            startY = 0f,
+                            endY = POSITIVE_INFINITY
+                            ),
+                            RoundedCornerShape(topStart = 30.dp, topEnd = 30.dp)
+                        )
+                    }
                 ){
+                  if (playerBackgroundColors == PlayerBackgroundColors.MidnightOdyssey && !isShowingLyrics){
+                    Box{
+                        Box(
+                            modifier = Modifier
+                                .align(Alignment.Center)
+                                .offset(0.dp,(-15).dp)
+                                .size(30.dp)
+                                .background(Color.DarkGray.copy(0.5f), CircleShape)
+                        ){
+                            IconButton(
+                                color = colorPalette().favoritesIcon,
+                                icon = getLikeState(mediaItem.mediaId),
+                                onClick = {
+                                    if (!isNetworkConnected(appContext()) && isYouTubeSyncEnabled()) {
+                                        SmartMessage(appContext().resources.getString(R.string.no_connection), context = appContext(), type = PopupType.Error)
+                                    } else if (!isYouTubeSyncEnabled()){
+                                        Database.asyncTransaction {
+                                            CoroutineScope(Dispatchers.IO).launch {
+                                                mediaItem.takeIf { it.mediaId == mediaItem.mediaId }?.let { mediaItem ->
+                                                    mediaItemToggleLike(mediaItem)
+                                                    MyDownloadHelper.autoDownloadWhenLiked(context(), mediaItem)
+                                                }
+                                            }
+                                        }
+                                    } else {
+                                        CoroutineScope(Dispatchers.IO).launch {
+                                            addToYtLikedSong(mediaItem)
+                                        }
+                                    }
+                                    if (effectRotationEnabled) isRotated = !isRotated
+                                },
+                                onLongClick = {
+                                    if (!isNetworkConnected(appContext()) && isYouTubeSyncEnabled()) {
+                                        SmartMessage(appContext().resources.getString(R.string.no_connection), context = appContext(), type = PopupType.Error)
+                                    } else if (!isYouTubeSyncEnabled()){
+                                        Database.asyncTransaction {
+                                            CoroutineScope(Dispatchers.IO).launch {
+                                                mediaItem.takeIf { it.mediaId == mediaItem.mediaId }?.let { mediaItem ->
+                                                    if (like(mediaItem.mediaId, setDisLikeState(likedAt)) == 0){
+                                                        insert(mediaItem, Song::toggleDislike)
+                                                    }
+                                                    MyDownloadHelper.autoDownloadWhenLiked(context(), mediaItem)
+                                                }
+                                            }
+                                        }
+                                    } else {
+                                        CoroutineScope(Dispatchers.IO).launch {
+                                            unlikeYtVideoOrSong(mediaItem)
+                                        }
+                                    }
+                                    if (effectRotationEnabled) isRotated = !isRotated
+                                },
+                                modifier = Modifier
+                                    .size(24.dp)
+                                    .align(Alignment.Center)
+                            )
+                        }
+                    }
+                  }
                 if (!expandedplayer || !isShowingLyrics || queueDurationExpanded) {
                     if (showTotalTimeQueue)
                         Row(
